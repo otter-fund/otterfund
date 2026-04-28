@@ -28,7 +28,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Budget spent/remaining updates immediately when a transaction is added or a CSV/PDF import completes
   3. A monthly surplus figure is available at month-end, derived from income minus total spending for that month
   4. Existing user data is preserved — no balances or budget figures are corrupted by the schema/logic change
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Computation layer: calculate balances, budget spent, and surplus from transactions
+- [ ] 01-02-PLAN.md — Integration: wire computed values into API routes and dashboard display
 
 ### Phase 2: Smart Goals and Subscriptions
 **Goal**: Surplus flows to savings goals automatically and subscriptions flag their own problems without user effort
@@ -73,7 +77,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Connected Data Engine | 0/TBD | Not started | - |
+| 1. Connected Data Engine | 0/2 | Planning complete | - |
 | 2. Smart Goals and Subscriptions | 0/TBD | Not started | - |
 | 3. Notification Center | 0/TBD | Not started | - |
 | 4. Financial Intelligence | 0/TBD | Not started | - |
