@@ -194,9 +194,9 @@
 .bk-month-cell {
   display: grid;
   place-items: center;
-  height: 38px;
+  height: 44px;
   border: none;
-  border-radius: 10px;
+  border-radius: 11px;
   background: transparent;
   font-family: inherit;
   font-size: 13px;

@@ -23,7 +23,7 @@ import { EditAccountModal } from "@/components/dashboard/modals/edit-account-mod
 import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { SettingsModal } from "@/components/dashboard/modals/settings-modal";
 import type { TransactionView, GoalView, AccountView, SpendCategory, BillView } from "@/lib/types";
-import { DEFAULT_ACCENT, deriveTheme, themeVars, hueOf } from "@/components/bulga/theme";
+import { DEFAULT_ACCENT, deriveTheme, themeVars } from "@/components/bulga/theme";
 import { LogoMark } from "@/components/bulga/logo";
 import { MonthPicker } from "@/components/bulga/month-picker";
 import { BulgaChromeProvider } from "@/components/bulga/chrome-context";
@@ -393,7 +393,7 @@ export function BulgaChrome({
                   style={{
                     display: "flex", alignItems: "center", gap: 8, height: 38, padding: "0 17px 0 14px", borderRadius: 999,
                     border: "none", background: "var(--bk-accent)", color: "#fff", fontFamily: "inherit", fontSize: 13.5,
-                    fontWeight: 600, cursor: "pointer", boxShadow: `0 1px 2px oklch(40% 0.1 ${hueOf(accent)} / 0.3)`,
+                    fontWeight: 600, cursor: "pointer",
                   }}
                 >
                   <Plus size={16} strokeWidth={2.4} aria-hidden="true" />

@@ -10,7 +10,7 @@
 import { useMemo, useState } from "react";
 import type { TransactionView } from "@/lib/types";
 import type { BulgaTheme } from "@/components/bulga/theme";
-import { tintFor, hueOf } from "@/components/bulga/theme";
+import { tintFor } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
 
 interface BulgaTransactionsProps {
@@ -116,7 +116,6 @@ export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdi
                   cursor: "pointer",
                   background: active ? theme.accent : "transparent",
                   color: active ? "#fff" : "var(--color-bk-muted)",
-                  boxShadow: active ? `0 1px 3px oklch(40% 0.1 ${hueOf(theme.accent)} / 0.22)` : "none",
                   transition: "background .16s, color .16s",
                 }}
               >

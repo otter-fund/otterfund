@@ -11,7 +11,6 @@
 import { useEffect, useState } from "react";
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import type { BulgaTheme } from "@/components/bulga/theme";
-import { hueOf } from "@/components/bulga/theme";
 import { MONTH_NAMES } from "@/lib/constants";
 // Browsable year range — the SAME constants the validators use (lib/period), so
 // a picked month can never fall outside what the server accepts.
@@ -133,9 +132,9 @@ export function MonthPicker({
               top: 46,
               right: 0,
               zIndex: 50,
-              width: 264,
-              padding: 12,
-              borderRadius: 16,
+              width: 300,
+              padding: 16,
+              borderRadius: 18,
               background: "var(--color-bk-surface)",
               border: "1px solid var(--color-bk-line)",
               boxShadow: "0 12px 32px oklch(20% 0.02 80 / 0.16)",
@@ -147,7 +146,7 @@ export function MonthPicker({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                padding: "0 2px 10px",
+                padding: "0 2px 14px",
               }}
             >
               <button
@@ -187,7 +186,7 @@ export function MonthPicker({
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",
-                gap: 6,
+                gap: 8,
               }}
             >
               {MONTHS_SHORT.map((m, i) => {
@@ -204,11 +203,7 @@ export function MonthPicker({
                     onClick={() => choose(mn)}
                     style={
                       selected
-                        ? {
-                            background: accent,
-                            color: "#fff",
-                            boxShadow: `0 2px 8px oklch(40% 0.1 ${hueOf(accent)} / 0.28)`,
-                          }
+                        ? { background: accent, color: "#fff" }
                         : undefined
                     }
                   >
@@ -220,7 +215,7 @@ export function MonthPicker({
                           style={{
                             position: "absolute",
                             left: "50%",
-                            bottom: -7,
+                            bottom: -6,
                             transform: "translateX(-50%)",
                             width: 4,
                             height: 4,
@@ -255,7 +250,7 @@ export function MonthPicker({
                   }}
                 >
                   <RotateCcw size={14} strokeWidth={2} aria-hidden="true" />
-                  Back to this month
+                  Back to current month
                 </button>
               </>
             )}
