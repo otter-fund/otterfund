@@ -12,21 +12,15 @@ import { useEffect, useState } from "react";
 import { Calendar, ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import type { BulgaTheme } from "@/components/bulga/theme";
 import { hueOf } from "@/components/bulga/theme";
+import { MONTH_NAMES } from "@/lib/constants";
+// Browsable year range — the SAME constants the validators use (lib/period), so
+// a picked month can never fall outside what the server accepts.
+import { PERIOD_MIN_YEAR as MIN_YEAR, PERIOD_MAX_YEAR_AHEAD as MAX_YEAR_AHEAD } from "@/lib/period";
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 const MONTHS_SHORT = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
-
-// Keep the browsable year range identical to what the server accepts
-// (see resolvePeriod in dashboard/page.tsx) so a picked month never silently
-// snaps back to today.
-const MIN_YEAR = 2000;
-const MAX_YEAR_AHEAD = 5;
 
 interface MonthPickerProps {
   /** Committed selection (1-indexed month). */

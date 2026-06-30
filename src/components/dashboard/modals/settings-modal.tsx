@@ -221,6 +221,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
             <Tabs
               items={TABS}
               value={tab}
+              accent={accent}
               onValueChange={(v) => {
                 disarmDelete();
                 setTab(v as SettingsTab);

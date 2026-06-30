@@ -1,16 +1,13 @@
 "use client";
 
-// Bulga tabs — a calm vertical (or horizontal) tab rail on-brand with the
-// design system: pill active state, accent tint, hairline divider. Generic
-// enough to reuse anywhere (settings, detail panels). Controlled component:
-// the parent owns the active value.
+// Bulga tabs — vertical/horizontal tab rail. The active tab is a solid
+// dark-accent pill, matching the app's icon-rail (RailLink in bulga-chrome).
 
 import { cn } from "@/lib/utils";
 
 export interface TabItem {
   value: string;
   label: string;
-  /** Optional leading icon (lucide component). */
   icon?: React.ComponentType<{ className?: string; strokeWidth?: number }>;
 }
 
@@ -18,7 +15,8 @@ interface TabsProps {
   items: TabItem[];
   value: string;
   onValueChange: (value: string) => void;
-  /** "vertical" = left rail (default), "horizontal" = pill row. */
+  /** The live accent — fills the active tab. */
+  accent: string;
   orientation?: "vertical" | "horizontal";
   className?: string;
 }
@@ -27,6 +25,7 @@ export function Tabs({
   items,
   value,
   onValueChange,
+  accent,
   orientation = "vertical",
   className,
 }: TabsProps) {
@@ -53,9 +52,10 @@ export function Tabs({
               "outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
               vertical ? "w-full" : "shrink-0",
               active
-                ? "bg-[var(--accent)] text-[var(--color-primary)]"
+                ? "text-white"
                 : "text-[var(--color-bk-muted)] hover:bg-[var(--color-bk-line-soft)] hover:text-[var(--color-bk-ink)]"
             )}
+            style={active ? { background: accent } : undefined}
           >
             {Icon && (
               <Icon
