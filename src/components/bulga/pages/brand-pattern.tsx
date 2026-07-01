@@ -224,6 +224,7 @@ function Engraving({ accent }: { accent: string }) {
       const dpr = window.devicePixelRatio || 1;
       const W = canvas.clientWidth;
       const H = 240;
+      if (W <= 0) return;
       canvas.width = W * dpr;
       canvas.height = H * dpr;
       const ctx = canvas.getContext("2d");
