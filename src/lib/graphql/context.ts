@@ -33,11 +33,11 @@ export async function createContext(
   let userId: string | null = null;
   if (!isCron) {
     const supabase = await createClient();
-    // getUser() validates the JWT with Supabase — the security-correct check.
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    userId = user?.id ?? null;
+    // getClaims() verifies the JWT locally (asymmetric ES256 keys) against a
+    // cached JWKS — no per-request network hop, unlike getUser(). Runs on every
+    // GraphQL request, so this is the hottest of the auth reads.
+    const { data } = await supabase.auth.getClaims();
+    userId = data?.claims?.sub ?? null;
   }
 
   return { userId, isCron, request };

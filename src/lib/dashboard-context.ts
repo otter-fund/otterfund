@@ -19,14 +19,16 @@ export { resolvePeriod } from "@/lib/period";
 /** Auth + onboarding guard. Returns the signed-in user; redirects otherwise. */
 export const requireUser = cache(async () => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  // getClaims() verifies the JWT locally (asymmetric ES256 keys) against a
+  // cached JWKS — no network round-trip to the Auth server per request, unlike
+  // getUser(). The proxy already validated this same request; this second read
+  // is just to resolve the id for the profile lookup, so keep it local + cheap.
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) redirect("/login");
 
   // Profile row (id === Supabase auth uuid) carries name + onboarding state.
   const profile = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { id: data.claims.sub },
     select: { id: true, name: true, email: true, onboardingDone: true },
   });
   if (!profile) redirect("/login");

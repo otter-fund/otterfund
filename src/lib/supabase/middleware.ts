@@ -1,6 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import type { User } from "@supabase/supabase-js";
+
+/** The minimal identity the proxy needs — id is enough for its redirect gate. */
+type SessionUser = { id: string };
 
 /**
  * Refreshes the Supabase auth session on every request and surfaces the current
@@ -10,7 +12,7 @@ import type { User } from "@supabase/supabase-js";
  */
 export async function updateSession(
   request: NextRequest,
-): Promise<{ response: NextResponse; user: User | null }> {
+): Promise<{ response: NextResponse; user: SessionUser | null }> {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -41,10 +43,11 @@ export async function updateSession(
     },
   );
 
-  // IMPORTANT: getUser() validates the JWT with Supabase — do not replace with getSession().
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims() verifies the JWT signature LOCALLY (this project uses asymmetric
+  // ES256 keys) via WebCrypto against a cached JWKS — no per-request network hop
+  // to the Auth server, unlike getUser(). It still refreshes an expiring session
+  // first, so cookies stay fresh. Do NOT swap for getSession() (no verification).
+  const { data } = await supabase.auth.getClaims();
 
-  return { response, user };
+  return { response, user: data?.claims ? { id: data.claims.sub } : null };
 }
