@@ -67,6 +67,7 @@ export const SubscriptionRef = builder
       amount: t.exposeFloat("amount"),
       icon: t.exposeString("icon"),
       color: t.exposeString("color"),
+      domain: t.exposeString("domain", { nullable: true }),
       confirmedByUser: t.exposeBoolean("confirmedByUser"),
       categoryId: t.exposeID("categoryId", { nullable: true }),
       categoryName: t.exposeString("categoryName", { nullable: true }),
@@ -86,6 +87,7 @@ export const AccountRef = builder.objectRef<AccountView>("Account").implement({
     synced: t.exposeBoolean("synced", { nullable: true }),
     institution: t.exposeString("institution", { nullable: true }),
     syncedLabel: t.exposeString("syncedLabel", { nullable: true }),
+    excluded: t.exposeBoolean("excluded", { nullable: true }),
   }),
 });
 

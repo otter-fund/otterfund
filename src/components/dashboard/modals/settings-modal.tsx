@@ -504,9 +504,9 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                               confirmLabel="Are you sure?"
                               busyLabel="Disconnecting…"
                               busy={busy}
-                              restText="Unlink"
+                              restText="Disconnect"
                               restTextMobileOnly
-                              restWidth="w-[122px]"
+                              restWidth="w-[140px]"
                               expandedWidth="w-[172px]"
                               labelMaxWidth="max-w-[128px]"
                               restLabel={`Disconnect ${c.institutionName || "bank"}`}

@@ -70,6 +70,7 @@ export function AddAccountModal({
             type: values.type.toLowerCase().replace(" ", "-"),
             balance: Number(values.balance) || 0, // balance defaults to 0
             number: values.number.trim() || undefined,
+            gradient: values.gradient,
           },
         });
         setValues(EMPTY);

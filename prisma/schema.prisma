@@ -44,6 +44,9 @@ model Account {
   number    String?
   balance   Float
   gradient  String?
+  // Locally hidden: kept synced, but dropped from net worth and totals. Lets a
+  // user omit one account of a Plaid item without unlinking the whole bank.
+  excluded  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -179,6 +182,7 @@ model Subscription {
   cycle               String
   icon                String?
   color               String?
+  domain              String?
   isActive            Boolean   @default(true)
   detectedAt          DateTime?
   lastTransactionDate DateTime?
@@ -187,6 +191,22 @@ model Subscription {
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id])
+}
+
+// Universal, cross-user merchant cache. Keyed by a normalized merchant name so
+// a given merchant is resolved to a company/domain ONCE (via the seed dictionary
+// or a Haiku call) and reused by every user forever. `domain` null means
+// "resolved but no domain found"; `isCompany` false marks a generic
+// pattern/payment string that isn't a real company (so we skip the logo).
+model Merchant {
+  id            String   @id @default(cuid())
+  normalizedKey String   @unique
+  displayName   String
+  domain        String?
+  isCompany     Boolean  @default(true)
+  source        String   @default("claude") // "dictionary" | "claude" | "manual"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Bill {

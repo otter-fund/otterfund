@@ -3,6 +3,7 @@ import {
   computeAccountBalances,
   computeAllBudgetSpent,
   computeMonthlySurplus,
+  NOT_EXCLUDED_ACCOUNT,
 } from "./calculations";
 import {
   detectPriceChanges,
@@ -59,7 +60,8 @@ export async function getDashboardOverview(
     budgets,
   ] = await Promise.all([
     prisma.user.findUnique({ where: { id: userId } }),
-    prisma.account.findMany({ where: { userId } }),
+    // Excluded accounts are hidden from net worth (kept synced, but omitted).
+    prisma.account.findMany({ where: { userId, excluded: false } }),
     computeAccountBalances(userId),
     computeMonthlySurplus(userId, month, year),
     computeAllBudgetSpent(userId, month, year),
@@ -133,6 +135,7 @@ export async function getDashboardOverview(
       userId,
       amount: { lt: 0 },
       date: { gte: sevenMonthsAgo },
+      ...NOT_EXCLUDED_ACCOUNT,
     },
   });
 
@@ -336,7 +339,7 @@ export async function getSubscriptions(userId: string): Promise<SubscriptionView
     }
     const un = unusedMap.get(s.id);
     if (un) {
-      flags.push(`Possibly unused (${un.daysSinceLastTransaction} days)`);
+      flags.push(`No matching charge in ${un.daysSinceLastTransaction} days`);
     }
 
     return {
@@ -346,6 +349,7 @@ export async function getSubscriptions(userId: string): Promise<SubscriptionView
       amount: s.amount,
       icon: s.icon || "tv",
       color: s.color || "#fde8e8",
+      domain: s.domain ?? undefined,
       confirmedByUser: s.confirmedByUser,
       categoryId: s.categoryId ?? undefined,
       categoryName: s.category?.name ?? undefined,
@@ -377,6 +381,7 @@ export async function getAccounts(userId: string): Promise<AccountView[]> {
     synced: !!a.plaidItemId,
     institution: a.institution ?? undefined,
     syncedLabel: a.syncedAt ? formatDate(a.syncedAt) : undefined,
+    excluded: a.excluded,
   }));
 }
 

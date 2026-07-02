@@ -2,6 +2,18 @@ import { prisma } from "./prisma";
 import type { MonthlySummary } from "@/lib/types";
 
 /**
+ * Prisma `where` fragment that drops transactions belonging to an excluded
+ * (locally hidden) account, while keeping manual transactions that have no
+ * account (`accountId: null`). Spread into any spending/budget/income
+ * aggregation so "hidden" is consistent with net worth — a hidden account's
+ * transactions must not count toward spending, budgets, or the savings rate.
+ * Single source of truth so the rule can't drift across aggregations.
+ */
+export const NOT_EXCLUDED_ACCOUNT = {
+  OR: [{ accountId: null }, { account: { excluded: false } }],
+};
+
+/**
  * Computes the live balance of an account as the sum of all its transactions.
  *
  * @param accountId - Account to compute balance for.
@@ -65,6 +77,7 @@ export async function computeBudgetSpent(
       categoryId,
       amount: { lt: 0 },
       date: { gte: startDate, lt: endDate },
+      ...NOT_EXCLUDED_ACCOUNT,
     },
     _sum: { amount: true },
   });
@@ -95,6 +108,7 @@ export async function computeAllBudgetSpent(
       amount: { lt: 0 },
       categoryId: { not: null },
       date: { gte: startDate, lt: endDate },
+      ...NOT_EXCLUDED_ACCOUNT,
     },
     _sum: { amount: true },
   });
@@ -139,6 +153,7 @@ export async function computeMonthlySurplus(
         userId,
         amount: { lt: 0 },
         date: { gte: startDate, lt: endDate },
+        ...NOT_EXCLUDED_ACCOUNT,
       },
       _sum: { amount: true },
     }),

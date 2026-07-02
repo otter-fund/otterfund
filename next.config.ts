@@ -31,7 +31,9 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.plaid.com",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: blob: https://*.plaid.com",
+      // Merchant/subscription logos come from Google's favicon service, which
+      // serves from www.google.com and *.gstatic.com.
+      "img-src 'self' data: blob: https://*.plaid.com https://www.google.com https://*.gstatic.com",
       "font-src 'self' data:",
       "connect-src 'self' https://*.supabase.co https://*.plaid.com",
       "frame-src https://*.plaid.com",

@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/bulga/confirm-button";
-import { Trash2, Unlink } from "lucide-react";
+import { Trash2, Unlink, Eye, EyeOff } from "lucide-react";
 import type { AccountView } from "@/lib/types";
 import { ACCOUNT_TYPES } from "@/lib/constants";
 import {
@@ -36,6 +36,12 @@ const DELETE_ACCOUNT = /* GraphQL */ `
 const UNLINK_PLAID_ITEM = /* GraphQL */ `
   mutation UnlinkPlaidItem($accountId: ID) {
     unlinkPlaidItem(accountId: $accountId) { ok }
+  }
+`;
+
+const SET_ACCOUNT_EXCLUDED = /* GraphQL */ `
+  mutation SetAccountExcluded($id: ID!, $excluded: Boolean!) {
+    setAccountExcluded(id: $id, excluded: $excluded) { ok }
   }
 `;
 
@@ -116,8 +122,8 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
     });
   };
 
-  // Synced accounts disconnect the whole bank link (removes its accounts +
-  // transactions). Manual accounts are simply deleted.
+  // Manual accounts are deleted; synced accounts unlink their WHOLE bank
+  // (Plaid is item-level — you can't remove one account of an item via the API).
   const handleRemove = () => {
     if (!account) return;
     startTransition(async () => {
@@ -130,7 +136,22 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
         onClose();
         onUpdated();
       } catch {
-        setFormError(synced ? "Couldn't disconnect the account." : "Couldn't delete the account.");
+        setFormError(synced ? "Couldn't disconnect the bank." : "Couldn't delete the account.");
+      }
+    });
+  };
+
+  // Hide/show a single synced account locally without touching the bank link —
+  // this is how you omit ONE account of a bank while the others keep syncing.
+  const handleToggleExcluded = () => {
+    if (!account) return;
+    startTransition(async () => {
+      try {
+        await gqlClient.request(SET_ACCOUNT_EXCLUDED, { id: account.id, excluded: !account.excluded });
+        onClose();
+        onUpdated();
+      } catch {
+        setFormError("Couldn't update the account.");
       }
     });
   };
@@ -155,29 +176,69 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
             className="mt-4 rounded-xl p-3 text-[12.5px] leading-relaxed"
             style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
           >
-            Synced from {account.institution || "your bank"}. Balance and transactions
-            update automatically — disconnect to manage this account manually.
+            Synced from {account.institution || "your bank"}. To omit just this account,
+            hide it — it stays synced but drops out of your net worth. Disconnecting
+            removes the entire bank and all its accounts.
           </div>
         )}
 
         {formError && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-3">{formError}</p>}
 
-        <div className="flex items-center gap-2.5 mt-7">
-          <ConfirmButton
-            onConfirm={handleRemove}
-            icon={synced ? Unlink : Trash2}
-            confirmLabel="Are you sure?"
-            busyLabel={synced ? "Disconnecting…" : "Deleting…"}
-            busy={isPending}
-            restLabel={synced ? "Disconnect account" : "Delete account"}
-            armedLabel={synced ? "Confirm disconnect account" : "Confirm delete account"}
-            expandedWidth={synced ? "w-[172px]" : "w-[148px]"}
-            labelMaxWidth={synced ? "max-w-[160px]" : "max-w-[140px]"}
-          />
-          <Button size="sm" onClick={handleSave} disabled={isPending} className="ml-auto">
-            {isPending ? "Saving…" : "Save changes"}
-          </Button>
-        </div>
+        {synced ? (
+          // Single row: whole-bank disconnect (left, compact) + hide & save (right).
+          <div className="flex items-center gap-2.5 mt-7">
+            <ConfirmButton
+              onConfirm={handleRemove}
+              icon={Unlink}
+              confirmLabel="Are you sure?"
+              busyLabel="Disconnecting…"
+              busy={isPending}
+              restText="Disconnect"
+              restWidth="w-[132px]"
+              restLabel="Disconnect bank"
+              armedLabel="Confirm disconnect bank"
+              expandedWidth="w-[172px]"
+              labelMaxWidth="max-w-[160px]"
+            />
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleToggleExcluded}
+              disabled={isPending}
+              className="ml-auto"
+            >
+              {account.excluded ? (
+                <>
+                  <Eye data-icon="inline-start" size={15} /> Show
+                </>
+              ) : (
+                <>
+                  <EyeOff data-icon="inline-start" size={15} /> Hide
+                </>
+              )}
+            </Button>
+            <Button size="sm" onClick={handleSave} disabled={isPending}>
+              {isPending ? "Saving…" : "Save"}
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2.5 mt-7">
+            <ConfirmButton
+              onConfirm={handleRemove}
+              icon={Trash2}
+              confirmLabel="Are you sure?"
+              busyLabel="Deleting…"
+              busy={isPending}
+              restLabel="Delete account"
+              armedLabel="Confirm delete account"
+              expandedWidth="w-[148px]"
+              labelMaxWidth="max-w-[140px]"
+            />
+            <Button size="sm" onClick={handleSave} disabled={isPending} className="ml-auto">
+              {isPending ? "Saving…" : "Save changes"}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

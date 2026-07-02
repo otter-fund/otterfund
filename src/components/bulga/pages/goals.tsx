@@ -113,20 +113,17 @@ export function BulgaGoals({ goals, accent, theme, currency = "CAD", onAdd, onEd
               }}
               style={{
                 background: "oklch(99.2% 0.003 95)",
-                border: "1px solid oklch(92% 0.006 85)",
+                border: "2px solid oklch(92% 0.006 85)",
                 borderRadius: 22,
-                padding: 26,
-                transition:
-                  "transform .2s cubic-bezier(.22,.61,.36,1), box-shadow .2s",
+                padding: 25,
+                cursor: "pointer",
+                transition: "border-color .15s",
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "translateY(-3px)";
-                e.currentTarget.style.boxShadow =
-                  "0 12px 32px oklch(20% 0.02 80 / 0.08)";
+                e.currentTarget.style.borderColor = theme.accentBorder;
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "translateY(0)";
-                e.currentTarget.style.boxShadow = "none";
+                e.currentTarget.style.borderColor = "oklch(92% 0.006 85)";
               }}
             >
               <div

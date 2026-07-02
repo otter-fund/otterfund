@@ -2,23 +2,31 @@
 
 // Bulga — SUBSCRIPTIONS page.
 //
-// Rebuilt in the Bulga design system from the pre-redesign Subscriptions tab.
-// A monthly-total hero (with annual projection + a flagged-count alert when any
-// subscription needs attention), then a two-up: the service list (letter-avatar
-// tiles + flag badges) and an annual-projection bar chart. Figures derive from
-// `subscriptions`; flags render as clay (price up) / amber (unused) badges.
+// A monthly-equivalent hero (with annual projection + a flagged-count alert when
+// subscriptions need attention), then a two-up: the service list (theme-derived
+// avatar tiles + flag badges) and an annual-projection bar chart. Every figure
+// derives from `subscriptions`; flags render as clay (price up) / amber (unused)
+// badges. Avatar tiles are tinted from the ACTIVE ACCENT (via the theme) rather
+// than a per-service colour, so the page stays on one hue and re-tints with the
+// brand-kit scheme.
 
 import type { SubscriptionView } from "@/lib/types";
-import { type BulgaTheme } from "@/components/bulga/theme";
+import { type BulgaTheme, accentFamilyTint } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
 import { ProgressBar } from "@/components/bulga/progress";
 import { GuillochePattern, GuillocheSeal } from "@/components/bulga/guilloche";
+import { StatPill } from "@/components/bulga/stat-pill";
+import { MerchantAvatar } from "@/components/bulga/merchant-avatar";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 interface BulgaSubscriptionsProps {
   subscriptions: SubscriptionView[];
   accent: string;
   theme: BulgaTheme;
   currency?: string;
+  onAdd?: () => void;
+  onEdit?: (subscription: SubscriptionView) => void;
 }
 
 const CARD: React.CSSProperties = {
@@ -28,17 +36,16 @@ const CARD: React.CSSProperties = {
   padding: 24,
 };
 
-// Price-up flags use the clay alert tone; everything else (e.g. "unused") gets a
-// warm amber tint so the two reasons-to-look read distinctly at a glance.
+// Price-up flags use the clay alert tone; "unused" gets a warm amber tint so the
+// two reasons-to-look read distinctly at a glance.
 function flagBadge(flag: string, theme: BulgaTheme): { bg: string; color: string; label: string } {
   const isPriceChange = flag.toLowerCase().startsWith("price");
   return isPriceChange
     ? { bg: theme.clayTint, color: theme.clay, label: "Price up" }
-    : { bg: "oklch(95% 0.05 90)", color: "oklch(46% 0.11 75)", label: "Unused?" };
+    : { bg: "oklch(95% 0.05 90)", color: "oklch(46% 0.11 75)", label: "No recent charge" };
 }
 
-export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: BulgaSubscriptionsProps) {
-
+export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD", onAdd, onEdit }: BulgaSubscriptionsProps) {
   const money = (n: number) => fmt(n, currency);
 
   const monthlyTotal = subscriptions
@@ -55,10 +62,25 @@ export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: B
     0,
   );
 
+  // Projection rows sorted high→low so the bars step down cleanly.
+  const projection = subscriptions
+    .map((s) => ({ s, annual: s.cycle === "Annual" ? s.amount : s.amount * 12 }))
+    .sort((a, b) => b.annual - a.annual);
+
   return (
     <div className="bk-enter bk-page">
       {/* ── hero · subscription summary ── */}
-      <section style={{ position: "relative", overflow: "hidden", padding: "0 4px 32px" }}>
+      <section
+        style={{
+          position: "relative",
+          overflow: "hidden",
+          padding: "0 4px 32px",
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          gap: 16,
+        }}
+      >
         <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.16} />
         <div style={{ position: "relative" }}>
         <div
@@ -85,66 +107,89 @@ export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: B
           {money(monthlyEquivalent)}
           <span style={{ fontSize: 18, color: "var(--color-bk-muted)", fontWeight: 400 }}>/mo</span>
         </div>
-        <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+        <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <span style={{ fontSize: 13, color: "var(--color-bk-muted)" }}>
             <span className="bk-num">{money(annualTotal)}</span>/year · {subscriptions.length} service
             {subscriptions.length === 1 ? "" : "s"}
           </span>
           {flaggedCount > 0 && (
-            <span
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                padding: "5px 12px",
-                borderRadius: 999,
-                fontSize: 12.5,
-                fontWeight: 600,
-                background: theme.clayTint,
-                color: theme.clay,
-              }}
-            >
-              <span className="bk-num">{flaggedCount}</span> need attention
-            </span>
+            <StatPill theme={theme} tone="clay" figure={flaggedCount} label="need attention" />
           )}
         </div>
         </div>
+        {onAdd && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onAdd()}
+            className="border-dashed shrink-0"
+            style={{ position: "relative" }}
+          >
+            <Plus data-icon="inline-start" size={16} strokeWidth={2.2} />
+            New subscription
+          </Button>
+        )}
       </section>
 
       {/* ── services + annual projection · two-up ── */}
       <section className="bk-grid-2up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         {/* service list */}
         <div style={CARD}>
-          <h3 style={{ margin: "0 0 16px", fontSize: 15, fontWeight: 600 }}>Services</h3>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              margin: "0 0 6px",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Services</h3>
+            <span style={{ fontSize: 12, color: "var(--color-bk-faint)" }}>
+              {subscriptions.length} active
+            </span>
+          </div>
           {subscriptions.length > 0 ? (
-            <div className="bk-scroll" style={{ maxHeight: 440, overflowY: "auto", margin: "0 -8px" }}>
-              {subscriptions.map((s) => (
+            <div style={{ margin: "0 -4px" }}>
+              {subscriptions.map((s, i) => {
+                const [tileBg, tileInk] = accentFamilyTint(i, theme.accent);
+                return (
                 <div
                   key={s.id}
-                  style={{ display: "flex", alignItems: "center", gap: 13, padding: "10px 8px" }}
+                  role={onEdit ? "button" : undefined}
+                  tabIndex={onEdit ? 0 : undefined}
+                  onClick={onEdit ? () => onEdit(s) : undefined}
+                  onKeyDown={
+                    onEdit
+                      ? (e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            onEdit(s);
+                          }
+                        }
+                      : undefined
+                  }
+                  onMouseEnter={
+                    onEdit ? (e) => (e.currentTarget.style.background = "oklch(97.5% 0.005 90)") : undefined
+                  }
+                  onMouseLeave={
+                    onEdit ? (e) => (e.currentTarget.style.background = "transparent") : undefined
+                  }
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 13,
+                    padding: "13px 8px",
+                    cursor: onEdit ? "pointer" : "default",
+                    transition: "background .15s",
+                    borderTop: i === 0 ? "none" : "1px solid var(--color-bk-line-soft)",
+                  }}
                 >
-                  <div
-                    style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 11,
-                      background: s.color,
-                      color: "#fff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: 14,
-                      fontWeight: 700,
-                      flexShrink: 0,
-                    }}
-                  >
-                    {s.name.charAt(0).toUpperCase()}
-                  </div>
+                  <MerchantAvatar name={s.name} domain={s.domain} bg={tileBg} ink={tileInk} size={30} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
                       <span
                         style={{
-                          fontSize: 13.5,
+                          fontSize: 14,
                           fontWeight: 600,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -174,16 +219,19 @@ export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: B
                         );
                       })}
                     </div>
-                    <div style={{ fontSize: 12, color: "var(--color-bk-faint)", marginTop: 1 }}>
+                    <div style={{ fontSize: 12, color: "var(--color-bk-faint)", marginTop: 2 }}>
                       {s.cycle}
-                      {s.categoryName && <span> · {s.categoryName}</span>}
                     </div>
                   </div>
-                  <div className="bk-num" style={{ fontSize: 14, fontWeight: 500, flexShrink: 0 }}>
+                  <div className="bk-num" style={{ fontSize: 15, fontWeight: 500, flexShrink: 0, whiteSpace: "nowrap" }}>
                     {money(s.amount)}
+                    <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-bk-faint)", marginLeft: 2 }}>
+                      {s.cycle === "Annual" ? "/yr" : "/mo"}
+                    </span>
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, minHeight: 220, textAlign: "center" }}>
@@ -197,25 +245,38 @@ export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: B
 
         {/* annual projection */}
         <div style={CARD}>
-          <h3 style={{ margin: "0 0 20px", fontSize: 15, fontWeight: 600 }}>Annual projection</h3>
-          {subscriptions.length > 0 ? (
-            subscriptions.map((s) => {
-              const annualCost = s.cycle === "Annual" ? s.amount : s.amount * 12;
-              const pct = maxAnnual > 0 ? (annualCost / maxAnnual) * 100 : 0;
-              return (
-                <div key={s.id} style={{ marginBottom: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 7 }}>
-                    <span style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {s.name}
-                    </span>
-                    <span className="bk-num" style={{ color: "var(--color-bk-muted)", flexShrink: 0 }}>
-                      {money(annualCost)}/yr
-                    </span>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "baseline",
+              justifyContent: "space-between",
+              margin: "0 0 18px",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Annual projection</h3>
+            <span className="bk-num" style={{ fontSize: 12, color: "var(--color-bk-faint)" }}>
+              {money(annualTotal)}/yr total
+            </span>
+          </div>
+          {projection.length > 0 ? (
+            <div>
+              {projection.map(({ s, annual }, i) => {
+                const pct = maxAnnual > 0 ? (annual / maxAnnual) * 100 : 0;
+                return (
+                  <div key={s.id} style={{ marginBottom: i === projection.length - 1 ? 0 : 18 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, marginBottom: 7, gap: 12 }}>
+                      <span style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                        {s.name}
+                      </span>
+                      <span className="bk-num" style={{ color: "var(--color-bk-muted)", flexShrink: 0 }}>
+                        {money(annual)}<span style={{ color: "var(--color-bk-faint)" }}>/yr</span>
+                      </span>
+                    </div>
+                    <ProgressBar value={pct} color={theme.accent} />
                   </div>
-                  <ProgressBar value={pct} color={theme.accent} />
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, minHeight: 220, textAlign: "center" }}>
               <div style={{ width: 72, height: 72 }} aria-hidden="true">

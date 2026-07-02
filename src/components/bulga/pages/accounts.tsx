@@ -96,7 +96,8 @@ export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "C
 
   const groups = GROUP_ORDER.filter((key) => buckets[key].length > 0).map((key) => {
     const items = buckets[key];
-    const total = items.reduce((sum, a) => sum + a.balance, 0);
+    // Group subtotal excludes hidden accounts, matching net worth.
+    const total = items.reduce((sum, a) => sum + (a.excluded ? 0 : a.balance), 0);
     return { key, label: GROUP_LABELS[key], items, total };
   });
 
@@ -238,8 +239,11 @@ export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "C
                       gap: 15,
                       padding: "18px 22px",
                       borderTop: i === 0 ? "none" : "1px solid var(--color-bk-line-soft)",
-                      transition: "background .15s",
+                      transition: "background .15s, opacity .15s",
                       cursor: "pointer",
+                      // Excluded accounts are dimmed — kept visible so they can be
+                      // un-hidden, but visibly omitted from net worth.
+                      opacity: a.excluded ? 0.5 : 1,
                     }}
                   >
                     <div
@@ -286,6 +290,22 @@ export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "C
                             }}
                           >
                             Synced
+                          </span>
+                        )}
+                        {a.excluded && (
+                          <span
+                            style={{
+                              flexShrink: 0,
+                              padding: "2px 8px",
+                              borderRadius: 9999,
+                              background: "var(--color-bk-line-soft)",
+                              color: "var(--color-bk-muted)",
+                              fontSize: 10.5,
+                              fontWeight: 600,
+                              letterSpacing: "0.02em",
+                            }}
+                          >
+                            Hidden
                           </span>
                         )}
                       </div>
