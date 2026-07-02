@@ -10,19 +10,18 @@
 // deadline-pacing signal. Every figure derives from `plan`.
 
 import { useState } from "react";
-import { Plus, ArrowRight, AlertTriangle } from "lucide-react";
+import { Plus } from "lucide-react";
 import type { GoalPlanItem, GoalsPlanView, GoalView } from "@/lib/types";
 import type { BulgaTheme } from "@/components/bulga/theme";
 import { Button } from "@/components/ui/button";
-import { ProgressRing, ProgressBar } from "@/components/bulga/progress";
+import { ProgressRing } from "@/components/bulga/progress";
 import { GuillochePattern, GuillocheSeal } from "@/components/bulga/guilloche";
 import { useBulgaChrome } from "@/components/bulga/chrome-context";
-import { allocatePool } from "@/lib/goal-split";
-import { gqlClient, errMessage } from "@/lib/graphql/client";
+import { gqlClient } from "@/lib/graphql/client";
 
 const ASSIGN_SAVINGS = /* GraphQL */ `
-  mutation AssignSavingsToGoals($amount: Float!) {
-    assignSavingsToGoals(amount: $amount) { ok }
+  mutation AssignSavingsToGoals {
+    assignSavingsToGoals { ok }
   }
 `;
 
@@ -56,7 +55,7 @@ function priorityLabel(p: number): "Low" | "Medium" | "High" {
 }
 
 export function BulgaGoals({ plan, accent, theme, onAdd, onEdit }: BulgaGoalsProps) {
-  const { currency, goals, monthlyIncome, monthlySpent, monthlySavings, surplus, planName, totalSaved, totalTarget } = plan;
+  const { currency, goals, monthlySavings, surplus, totalSaved, totalTarget, assignable } = plan;
 
   const fmtDate = (iso?: string) =>
     iso
@@ -75,6 +74,35 @@ export function BulgaGoals({ plan, accent, theme, onAdd, onEdit }: BulgaGoalsPro
     }).format(Math.abs(n));
 
   const hasPool = monthlySavings > 0;
+
+  const { refreshData } = useBulgaChrome();
+  const [assigning, setAssigning] = useState(false);
+
+  // Assign this month's remaining real surplus across goals. The server derives
+  // and records the amount, so once the surplus is spent `assignable` is 0 and
+  // this can't run again (no double-spending cash you don't have).
+  const handleAssign = async () => {
+    if (assignable <= 0 || assigning) return;
+    setAssigning(true);
+    try {
+      await gqlClient.request(ASSIGN_SAVINGS);
+      refreshData();
+    } catch {
+      // Non-fatal: leave figures as-is if the assignment fails.
+    } finally {
+      setAssigning(false);
+    }
+  };
+
+  // Assign is only actionable when there's real cash left AND a goal to take it.
+  // Otherwise the button stays visible but grayed, with a reason on hover.
+  const canAssign = assignable > 0 && goals.some((g) => g.remaining > 0);
+  const assignReason =
+    surplus <= 0
+      ? "No surplus to assign this month"
+      : assignable <= 0
+        ? "Already assigned this month"
+        : "All goals are funded";
 
   return (
     <div className="bk-enter bk-page">
@@ -116,7 +144,16 @@ export function BulgaGoals({ plan, accent, theme, onAdd, onEdit }: BulgaGoalsPro
           </div>
         </div>
 
-        <div style={{ position: "relative", flexShrink: 0 }}>
+        <div style={{ position: "relative", flexShrink: 0, alignSelf: "flex-start", display: "flex", gap: 8 }}>
+          {goals.length > 0 && hasPool && (
+            // Wrapper carries the title so the tooltip shows even while the
+            // button is disabled (disabled controls don't fire hover events).
+            <span title={canAssign ? undefined : assignReason} style={{ display: "inline-flex" }}>
+              <Button size="sm" onClick={handleAssign} disabled={assigning || !canAssign}>
+                {assigning ? "Assigning…" : "Assign"}
+              </Button>
+            </span>
+          )}
           <Button variant="outline" size="sm" onClick={() => onAdd?.()} className="border-dashed">
             <Plus data-icon="inline-start" size={16} strokeWidth={2.2} />
             New goal
@@ -139,7 +176,6 @@ export function BulgaGoals({ plan, accent, theme, onAdd, onEdit }: BulgaGoalsPro
             textAlign: "center",
           }}
         >
-          <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="radial" opacity={0.16} />
           <div style={{ position: "relative", width: 72, height: 72, marginBottom: 8 }} aria-hidden="true">
             <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
           </div>
@@ -149,28 +185,9 @@ export function BulgaGoals({ plan, accent, theme, onAdd, onEdit }: BulgaGoalsPro
           <div style={{ position: "relative", fontSize: 13, color: "var(--color-bk-muted)", maxWidth: 340 }}>
             Create a goal and your monthly savings will split across it automatically by priority.
           </div>
-          <div style={{ position: "relative", marginTop: 14 }}>
-            <Button size="sm" onClick={() => onAdd?.()}>
-              <Plus data-icon="inline-start" size={16} strokeWidth={2.2} />
-              Create your first goal
-            </Button>
-          </div>
         </section>
       ) : (
         <>
-          {/* ── assign savings to goals ── */}
-          <AssignSavingsCard
-            goals={goals}
-            monthlyIncome={monthlyIncome}
-            monthlySpent={monthlySpent}
-            monthlySavings={monthlySavings}
-            surplus={surplus}
-            planName={planName}
-            theme={theme}
-            currency={currency}
-            fmt0={fmt0}
-          />
-
           {/* ── goal cards ── */}
           <div className="bk-grid-2up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {goals.map((g) => (
@@ -189,241 +206,6 @@ export function BulgaGoals({ plan, accent, theme, onAdd, onEdit }: BulgaGoalsPro
         </>
       )}
     </div>
-  );
-}
-
-function AssignSavingsCard({
-  goals,
-  monthlyIncome,
-  monthlySpent,
-  monthlySavings,
-  surplus,
-  planName,
-  theme,
-  currency,
-  fmt0,
-}: {
-  goals: GoalPlanItem[];
-  monthlyIncome: number;
-  monthlySpent: number;
-  monthlySavings: number;
-  surplus: number;
-  planName: string;
-  theme: BulgaTheme;
-  currency: string;
-  fmt0: (n: number) => string;
-}) {
-  const { refreshData } = useBulgaChrome();
-
-  const hasIncome = monthlyIncome > 0;
-  // What's actually left this month = income − spending. Can be negative when
-  // the user has overspent; `surplus` is the same value floored at 0.
-  const net = Math.round((monthlyIncome - monthlySpent) * 100) / 100;
-  const overspent = hasIncome && net <= 0;
-
-  const [amount, setAmount] = useState(String(surplus));
-  const [isPending, setPending] = useState(false);
-  const [error, setError] = useState("");
-  const [done, setDone] = useState("");
-
-  const amountNum = Math.max(0, Math.round(Number(amount) || 0));
-  const split = allocatePool(
-    goals.map((g) => ({ id: g.id, priority: g.priority, saved: g.saved, target: g.target })),
-    amountNum,
-  );
-  const previewFunded = goals.filter((g) => (split.get(g.id) ?? 0) > 0);
-  const assignedTotal = [...split.values()].reduce((s, n) => s + n, 0);
-  const leftover = Math.max(0, Math.round((amountNum - assignedTotal) * 100) / 100);
-  const overBudget = amountNum > surplus && surplus >= 0;
-  const canAssign = amountNum > 0 && split.size > 0 && !isPending;
-
-  const setChip = (v: number) => {
-    setAmount(String(v));
-    setDone("");
-  };
-
-  const handleAssign = async () => {
-    if (!canAssign) return;
-    setPending(true);
-    setError("");
-    setDone("");
-    try {
-      await gqlClient.request(ASSIGN_SAVINGS, { amount: amountNum });
-      setDone(`${fmt0(assignedTotal)} moved into ${split.size} ${split.size === 1 ? "goal" : "goals"}.`);
-      refreshData();
-    } catch (e) {
-      setError(errMessage(e));
-    } finally {
-      setPending(false);
-    }
-  };
-
-  return (
-    <section style={{ ...CARD, marginBottom: 16 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Assign savings to goals</h3>
-        <span style={{ fontSize: 12.5, color: "var(--color-bk-faint)" }}>{planName}</span>
-      </div>
-
-      {!hasIncome ? (
-        <p style={{ fontSize: 12.5, color: "var(--color-bk-muted)", margin: 0 }}>
-          Add your income and pick a budget plan in Settings to start funding goals.
-        </p>
-      ) : (
-        <>
-          {/* income − spent = left, shown explicitly so the number is never a mystery */}
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              alignItems: "baseline",
-              gap: "4px 10px",
-              fontSize: 13,
-              color: "var(--color-bk-muted)",
-              margin: "2px 0 16px",
-            }}
-          >
-            <span>
-              Income <span className="bk-num" style={{ color: "var(--color-bk-ink)" }}>{fmt0(monthlyIncome)}</span>
-            </span>
-            <span style={{ color: "var(--color-bk-faint)" }}>−</span>
-            <span>
-              spent <span className="bk-num" style={{ color: "var(--color-bk-ink)" }}>{fmt0(monthlySpent)}</span>
-            </span>
-            <span style={{ color: "var(--color-bk-faint)" }}>=</span>
-            <span style={{ fontWeight: 600, color: overspent ? theme.clay : theme.accentDeep }}>
-              <span className="bk-num">{fmt0(net)}</span> {overspent ? "over" : "left to save"}
-            </span>
-          </div>
-
-          {overspent ? (
-            <div
-              style={{
-                display: "flex",
-                gap: 10,
-                alignItems: "flex-start",
-                background: theme.clayTint,
-                border: `1px solid ${theme.clay}22`,
-                borderRadius: 14,
-                padding: "12px 14px",
-              }}
-            >
-              <AlertTriangle size={16} color={theme.clay} strokeWidth={2.2} style={{ marginTop: 1, flexShrink: 0 }} />
-              <p style={{ margin: 0, fontSize: 13, color: "var(--color-bk-ink)" }}>
-                You&apos;ve spent everything you earned this month — there&apos;s nothing left to assign right now. Trim spending
-                or wait for your next income, and this will free up.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* amount + assign */}
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
-                <div style={{ position: "relative", flex: "1 1 160px", minWidth: 140 }}>
-                  <span
-                    style={{
-                      position: "absolute",
-                      left: 14,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      fontSize: 14,
-                      color: "var(--color-bk-faint)",
-                    }}
-                  >
-                    {currency === "USD" ? "$" : currency + " "}
-                  </span>
-                  <input
-                    type="number"
-                    min="0"
-                    value={amount}
-                    onChange={(e) => {
-                      setAmount(e.target.value);
-                      setDone("");
-                    }}
-                    className="bk-field bk-num"
-                    style={{ paddingLeft: currency === "USD" ? 26 : 46 }}
-                    aria-label="Amount to assign"
-                  />
-                </div>
-                <Button size="sm" onClick={handleAssign} disabled={!canAssign}>
-                  {isPending ? "Assigning…" : `Assign ${fmt0(amountNum)}`}
-                  {!isPending && <ArrowRight data-icon="inline-end" size={15} strokeWidth={2.2} />}
-                </Button>
-              </div>
-
-              {/* quick amounts */}
-              <div style={{ display: "flex", gap: 8, marginTop: 10, flexWrap: "wrap" }}>
-                <Chip label={`Left to save ${fmt0(surplus)}`} onClick={() => setChip(surplus)} theme={theme} />
-                {monthlySavings > 0 && monthlySavings !== surplus && (
-                  <Chip label={`Plan target ${fmt0(monthlySavings)}`} onClick={() => setChip(monthlySavings)} theme={theme} />
-                )}
-              </div>
-
-              {overBudget && (
-                <p style={{ fontSize: 12, color: theme.clay, margin: "10px 0 0" }}>
-                  That&apos;s more than the {fmt0(surplus)} you have left this month.
-                </p>
-              )}
-              {error && <p style={{ fontSize: 12.5, color: theme.clay, margin: "12px 0 0", fontWeight: 500 }}>{error}</p>}
-              {done && <p style={{ fontSize: 12.5, color: theme.accentDeep, margin: "12px 0 0", fontWeight: 500 }}>{done}</p>}
-
-              {/* live split preview */}
-              {amountNum > 0 && previewFunded.length > 0 ? (
-                <div style={{ display: "grid", gap: 14, marginTop: 20 }}>
-                  {previewFunded.map((g) => {
-                    const amt = split.get(g.id) ?? 0;
-                    const sharePct = assignedTotal > 0 ? Math.round((amt / assignedTotal) * 100) : 0;
-                    return (
-                      <div key={g.id}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 13, marginBottom: 6 }}>
-                          <span style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 500 }}>
-                            {g.emoji && <span style={{ fontSize: 15 }}>{g.emoji}</span>}
-                            {g.name}
-                            <span style={{ color: "var(--color-bk-faint)", fontWeight: 400 }}>· {sharePct}%</span>
-                          </span>
-                          <span className="bk-num" style={{ color: theme.accentDeep }}>{fmt0(amt)}</span>
-                        </div>
-                        <ProgressBar value={sharePct} color={g.color} />
-                      </div>
-                    );
-                  })}
-                  {leftover > 0 && (
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12.5, color: "var(--color-bk-muted)", paddingTop: 2 }}>
-                      <span>Left unassigned (all goals full)</span>
-                      <span className="bk-num">{fmt0(leftover)}</span>
-                    </div>
-                  )}
-                </div>
-              ) : amountNum > 0 ? (
-                <p style={{ fontSize: 13, color: "var(--color-bk-muted)", margin: "16px 0 0" }}>
-                  Every goal is already fully funded — nothing to assign.
-                </p>
-              ) : null}
-            </>
-          )}
-        </>
-      )}
-    </section>
-  );
-}
-
-function Chip({ label, onClick, theme }: { label: string; onClick: () => void; theme: BulgaTheme }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      style={{
-        fontSize: 12,
-        fontWeight: 500,
-        padding: "5px 11px",
-        borderRadius: 999,
-        border: `1px solid ${theme.accentTintBorder}`,
-        background: theme.accentTint,
-        color: theme.accentDeep,
-        cursor: "pointer",
-      }}
-    >
-      {label}
-    </button>
   );
 }
 

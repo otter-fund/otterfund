@@ -3,7 +3,7 @@ import { requireUser, notFound, badRequest } from "../errors";
 import { GoalRef } from "../types/views";
 import { MutationResultRef } from "../types/results";
 import { getGoals } from "@/lib/db/queries";
-import { assignSavingsToGoals } from "@/lib/db/goal-allocation";
+import { assignAvailableSurplus } from "@/lib/db/goal-allocation";
 import { prisma } from "@/lib/db/prisma";
 import { okString, okMoney, okColor, LIMITS } from "@/lib/validate";
 
@@ -111,16 +111,16 @@ builder.mutationField("updateGoal", (t) =>
   }),
 );
 
+// Assigns this month's remaining real surplus to goals. The amount is derived
+// server-side (surplus − already assigned this month) so a client can't spend
+// cash it doesn't have, and re-running is a no-op once the surplus is used.
 builder.mutationField("assignSavingsToGoals", (t) =>
   t.field({
     type: MutationResultRef,
-    args: { amount: t.arg.float({ required: true }) },
-    resolve: async (_root, { amount }, ctx) => {
+    resolve: async (_root, _args, ctx) => {
       const userId = requireUser(ctx);
-      if (!Number.isFinite(amount) || amount <= 0 || amount > 1e12) {
-        badRequest("Amount is out of range.");
-      }
-      await assignSavingsToGoals(userId, amount);
+      const now = new Date();
+      await assignAvailableSurplus(userId, now.getMonth() + 1, now.getFullYear());
       return { ok: true, id: userId };
     },
   }),

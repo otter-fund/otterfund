@@ -20,6 +20,7 @@ function emptyPlan(): GoalsPlanView {
     totalTarget: 0,
     allocated: 0,
     unallocated: 0,
+    assignable: 0,
     goals: [],
   };
 }

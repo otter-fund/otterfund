@@ -2,8 +2,8 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { TextInput, SelectInput } from "@/components/bulga/form";
 import { BRAND_THEME } from "@/components/bulga/theme";
 import { LogoMark } from "@/components/bulga/logo";
 import {
@@ -19,7 +19,6 @@ import {
   Brain,
   PenLine,
   Check,
-  ChevronDown,
   ArrowRight,
   type LucideIcon,
 } from "lucide-react";
@@ -99,42 +98,13 @@ const MODE_OPTIONS: { mode: Mode; icon: LucideIcon; title: string; desc: string;
   },
 ];
 
-// Full-size fields use the shared system class (one source of truth). The
-// compact variant keeps the same look at a smaller scale for dense rows.
-const FIELD_CLASS = "bk-field";
-const FIELD_SM_CLASS =
-  "w-full h-9 rounded-xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] px-3 text-sm text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none transition-colors focus:border-[var(--color-primary)]";
+// Labels + headings for the wizard. Every input control comes from the brand
+// kit (`TextInput` / `SelectInput`), so field styling lives in ONE place
+// (globals.css `bk-field`) and never drifts from the rest of the app's forms.
 const LABEL_CLASS =
   "block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5";
 const HEADING_CLASS =
   "text-2xl sm:text-[28px] font-semibold tracking-[-0.02em] leading-[1.05] text-[var(--color-bk-ink)] mb-2";
-
-// On-brand select for the wizard: strips the native OS dropdown and overlays
-// the shared chevron, while preserving each call site's own size/padding so
-// the dense rows keep their compact scale. `compact` shrinks the chevron + its
-// inset for the h-8/h-9 inline rows.
-function WizardSelect({
-  className = "",
-  compact,
-  children,
-  ...props
-}: React.ComponentProps<"select"> & { compact?: boolean }) {
-  return (
-    <div className={`relative ${className.includes("flex-1") ? "flex-1" : ""}`}>
-      <select
-        {...props}
-        className={`${className} appearance-none ${compact ? "pr-7" : "pr-10"}`}
-      >
-        {children}
-      </select>
-      <ChevronDown
-        className={`absolute top-1/2 -translate-y-1/2 pointer-events-none text-[var(--color-bk-muted)] ${
-          compact ? "right-2 w-3.5 h-3.5" : "right-4 w-4 h-4"
-        }`}
-      />
-    </div>
-  );
-}
 
 export function OnboardingWizard({ userName }: { userName: string }) {
   const [mode, setMode] = useState<Mode>("choose");
@@ -443,13 +413,13 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Monthly Income</label>
-                  <Input type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} placeholder="5000" min="0" step="100" className={FIELD_CLASS} />
+                  <TextInput type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} placeholder="5000" min="0" step="100" />
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Currency</label>
-                  <WizardSelect value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full ${FIELD_CLASS}`}>
+                  <SelectInput value={currency} onChange={(e) => setCurrency(e.target.value)}>
                     {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </WizardSelect>
+                  </SelectInput>
                 </div>
               </div>
             )}
@@ -481,16 +451,20 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   {accounts.map((acc, i) => (
                     <div key={i} className="flex gap-2 items-start p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
                       <div className="flex-1 space-y-2">
-                        <Input value={acc.name} onChange={(e) => updateAccount(i, "name", e.target.value)} placeholder="Account name" className="h-9 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-3 text-sm text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none focus:border-[var(--color-primary)]" />
+                        <TextInput value={acc.name} onChange={(e) => updateAccount(i, "name", e.target.value)} placeholder="Account name" />
                         <div className="flex gap-2">
-                          <WizardSelect compact value={acc.type} onChange={(e) => updateAccount(i, "type", e.target.value)} className="flex-1 h-9 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-3 text-sm text-[var(--color-bk-ink)] outline-none focus:border-[var(--color-primary)]">
-                            {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                          </WizardSelect>
-                          <Input type="number" value={acc.balance} onChange={(e) => updateAccount(i, "balance", e.target.value)} placeholder="Balance" className="flex-1 h-9 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-3 text-sm text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none focus:border-[var(--color-primary)]" />
+                          <div className="flex-1">
+                            <SelectInput value={acc.type} onChange={(e) => updateAccount(i, "type", e.target.value)}>
+                              {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                            </SelectInput>
+                          </div>
+                          <div className="flex-1">
+                            <TextInput type="number" value={acc.balance} onChange={(e) => updateAccount(i, "balance", e.target.value)} placeholder="Balance" />
+                          </div>
                         </div>
                       </div>
                       {accounts.length > 1 && (
-                        <button onClick={() => removeAccount(i)} className="mt-1 text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)] transition-colors">
+                        <button onClick={() => removeAccount(i)} className="mt-2.5 text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)] transition-colors">
                           <X className="w-4 h-4" />
                         </button>
                       )}
@@ -514,18 +488,22 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   {recurring.map((rec, i) => (
                     <div key={i} className="flex gap-2 items-start p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
                       <div className="flex-1 space-y-2">
-                        <Input value={rec.name} onChange={(e) => updateRecurring(i, "name", e.target.value)} placeholder="e.g. Rent, Netflix" className="h-9 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-3 text-sm text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none focus:border-[var(--color-primary)]" />
+                        <TextInput value={rec.name} onChange={(e) => updateRecurring(i, "name", e.target.value)} placeholder="e.g. Rent, Netflix" />
                         <div className="flex gap-2">
-                          <Input type="number" value={rec.amount} onChange={(e) => updateRecurring(i, "amount", e.target.value)} placeholder="Amount" className="flex-1 h-9 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-3 text-sm text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none focus:border-[var(--color-primary)]" />
-                          <WizardSelect compact value={rec.cycle} onChange={(e) => updateRecurring(i, "cycle", e.target.value)} className="flex-1 h-9 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-3 text-sm text-[var(--color-bk-ink)] outline-none focus:border-[var(--color-primary)]">
-                            <option value="Monthly">Monthly</option>
-                            <option value="Annual">Annual</option>
-                            <option value="Weekly">Weekly</option>
-                          </WizardSelect>
+                          <div className="flex-1">
+                            <TextInput type="number" value={rec.amount} onChange={(e) => updateRecurring(i, "amount", e.target.value)} placeholder="Amount" />
+                          </div>
+                          <div className="flex-1">
+                            <SelectInput value={rec.cycle} onChange={(e) => updateRecurring(i, "cycle", e.target.value)}>
+                              <option value="Monthly">Monthly</option>
+                              <option value="Annual">Annual</option>
+                              <option value="Weekly">Weekly</option>
+                            </SelectInput>
+                          </div>
                         </div>
                       </div>
                       {recurring.length > 1 && (
-                        <button onClick={() => removeRecurring(i)} className="mt-1 text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)] transition-colors">
+                        <button onClick={() => removeRecurring(i)} className="mt-2.5 text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)] transition-colors">
                           <X className="w-4 h-4" />
                         </button>
                       )}
@@ -571,9 +549,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Currency</label>
-                  <WizardSelect value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full ${FIELD_CLASS}`}>
+                  <SelectInput value={currency} onChange={(e) => setCurrency(e.target.value)}>
                     {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </WizardSelect>
+                  </SelectInput>
                 </div>
               </div>
             )}
@@ -594,7 +572,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                     </div>
                     <div>
                       <label className={LABEL_CLASS}>Detected monthly income</label>
-                      <Input type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} placeholder="0" min="0" step="100" className={FIELD_CLASS} />
+                      <TextInput type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} placeholder="0" min="0" step="100" />
                       <p className="text-xs text-[var(--color-bk-muted)] mt-1.5">
                         {Number(monthlyIncome) > 0
                           ? "Estimated from the deposits we just imported — edit it if it looks off."
@@ -610,13 +588,23 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                     )}
                   </>
                 ) : (
-                  <Button size="sm" onClick={() => setShowConnect(true)} className="w-full">
-                    <Landmark data-icon="inline-start" className="w-4 h-4" /> Connect a bank
-                  </Button>
+                  <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] p-5">
+                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]">
+                      <Landmark className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={1.9} />
+                    </span>
+                    <div>
+                      <div className="text-[14px] font-semibold text-[var(--color-bk-ink)]">Link your bank securely</div>
+                      <div className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--color-bk-muted)]">
+                        Bulga imports your accounts and recent transactions through Plaid and keeps them in sync. Your credentials are encrypted and never seen by Bulga.
+                      </div>
+                    </div>
+                  </div>
                 )}
 
                 <p className="text-xs text-[var(--color-bk-muted)]">
-                  Prefer to do this later? You can connect anytime from Settings → Connections. Click “Get Started” below to finish.
+                  {bankConnected
+                    ? "You're all set — click Get Started to finish."
+                    : "Not ready? Skip for now — you can connect anytime from Settings → Connections."}
                 </p>
               </div>
             )}
@@ -638,9 +626,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
 
                 <div>
                   <label className={LABEL_CLASS}>Currency</label>
-                  <WizardSelect value={currency} onChange={(e) => setCurrency(e.target.value)} className={`w-full ${FIELD_CLASS}`}>
+                  <SelectInput value={currency} onChange={(e) => setCurrency(e.target.value)}>
                     {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </WizardSelect>
+                  </SelectInput>
                 </div>
 
                 <div
@@ -706,7 +694,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                 {/* Editable income + budget plan */}
                 <div>
                   <label className={LABEL_CLASS}>Monthly Income</label>
-                  <Input type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} className={FIELD_SM_CLASS} />
+                  <TextInput type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} />
                 </div>
                 <div>
                   <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-2">Budget plan</div>
@@ -726,11 +714,13 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   <div className="space-y-2 max-h-[160px] overflow-y-auto bk-scroll pr-1">
                     {accounts.map((acc, i) => (
                       <div key={i} className="flex gap-2 items-center p-2.5 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
-                        <Input value={acc.name} onChange={(e) => updateAccount(i, "name", e.target.value)} className="flex-1 h-8 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-2.5 text-xs text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none focus:border-[var(--color-primary)]" />
-                        <WizardSelect compact value={acc.type} onChange={(e) => updateAccount(i, "type", e.target.value)} className="h-8 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-1.5 text-xs text-[var(--color-bk-ink)] outline-none focus:border-[var(--color-primary)]">
-                          {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                        </WizardSelect>
-                        <Input type="number" value={acc.balance} onChange={(e) => updateAccount(i, "balance", e.target.value)} placeholder="Balance" className="w-24 h-8 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-2.5 text-xs text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none focus:border-[var(--color-primary)]" />
+                        <div className="flex-1"><TextInput value={acc.name} onChange={(e) => updateAccount(i, "name", e.target.value)} placeholder="Account name" /></div>
+                        <div className="w-32">
+                          <SelectInput value={acc.type} onChange={(e) => updateAccount(i, "type", e.target.value)}>
+                            {ACCOUNT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                          </SelectInput>
+                        </div>
+                        <div className="w-28"><TextInput type="number" value={acc.balance} onChange={(e) => updateAccount(i, "balance", e.target.value)} placeholder="Balance" /></div>
                         {accounts.length > 1 && (
                           <button onClick={() => removeAccount(i)} className="text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)]"><X className="w-3.5 h-3.5" /></button>
                         )}
@@ -750,13 +740,15 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   <div className="space-y-2 max-h-[160px] overflow-y-auto bk-scroll pr-1">
                     {recurring.map((rec, i) => (
                       <div key={i} className="flex gap-2 items-center p-2.5 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
-                        <Input value={rec.name} onChange={(e) => updateRecurring(i, "name", e.target.value)} className="flex-1 h-8 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-2.5 text-xs text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none focus:border-[var(--color-primary)]" />
-                        <Input type="number" value={rec.amount} onChange={(e) => updateRecurring(i, "amount", e.target.value)} placeholder="$" className="w-20 h-8 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-2.5 text-xs text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none focus:border-[var(--color-primary)]" />
-                        <WizardSelect compact value={rec.cycle} onChange={(e) => updateRecurring(i, "cycle", e.target.value)} className="h-8 rounded-lg border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-1.5 text-xs text-[var(--color-bk-ink)] outline-none focus:border-[var(--color-primary)]">
-                          <option value="Monthly">Monthly</option>
-                          <option value="Annual">Annual</option>
-                          <option value="Weekly">Weekly</option>
-                        </WizardSelect>
+                        <div className="flex-1"><TextInput value={rec.name} onChange={(e) => updateRecurring(i, "name", e.target.value)} placeholder="Expense name" /></div>
+                        <div className="w-24"><TextInput type="number" value={rec.amount} onChange={(e) => updateRecurring(i, "amount", e.target.value)} placeholder="$" /></div>
+                        <div className="w-32">
+                          <SelectInput value={rec.cycle} onChange={(e) => updateRecurring(i, "cycle", e.target.value)}>
+                            <option value="Monthly">Monthly</option>
+                            <option value="Annual">Annual</option>
+                            <option value="Weekly">Weekly</option>
+                          </SelectInput>
+                        </div>
                         {recurring.length > 1 && (
                           <button onClick={() => removeRecurring(i)} className="text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)]"><X className="w-3.5 h-3.5" /></button>
                         )}
@@ -786,8 +778,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
 
           {mode === "auto" && step === 0 ? (
             <Button size="sm" onClick={handleAutoAnalyze} disabled={files.length === 0} className="px-6">
-              <Brain data-icon="inline-start" className="w-4 h-4" />
-              Analyze {files.length} file{files.length !== 1 ? "s" : ""}
+              Analyze
             </Button>
           ) : mode === "auto" && step === 1 ? (
             <div />
@@ -795,6 +786,17 @@ export function OnboardingWizard({ userName }: { userName: string }) {
             <Button size="sm" onClick={() => setStep(step + 1)} disabled={!canAdvance()} className="px-6">
               Continue
             </Button>
+          ) : mode === "connect" && !bankConnected ? (
+            // Connecting stays the primary action so you can still link a bank
+            // even if you didn't at first; skipping is an explicit secondary.
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={handleSubmit} disabled={loading} className="px-5 text-[var(--color-bk-muted)]">
+                {loading ? "Setting up..." : "Skip for now"}
+              </Button>
+              <Button size="sm" onClick={() => setShowConnect(true)} disabled={loading} className="px-6">
+                <Landmark data-icon="inline-start" className="w-4 h-4" /> Connect a bank
+              </Button>
+            </div>
           ) : (
             <Button size="sm" onClick={handleSubmit} disabled={loading} className="px-6">
               {loading ? "Setting up..." : "Get Started"}

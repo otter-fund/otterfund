@@ -389,6 +389,17 @@
 [data-in] .bk-lp-area { opacity: 1; }
 .bk-lp-dot { opacity: 0; transition: opacity 0.35s ease 1.6s; }
 [data-in] .bk-lp-dot { opacity: 1; }
+/* Auth panel: a subtle "matrix" drizzle inside the net-worth area fill — small
+   glints fall on staggered loops so the chart feels quietly alive. Each streak
+   fades in/out as it falls (peak opacity via per-streak --o) and travels from
+   just above the area to below it (user units; chart viewBox is 96 tall). */
+.bk-lp-rain { animation-name: bkRain; animation-timing-function: linear; animation-iteration-count: infinite; }
+@keyframes bkRain {
+  0% { transform: translateY(-20px); opacity: 0; }
+  12% { opacity: var(--o, 0.4); }
+  88% { opacity: var(--o, 0.4); }
+  100% { transform: translateY(116px); opacity: 0; }
+}
 /* …then the end dot breathes: a soft ring radiates out every few seconds. */
 .bk-lp-pulse { opacity: 0; transform-box: fill-box; transform-origin: center; }
 [data-in] .bk-lp-pulse { animation: bkPulse 3.2s ease-out 2.1s infinite; }
@@ -421,6 +432,7 @@
   .bk-lp-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
   .bk-lp-area, .bk-lp-dot { opacity: 1; transition: none; }
   .bk-lp-pulse { animation: none; }
+  .bk-lp-rain { animation: none; opacity: 0; }
   .bk-seal-spin { animation: none; }
   .bk-ticker { animation: none; }
 }

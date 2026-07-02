@@ -13,6 +13,9 @@
 // The mark stands on its own (transparent, no tile) in the fixed brand coral
 // so it pops against the canvas. Pass `bg` to sit it on a colored tile.
 
+"use client";
+
+import { useId } from "react";
 import { LOGO_CORAL } from "@/components/bulga/theme";
 
 // Letterform geometry. `D_MARK_*` are the B body + veined leaf (clipped +
@@ -44,7 +47,7 @@ const D_LEAF_GRAIN =
     render sizes the hairlines fall below a device pixel and muddy into a smudge,
     so we fade them out and lean on the tonal base + crisp outline to carry the
     "B". At full size the complete engraving shows. */
-function EngravedMark({ detail = 1 }: { detail?: number }) {
+function EngravedMark({ detail = 1, uid }: { detail?: number; uid: string }) {
   // Below full detail, deepen the tonal base so the letterform keeps its mass as
   // the interior lines fade, and thicken the capping outline so the silhouette
   // stays sharp. lineOpacity drives the fine engraving; it reaches 0 when tiny.
@@ -52,36 +55,46 @@ function EngravedMark({ detail = 1 }: { detail?: number }) {
   const baseBottom = 0.24 + (1 - detail) * 0.3; // 0.24 → 0.54
   const outlineWidth = 1.4 + (1 - detail) * 0.8; // 1.4 → 2.2
   const lineOpacity = detail; // fine line-work fades with size
+  // IDs are unique per instance (via useId). Sharing one id set across instances
+  // breaks when the first definition lives in a display:none subtree (e.g. the
+  // lg-only brand panel on mobile) — browsers then ignore that clipPath and the
+  // engraving bleeds outside the letterform.
+  const base = `${uid}-base`;
+  const mark = `${uid}-mark`;
+  const stem = `${uid}-stem`;
+  const upper = `${uid}-upper`;
+  const lower = `${uid}-lower`;
+  const leaf = `${uid}-leaf`;
   return (
     <>
       <defs>
-        <linearGradient id="bulga-base" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={base} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="currentColor" stopOpacity={baseTop} />
           <stop offset="1" stopColor="currentColor" stopOpacity={baseBottom} />
         </linearGradient>
-        <clipPath id="bulga-mark" clipRule="evenodd">
+        <clipPath id={mark} clipRule="evenodd">
           <path d={D_BODY} />
           <path d={D_LEAF} />
         </clipPath>
-        <clipPath id="bulga-stem">
+        <clipPath id={stem}>
           <rect x="20" y="24" width="19.2" height="64" />
         </clipPath>
-        <clipPath id="bulga-upper">
+        <clipPath id={upper}>
           <rect x="39.2" y="24" width="42" height="32" />
         </clipPath>
-        <clipPath id="bulga-lower">
+        <clipPath id={lower}>
           <rect x="39.2" y="55.5" width="42" height="33" />
         </clipPath>
-        <clipPath id="bulga-leaf">
+        <clipPath id={leaf}>
           <path d={D_LEAF_SHAPE} />
         </clipPath>
       </defs>
 
       {/* engraved fill: tonal base + form-following line-work, ink only */}
-      <g clipPath="url(#bulga-mark)">
-        <rect x="8" y="8" width="80" height="80" fill="url(#bulga-base)" />
+      <g clipPath={`url(#${mark})`}>
+        <rect x="8" y="8" width="80" height="80" fill={`url(#${base})`} />
         <g fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" opacity={lineOpacity}>
-          <g clipPath="url(#bulga-stem)">
+          <g clipPath={`url(#${stem})`}>
             <path d={D_STEM} />
             {/* woven cross-hatch over the verticals — the $100-bill texture */}
             <g strokeWidth="0.36" strokeOpacity={0.65}>
@@ -93,13 +106,13 @@ function EngravedMark({ detail = 1 }: { detail?: number }) {
               </g>
             </g>
           </g>
-          <g clipPath="url(#bulga-upper)">
+          <g clipPath={`url(#${upper})`}>
             <path d={D_UPPER} />
           </g>
-          <g clipPath="url(#bulga-lower)">
+          <g clipPath={`url(#${lower})`}>
             <path d={D_LOWER} />
           </g>
-          <g clipPath="url(#bulga-leaf)">
+          <g clipPath={`url(#${leaf})`}>
             <g transform="rotate(-23 60 18)">
               <path d={D_LEAF_GRAIN} />
             </g>
@@ -128,6 +141,9 @@ interface LogoMarkProps {
 
 /** The brand mark — used standalone, in the sidebar rail, and as the favicon. */
 export function LogoMark({ size = 30, bg = "transparent", fg = LOGO_CORAL, className }: LogoMarkProps) {
+  // Unique per instance so multiple marks on one page never share (and collide
+  // on) clipPath / gradient ids. Colons from useId aren't valid in url(#…) refs.
+  const uid = useId().replace(/:/g, "");
   const r = size * 0.3;
   // Fade the fine engraving as the mark shrinks: full detail at ≥64px, minimal
   // interior line-work at ≤28px so the "B" reads cleanly on the small rail.
@@ -153,7 +169,7 @@ export function LogoMark({ size = 30, bg = "transparent", fg = LOGO_CORAL, class
         aria-hidden="true"
         style={{ color: fg, overflow: "visible" }}
       >
-        <EngravedMark detail={detail} />
+        <EngravedMark detail={detail} uid={uid} />
       </svg>
     </div>
   );

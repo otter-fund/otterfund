@@ -65,11 +65,29 @@ const STATS = [
   { label: "Spending", value: 4012.55 },
 ];
 
+// Subtle "matrix" drizzle inside the area fill — small glints that fall on
+// staggered loops. Values are fixed (not random) so server and client markup
+// match. x is in the chart's 0–460 viewBox; negative delays start each mid-fall
+// so there's no empty first pass.
+const RAIN: { x: number; h: number; dur: number; delay: number; o: number }[] = [
+  { x: 26, h: 12, dur: 3.4, delay: 0.0, o: 0.4 },
+  { x: 63, h: 8, dur: 4.3, delay: 1.6, o: 0.28 },
+  { x: 104, h: 15, dur: 3.7, delay: 2.4, o: 0.46 },
+  { x: 145, h: 10, dur: 4.8, delay: 0.7, o: 0.32 },
+  { x: 187, h: 13, dur: 4.0, delay: 2.9, o: 0.38 },
+  { x: 225, h: 8, dur: 5.1, delay: 1.1, o: 0.26 },
+  { x: 264, h: 16, dur: 3.5, delay: 3.3, o: 0.48 },
+  { x: 300, h: 11, dur: 4.4, delay: 0.4, o: 0.34 },
+  { x: 338, h: 9, dur: 5.3, delay: 2.6, o: 0.26 },
+  { x: 375, h: 14, dur: 3.8, delay: 1.9, o: 0.42 },
+  { x: 410, h: 10, dur: 4.6, delay: 1.0, o: 0.32 },
+  { x: 441, h: 12, dur: 4.1, delay: 3.6, o: 0.38 },
+];
+
 export function AuthBrandPanel() {
   // One flag drives the count-ups and flips `data-in` so the sparkline draws.
   const [live, setLive] = useState(false);
   const netWorth = useCountUp(24180.62, live);
-  const gained = useCountUp(1240.18, live, 1300);
   useEffect(() => {
     const id = requestAnimationFrame(() => setLive(true));
     return () => cancelAnimationFrame(id);
@@ -152,22 +170,6 @@ export function AuthBrandPanel() {
             {fmt(netWorth)}
           </div>
 
-          <div
-            className="mt-3 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1"
-            style={{
-              background: "oklch(90% 0.09 158 / 0.16)",
-              color: PANEL_ACCENT,
-              fontSize: 12,
-              fontWeight: 600,
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-              <path d="M7 17 17 7M9 7h8v8" />
-            </svg>
-            <span className="bk-num">+{fmt(gained)}</span>
-            <span style={{ opacity: 0.85 }}>this month</span>
-          </div>
-
           <div className="relative mt-5">
             <svg viewBox={`0 0 ${SP_W} ${SP_H}`} preserveAspectRatio="none" className="h-[80px] w-full" aria-hidden>
               <defs>
@@ -175,8 +177,36 @@ export function AuthBrandPanel() {
                   <stop offset="0%" stopColor={PANEL_ACCENT} stopOpacity="0.28" />
                   <stop offset="100%" stopColor={PANEL_ACCENT} stopOpacity="0" />
                 </linearGradient>
+                {/* each drizzle glint: soft at the ends, bright in the middle */}
+                <linearGradient id="auth-nw-drop" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={PANEL_ACCENT} stopOpacity="0" />
+                  <stop offset="50%" stopColor={PANEL_ACCENT} stopOpacity="1" />
+                  <stop offset="100%" stopColor={PANEL_ACCENT} stopOpacity="0" />
+                </linearGradient>
+                <clipPath id="auth-nw-clip">
+                  <path d={SPARK.area} />
+                </clipPath>
               </defs>
               <path className="bk-lp-area" d={SPARK.area} fill="url(#auth-nw-grad)" />
+              <g className="bk-lp-area" clipPath="url(#auth-nw-clip)">
+                {RAIN.map((d, i) => (
+                  <rect
+                    key={i}
+                    className="bk-lp-rain"
+                    x={d.x}
+                    y={0}
+                    width={1.8}
+                    height={d.h}
+                    rx={0.9}
+                    fill="url(#auth-nw-drop)"
+                    style={{
+                      ["--o"]: d.o,
+                      animationDuration: `${d.dur}s`,
+                      animationDelay: `-${d.delay}s`,
+                    } as React.CSSProperties}
+                  />
+                ))}
+              </g>
               <path
                 className="bk-lp-line"
                 d={SPARK.line}
@@ -193,10 +223,6 @@ export function AuthBrandPanel() {
               style={{ left: `${(SPARK.lx / SP_W) * 100}%`, top: `${(SPARK.ly / SP_H) * 100}%` }}
               aria-hidden
             >
-              <span
-                className="bk-lp-pulse absolute -left-3.5 -top-3.5 block h-7 w-7 rounded-full"
-                style={{ border: `1.5px solid ${PANEL_ACCENT}` }}
-              />
               <span
                 className="bk-lp-dot absolute -left-[5.5px] -top-[5.5px] block h-[11px] w-[11px] rounded-full"
                 style={{ background: PANEL_ACCENT, border: "2px solid oklch(28% 0.05 158)" }}

@@ -120,6 +120,12 @@ export interface GoalsPlanView {
   allocated: number;
   /** Pool left after funding goals (e.g. all goals fully funded). */
   unallocated: number;
+  /**
+   * Real cash still available to assign this month = surplus − what's already
+   * been assigned to goals this month. Drives the "Assign" action; once 0 the
+   * surplus is spent and can't be assigned again.
+   */
+  assignable: number;
   goals: GoalPlanItem[];
 }
 
@@ -186,6 +192,20 @@ export interface MonthlySummary {
   surplus: number;
 }
 
+/**
+ * One month in the net-worth history: the balance at that month's end and the
+ * net cash flow that occurred during the month. Powers the Overview sparkline
+ * and its hover tooltip.
+ */
+export interface NetWorthPoint {
+  /** Short month label, e.g. "Jun". */
+  label: string;
+  /** Net worth at the end of this month. */
+  value: number;
+  /** Net cash flow during the month (income − spend); positive = net worth rose. */
+  change: number;
+}
+
 export interface DashboardOverview {
   netWorth: number;
   netWorthChange: number;
@@ -199,7 +219,7 @@ export interface DashboardOverview {
   spendingByCategory: SpendCategory[];
   upcomingBills: BillView[];
   incomeVsExpense: { months: string[]; income: number[]; expenses: number[] };
-  netWorthTrend: number[];
+  netWorthTrend: NetWorthPoint[];
   goals: GoalView[];
   recentTransactions: TransactionView[];
 }

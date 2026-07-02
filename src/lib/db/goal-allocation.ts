@@ -13,37 +13,53 @@ export interface GoalAllocationPlan {
 }
 
 /**
- * Immediately moves a lump sum into the user's goals: splits `amount` across
- * under-funded goals by priority (via `allocatePool`) and increments each
- * goal's `saved` in a single transaction. This is the deliberate "assign my
- * savings to goals" action — unlike the monthly `GoalAllocation` pipeline it
- * keeps no pending rows, so the caller controls exactly when money is applied.
+ * Assigns this month's *remaining* real surplus across under-funded goals and
+ * records it, so the same cash can't be assigned twice. Available = surplus −
+ * what's already been assigned this month (sum of applied GoalAllocation rows).
+ * Each funded goal's `saved` is incremented and its month's applied allocation
+ * is bumped by the same amount, all in one transaction. Server-authoritative:
+ * the amount is derived here, never taken from the client.
  *
  * @param userId - Owner of the goals.
- * @param amount - Dollars to distribute (values <= 0 are a no-op).
- * @returns The total actually assigned (may be less than `amount` when goals
- *          fill up) and the number of goals funded.
+ * @param month - 1-indexed month.
+ * @param year - 4-digit year.
+ * @returns The total assigned and how many goals were funded (0 when there's
+ *          nothing left to assign or no under-funded goals).
  */
-export async function assignSavingsToGoals(
+export async function assignAvailableSurplus(
   userId: string,
-  amount: number
+  month: number,
+  year: number
 ): Promise<{ assigned: number; goalsFunded: number }> {
-  if (!(amount > 0)) return { assigned: 0, goalsFunded: 0 };
+  const [summary, goals, assignedAgg] = await Promise.all([
+    computeMonthlySurplus(userId, month, year),
+    prisma.goal.findMany({ where: { userId } }),
+    prisma.goalAllocation.aggregate({
+      where: { userId, month, year, status: "applied" },
+      _sum: { amount: true },
+    }),
+  ]);
 
-  const goals = await prisma.goal.findMany({ where: { userId } });
-  const split = allocatePool(goals, amount);
+  const surplus = Math.max(0, summary.surplus);
+  const already = assignedAgg._sum.amount ?? 0;
+  const available = Math.max(0, Math.round((surplus - already) * 100) / 100);
+  if (available <= 0) return { assigned: 0, goalsFunded: 0 };
+
+  const split = allocatePool(goals, available);
   if (split.size === 0) return { assigned: 0, goalsFunded: 0 };
 
   let assigned = 0;
-  await prisma.$transaction(
-    [...split.entries()].map(([id, amt]) => {
+  await prisma.$transaction(async (tx) => {
+    for (const [goalId, amt] of split.entries()) {
       assigned += amt;
-      return prisma.goal.update({
-        where: { id },
-        data: { saved: { increment: amt } },
+      await tx.goal.update({ where: { id: goalId }, data: { saved: { increment: amt } } });
+      await tx.goalAllocation.upsert({
+        where: { userId_goalId_month_year: { userId, goalId, month, year } },
+        create: { userId, goalId, month, year, amount: amt, status: "applied" },
+        update: { amount: { increment: amt }, status: "applied" },
       });
-    })
-  );
+    }
+  });
 
   return { assigned: Math.round(assigned * 100) / 100, goalsFunded: split.size };
 }

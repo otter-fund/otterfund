@@ -6,7 +6,8 @@
 // and goals, then recent activity beside a Bulga insight card. Every bar
 // animates from 0% once mounted; every figure derives from `overview`.
 
-import type { DashboardOverview } from "@/lib/types";
+import { useState } from "react";
+import type { DashboardOverview, NetWorthPoint } from "@/lib/types";
 import { type BulgaTheme, tintFor } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -28,27 +29,101 @@ const CARD: React.CSSProperties = {
   padding: 24,
 };
 
-// ── net-worth sparkline geometry (net-worth sparkline geometry) ──
+// ── net-worth sparkline geometry ──
 const W = 620;
 const H = 130;
 
-function sparkline(trend: number[]) {
-  const data = trend.length >= 2 ? trend : [0, 0];
-  const mn = Math.min(...data);
-  const mx = Math.max(...data);
+interface SparkPoint {
+  x: number;
+  y: number;
+  point: NetWorthPoint;
+}
+
+function sparkline(trend: NetWorthPoint[]) {
+  const zero: NetWorthPoint = { label: "", value: 0, change: 0 };
+  const data =
+    trend.length >= 2
+      ? trend
+      : trend.length === 1
+        ? [trend[0], trend[0]]
+        : [zero, zero];
+  const values = data.map((d) => d.value);
+  const mn = Math.min(...values);
+  const mx = Math.max(...values);
   const rg = mx - mn || 1;
-  const pts = data.map((d, i) => [
-    (i / (data.length - 1)) * W,
-    H - 10 - ((d - mn) / rg) * (H - 28),
-  ] as const);
-  const line = pts.map((p) => p[0].toFixed(1) + "," + p[1].toFixed(1)).join(" ");
-  const last = pts[pts.length - 1];
-  return {
-    line,
-    area: `0,${H} ${line} ${W},${H}`,
-    dotX: last[0].toFixed(1),
-    dotY: last[1].toFixed(1),
-  };
+  const pts: SparkPoint[] = data.map((d, i) => ({
+    x: (i / (data.length - 1)) * W,
+    y: H - 10 - ((d.value - mn) / rg) * (H - 28),
+    point: d,
+  }));
+  const line = pts.map((p) => p.x.toFixed(1) + "," + p.y.toFixed(1)).join(" ");
+  return { line, area: `0,${H} ${line} ${W},${H}`, pts };
+}
+
+function NetWorthTooltip({
+  pt,
+  atStart,
+  atEnd,
+  theme,
+  money,
+  signed,
+}: {
+  pt: SparkPoint;
+  atStart: boolean;
+  atEnd: boolean;
+  theme: BulgaTheme;
+  money: (n: number) => string;
+  signed: (n: number) => string;
+}) {
+  const { change, value, label } = pt.point;
+  const down = change < 0;
+  // Anchor horizontally so edge points don't overflow the chart; drop the card
+  // below the point when it sits high enough that a card above would clip.
+  const anchorX = atStart ? "0%" : atEnd ? "-100%" : "-50%";
+  const yPct = (pt.y / H) * 100;
+  const anchorY = yPct < 46 ? "18px" : "calc(-100% - 14px)";
+  const changeColor = change === 0 ? "var(--color-bk-muted)" : down ? theme.clay : theme.accentDeep;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: `${(pt.x / W) * 100}%`,
+        top: `${yPct}%`,
+        transform: `translate(${anchorX}, ${anchorY})`,
+        background: "var(--color-bk-surface)",
+        border: "1px solid var(--color-bk-line)",
+        borderRadius: 12,
+        padding: "9px 12px",
+        boxShadow: "0 8px 24px rgba(30,20,10,0.14)",
+        whiteSpace: "nowrap",
+        pointerEvents: "none",
+        zIndex: 6,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 10.5,
+          fontWeight: 700,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          color: "var(--color-bk-faint)",
+        }}
+      >
+        {label}
+      </div>
+      <div className="bk-num" style={{ fontSize: 19, letterSpacing: "-0.02em", marginTop: 3, lineHeight: 1.1 }}>
+        {money(value)}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 5, fontSize: 12, fontWeight: 600, color: changeColor }}>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d={down ? "M7 7 17 17M9 17h8V9" : "M7 17 17 7M9 7h8v8"} />
+        </svg>
+        <span className="bk-num">{signed(change)}</span>
+        <span style={{ color: "var(--color-bk-faint)", fontWeight: 500 }}>this month</span>
+      </div>
+    </div>
+  );
 }
 
 export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProps) {
@@ -59,6 +134,9 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
   const nwDown = overview.netWorthChange < 0;
   const surplusDown = overview.monthlySurplus < 0;
   const spark = sparkline(overview.netWorthTrend);
+  const [hover, setHover] = useState<number | null>(null);
+  const hoverPt = hover !== null ? spark.pts[hover] : null;
+  const hasTrend = overview.netWorthTrend.length > 0;
 
   const cats = overview.spendingByCategory.slice(0, 5);
   const goals = overview.goals.slice(0, 4);
@@ -127,17 +205,97 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
             />
           </div>
         </div>
-        <svg className="bk-nw-spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ position: "relative", width: "100%", height: 110 }} aria-hidden="true">
-          <defs>
-            <linearGradient id="ev-nw-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={theme.accent} stopOpacity="0.16" />
-              <stop offset="100%" stopColor={theme.accent} stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={`M${spark.area}Z`} fill="url(#ev-nw-grad)" />
-          <polyline points={spark.line} fill="none" stroke={theme.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx={spark.dotX} cy={spark.dotY} r="4.5" fill={theme.accent} stroke="#fff" strokeWidth="2.5" />
-        </svg>
+        <div
+          className="bk-nw-spark"
+          style={{ position: "relative", width: "100%", height: 110 }}
+          onMouseLeave={() => setHover(null)}
+          onMouseMove={
+            hasTrend
+              ? (e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const ratio = (e.clientX - rect.left) / rect.width;
+                  const idx = Math.max(
+                    0,
+                    Math.min(
+                      spark.pts.length - 1,
+                      Math.round(ratio * (spark.pts.length - 1))
+                    )
+                  );
+                  setHover(idx);
+                }
+              : undefined
+          }
+        >
+          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ position: "relative", width: "100%", height: "100%", display: "block" }} aria-hidden="true">
+            <defs>
+              <linearGradient id="ev-nw-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={theme.accent} stopOpacity="0.16" />
+                <stop offset="100%" stopColor={theme.accent} stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d={`M${spark.area}Z`} fill="url(#ev-nw-grad)" />
+            <polyline points={spark.line} fill="none" stroke={theme.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+
+          {/* End-of-line marker (hidden while a hovered point is active). */}
+          {hasTrend && !hoverPt && (
+            <span
+              style={{
+                position: "absolute",
+                left: `${(spark.pts[spark.pts.length - 1].x / W) * 100}%`,
+                top: `${(spark.pts[spark.pts.length - 1].y / H) * 100}%`,
+                width: 9,
+                height: 9,
+                borderRadius: "50%",
+                background: theme.accent,
+                border: "2px solid #fff",
+                boxShadow: "0 1px 3px rgba(30,20,10,0.2)",
+                transform: "translate(-50%, -50%)",
+                pointerEvents: "none",
+              }}
+            />
+          )}
+
+          {hoverPt && (
+            <>
+              <span
+                style={{
+                  position: "absolute",
+                  left: `${(hoverPt.x / W) * 100}%`,
+                  top: 0,
+                  bottom: 0,
+                  width: 1,
+                  background: "var(--color-bk-line)",
+                  transform: "translateX(-0.5px)",
+                  pointerEvents: "none",
+                }}
+              />
+              <span
+                style={{
+                  position: "absolute",
+                  left: `${(hoverPt.x / W) * 100}%`,
+                  top: `${(hoverPt.y / H) * 100}%`,
+                  width: 11,
+                  height: 11,
+                  borderRadius: "50%",
+                  background: theme.accent,
+                  border: "2.5px solid #fff",
+                  boxShadow: "0 1px 4px rgba(30,20,10,0.22)",
+                  transform: "translate(-50%, -50%)",
+                  pointerEvents: "none",
+                }}
+              />
+              <NetWorthTooltip
+                pt={hoverPt}
+                atStart={hover === 0}
+                atEnd={hover === spark.pts.length - 1}
+                theme={theme}
+                money={money}
+                signed={signed}
+              />
+            </>
+          )}
+        </div>
       </section>
 
       {/* ── this-month stats ── */}

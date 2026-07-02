@@ -8,6 +8,7 @@ import type {
   InsightView,
   BillView,
   DashboardOverview,
+  NetWorthPoint,
 } from "@/lib/types";
 
 // These object refs mirror the view-model interfaces in src/lib/types.ts exactly,
@@ -121,6 +122,16 @@ export const IncomeVsExpenseRef = builder
     }),
   });
 
+export const NetWorthPointRef = builder
+  .objectRef<NetWorthPoint>("NetWorthPoint")
+  .implement({
+    fields: (t) => ({
+      label: t.exposeString("label"),
+      value: t.exposeFloat("value"),
+      change: t.exposeFloat("change"),
+    }),
+  });
+
 export const DashboardOverviewRef = builder
   .objectRef<DashboardOverview>("DashboardOverview")
   .implement({
@@ -146,7 +157,10 @@ export const DashboardOverviewRef = builder
         type: IncomeVsExpenseRef,
         resolve: (o) => o.incomeVsExpense,
       }),
-      netWorthTrend: t.exposeFloatList("netWorthTrend"),
+      netWorthTrend: t.field({
+        type: [NetWorthPointRef],
+        resolve: (o) => o.netWorthTrend,
+      }),
       goals: t.field({ type: [GoalRef], resolve: (o) => o.goals }),
       recentTransactions: t.field({
         type: [TransactionRef],

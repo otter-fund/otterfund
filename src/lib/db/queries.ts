@@ -27,6 +27,7 @@ import type {
   SubscriptionView,
   AccountView,
   InsightView,
+  NetWorthPoint,
 } from "@/lib/types";
 
 const ACCOUNT_GRADIENTS: Record<string, string> = {
@@ -133,17 +134,26 @@ export async function getDashboardOverview(
     .filter((c) => c.amount > 0 || c.budget > 0)
     .sort((a, b) => b.amount - a.amount);
 
-  // Income vs expense trend (last 7 months). Income tracks the user's
-  // configured monthlyIncome (from settings) so the chart matches the
-  // headline figure; expenses are still computed from transactions.
+  // Last-7-months trends. We pull every non-excluded transaction in the window
+  // once and derive both series from it.
+  //
+  // Net worth history is real, not projected: net worth at a past month-end is
+  // today's net worth minus every transaction that landed after that month —
+  // each later transaction is exactly what moved the balance from then to now.
+  // This holds for manual and synced accounts alike (a synced account's stored
+  // balance is its current reported truth, and its transactions account for the
+  // deltas), so it matches the headline `netWorth` at the final point.
+  //
+  // Income vs expense still tracks the user's configured monthlyIncome for the
+  // income line (so it matches the headline figure); expenses are live.
   const sevenMonthsAgo = new Date(year, month - 7, 1);
-  const allRecentTxs = await prisma.transaction.findMany({
+  const windowTxs = await prisma.transaction.findMany({
     where: {
       userId,
-      amount: { lt: 0 },
       date: { gte: sevenMonthsAgo },
       ...NOT_EXCLUDED_ACCOUNT,
     },
+    select: { date: true, amount: true },
   });
 
   const settingsIncome = user?.monthlyIncome ?? 0;
@@ -151,20 +161,32 @@ export async function getDashboardOverview(
   const months: string[] = [];
   const incomeArr: number[] = [];
   const expenseArr: number[] = [];
-  const nwTrend: number[] = [];
+  const nwTrend: NetWorthPoint[] = [];
 
   for (let i = 6; i >= 0; i--) {
     const m = new Date(year, month - 1 - i, 1);
     const mEnd = new Date(m.getFullYear(), m.getMonth() + 1, 1);
     months.push(MONTH_NAMES[m.getMonth()]);
 
-    const mTxs = allRecentTxs.filter(
-      (t) => t.date >= m && t.date < mEnd
-    );
-    const exp = Math.abs(mTxs.reduce((s, t) => s + t.amount, 0));
+    let monthIncome = 0;
+    let monthExpense = 0;
+    let afterEnd = 0;
+    for (const t of windowTxs) {
+      if (t.date >= mEnd) {
+        afterEnd += t.amount;
+      } else if (t.date >= m) {
+        if (t.amount < 0) monthExpense += -t.amount;
+        else monthIncome += t.amount;
+      }
+    }
+
     incomeArr.push(Math.round(settingsIncome));
-    expenseArr.push(Math.round(exp));
-    nwTrend.push(Math.round(netWorth - (settingsIncome - exp) * i));
+    expenseArr.push(Math.round(monthExpense));
+    nwTrend.push({
+      label: MONTH_NAMES[m.getMonth()],
+      value: Math.round(netWorth - afterEnd),
+      change: Math.round(monthIncome - monthExpense),
+    });
   }
 
   const netWorthChange = savedAmount;
@@ -438,13 +460,19 @@ export async function getGoalsPlan(
   month: number,
   year: number,
 ): Promise<GoalsPlanView> {
-  const [user, goals, summary] = await Promise.all([
+  const [user, goals, summary, assignedAgg] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { monthlyIncome: true, currency: true, budgetPlan: true },
     }),
     prisma.goal.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
     computeMonthlySurplus(userId, month, year),
+    // How much surplus has already been assigned to goals this month — so the
+    // Assign action can't spend the same cash twice.
+    prisma.goalAllocation.aggregate({
+      where: { userId, month, year, status: "applied" },
+      _sum: { amount: true },
+    }),
   ]);
 
   const plan = getBudgetPlan(user?.budgetPlan);
@@ -453,6 +481,8 @@ export async function getGoalsPlan(
   const monthlySavings = Math.round((monthlyIncome * plan.savings) / 100);
   const monthlySpent = Math.round(summary.spending * 100) / 100;
   const surplus = Math.max(0, Math.round(summary.surplus * 100) / 100);
+  const assignedThisMonth = assignedAgg._sum.amount ?? 0;
+  const assignable = Math.max(0, Math.round((surplus - assignedThisMonth) * 100) / 100);
 
   const alloc = allocatePool(
     goals.map((g) => ({ id: g.id, priority: g.priority, saved: g.saved, target: g.target })),
@@ -527,6 +557,7 @@ export async function getGoalsPlan(
     totalTarget,
     allocated: Math.round(allocated * 100) / 100,
     unallocated: Math.max(0, Math.round((monthlySavings - allocated) * 100) / 100),
+    assignable,
     goals: items,
   };
 }
