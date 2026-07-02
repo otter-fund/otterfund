@@ -111,14 +111,10 @@ export function MobileNav({
       <Dialog.Portal>
         <Dialog.Backdrop className="fixed inset-0 z-[60] bg-[oklch(20%_0.02_80/0.34)] backdrop-blur-[2px] transition-opacity duration-300 data-closed:opacity-0 data-open:opacity-100" />
         <Dialog.Popup className="bk-sheet fixed inset-x-0 bottom-0 z-[61] mx-auto flex max-h-[86vh] w-full max-w-[520px] flex-col rounded-t-[28px] border border-b-0 border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-16px_60px_oklch(20%_0.02_80/0.22)] outline-none">
-          {/* grab handle */}
-          <div className="flex justify-center pt-3 pb-1">
-            <span aria-hidden="true" className="h-1 w-9 rounded-full bg-[var(--color-bk-line)]" />
-          </div>
-
-          {/* nav rows — scroll if a short screen can't fit them all. The grab
-              handle above is enough of a header; no logo needed here. */}
-          <nav aria-label="Primary" className="bk-scroll flex-1 overflow-y-auto px-3 pt-1">
+          {/* nav rows — scroll if a short screen can't fit them all. No grab
+              handle: it implied a drag gesture the sheet doesn't support;
+              dismiss via backdrop tap, a row tap, or Escape. */}
+          <nav aria-label="Primary" className="bk-scroll flex-1 overflow-y-auto px-3 pt-4">
             <div className="flex flex-col gap-1">
               {primary.map((item, i) => row(item, i))}
             </div>
