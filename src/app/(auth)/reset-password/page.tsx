@@ -12,6 +12,8 @@ import {
   passwordMeetsRules,
 } from "@/components/bulga/form";
 import { Button } from "@/components/ui/button";
+import { GuillochePattern } from "@/components/bulga/guilloche";
+import { BRAND_THEME } from "@/components/bulga/theme";
 
 type FieldErrors = { password?: string; confirm?: string };
 type Status = "checking" | "ready" | "expired";
@@ -93,7 +95,9 @@ export default function ResetPasswordPage() {
         )}
       </div>
 
-      <Card className="p-8">
+      <Card className="relative overflow-hidden p-8">
+        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="right" opacity={0.13} />
+        <div className="relative">
         {status === "checking" ? (
           <p className="text-center text-sm text-[var(--color-bk-muted)] py-4">Loading…</p>
         ) : status === "expired" ? (
@@ -170,6 +174,7 @@ export default function ResetPasswordPage() {
             </Button>
           </form>
         )}
+        </div>
       </Card>
     </>
   );

@@ -11,6 +11,7 @@ import { type BulgaTheme, tintFor } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/bulga/progress";
+import { GuillochePattern } from "@/components/bulga/guilloche";
 
 interface BulgaOverviewProps {
   overview: DashboardOverview;
@@ -78,6 +79,8 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
       <section
         className="bk-nw-hero"
         style={{
+          position: "relative",
+          overflow: "hidden",
           display: "grid",
           gridTemplateColumns: "1.15fr 1fr",
           gap: 28,
@@ -85,7 +88,8 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
           padding: "0 4px 36px",
         }}
       >
-        <div>
+        <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.16} />
+        <div style={{ position: "relative" }}>
           <div
             style={{
               fontSize: 12,
@@ -130,7 +134,7 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
             <span>this month</span>
           </div>
         </div>
-        <svg className="bk-nw-spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ width: "100%", height: 110 }} aria-hidden="true">
+        <svg className="bk-nw-spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ position: "relative", width: "100%", height: 110 }} aria-hidden="true">
           <defs>
             <linearGradient id="ev-nw-grad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor={theme.accent} stopOpacity="0.16" />

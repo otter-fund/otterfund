@@ -14,6 +14,8 @@ import {
 } from "@/components/bulga/form";
 import { Button } from "@/components/ui/button";
 import { GoogleAuthButton } from "@/components/auth/google-button";
+import { GuillochePattern } from "@/components/bulga/guilloche";
+import { BRAND_THEME } from "@/components/bulga/theme";
 
 type FieldErrors = { name?: string; password?: string; confirm?: string };
 
@@ -95,7 +97,9 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <Card className="p-8">
+      <Card className="relative overflow-hidden p-8">
+        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="right" opacity={0.13} />
+        <div className="relative">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <Field label="Name" htmlFor="name" error={fieldErrors.name}>
             <TextInput
@@ -180,6 +184,7 @@ export default function RegisterPage() {
             Sign in
           </Link>
         </p>
+        </div>
       </Card>
     </>
   );

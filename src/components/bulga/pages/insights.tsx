@@ -15,6 +15,7 @@ import type { InsightView } from "@/lib/types";
 import { type BulgaTheme } from "@/components/bulga/theme";
 import { gqlClient } from "@/lib/graphql/client";
 import { Button } from "@/components/ui/button";
+import { GuillochePattern, GuillocheSeal } from "@/components/bulga/guilloche";
 
 const GENERATE_INSIGHTS = /* GraphQL */ `
   mutation GenerateInsights {
@@ -61,13 +62,16 @@ export function BulgaInsights({ insights: initial, theme }: BulgaInsightsProps) 
       <section
         style={{
           ...CARD,
+          position: "relative",
+          overflow: "hidden",
           padding: "32px 28px",
           marginBottom: 16,
           background: theme.accentTint,
           border: `1px solid ${theme.accentTintBorder}`,
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
+        <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.14} />
+        <div style={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 24, flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 320px", minWidth: 0 }}>
             <div
               style={{
@@ -112,7 +116,7 @@ export function BulgaInsights({ insights: initial, theme }: BulgaInsightsProps) 
           </Button>
         </div>
         {note && (
-          <p style={{ margin: "14px 0 0", fontSize: 12.5, color: theme.accentDeep }}>{note}</p>
+          <p style={{ position: "relative", margin: "14px 0 0", fontSize: 12.5, color: theme.accentDeep }}>{note}</p>
         )}
       </section>
 
@@ -142,11 +146,17 @@ export function BulgaInsights({ insights: initial, theme }: BulgaInsightsProps) 
           ))}
         </section>
       ) : (
-        <section style={{ ...CARD, textAlign: "center", padding: "40px 24px" }}>
-          <p style={{ margin: 0, fontSize: 14, color: "var(--color-bk-muted)" }}>
-            No insights yet — hit <strong style={{ color: "var(--color-bk-ink)" }}>Generate insights</strong> above to get an
-            AI-powered read on your finances.
-          </p>
+        <section style={{ ...CARD, position: "relative", overflow: "hidden", textAlign: "center", padding: "44px 24px" }}>
+          <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="radial" opacity={0.14} />
+          <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            <div style={{ width: 72, height: 72 }} aria-hidden="true">
+              <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
+            </div>
+            <p style={{ margin: 0, fontSize: 14, color: "var(--color-bk-muted)", maxWidth: 360 }}>
+              No insights yet — hit <strong style={{ color: "var(--color-bk-ink)" }}>Generate insights</strong> above to get an
+              AI-powered read on your finances.
+            </p>
+          </div>
         </section>
       )}
     </div>

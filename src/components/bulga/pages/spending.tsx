@@ -12,6 +12,7 @@ import type { SpendCategory } from "@/lib/types";
 import { type BulgaTheme } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
 import { ProgressBar } from "@/components/bulga/progress";
+import { GuillochePattern } from "@/components/bulga/guilloche";
 
 interface BulgaSpendingProps {
   spending: SpendCategory[];
@@ -42,13 +43,16 @@ export function BulgaSpending({ spending, theme, currency = "CAD" }: BulgaSpendi
       <section
         className="bk-hero-row"
         style={{
+          position: "relative",
+          overflow: "hidden",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-end",
           padding: "0 4px 32px",
         }}
       >
-        <div>
+        <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.16} />
+        <div style={{ position: "relative" }}>
           <div
             style={{
               fontSize: 12,
@@ -78,6 +82,7 @@ export function BulgaSpending({ spending, theme, currency = "CAD" }: BulgaSpendi
         </div>
         <span
           style={{
+            position: "relative",
             display: "inline-flex",
             alignItems: "center",
             gap: 6,

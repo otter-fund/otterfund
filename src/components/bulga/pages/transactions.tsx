@@ -12,6 +12,7 @@ import { Trash2, Check, ChevronDown } from "lucide-react";
 import type { TransactionView } from "@/lib/types";
 import type { BulgaTheme } from "@/components/bulga/theme";
 import { tintFor } from "@/components/bulga/theme";
+import { GuillochePattern, GuillocheSeal } from "@/components/bulga/guilloche";
 import { fmt } from "@/lib/format";
 import { gqlClient } from "@/lib/graphql/client";
 import { Button } from "@/components/ui/button";
@@ -323,6 +324,8 @@ export function BulgaTransactions({ transactions, accounts, theme, currency = "C
         {filtered.length === 0 ? (
           <div
             style={{
+              position: "relative",
+              overflow: "hidden",
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
@@ -332,10 +335,14 @@ export function BulgaTransactions({ transactions, accounts, theme, currency = "C
               textAlign: "center",
             }}
           >
-            <div style={{ fontSize: 15, fontWeight: 600, color: "var(--color-bk-ink)" }}>
+            <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="radial" opacity={0.16} />
+            <div style={{ position: "relative", width: 72, height: 72, marginBottom: 8 }} aria-hidden="true">
+              <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
+            </div>
+            <div style={{ position: "relative", fontSize: 15, fontWeight: 600, color: "var(--color-bk-ink)" }}>
               No transactions
             </div>
-            <div style={{ fontSize: 13, color: "var(--color-bk-muted)" }}>
+            <div style={{ position: "relative", fontSize: 13, color: "var(--color-bk-muted)" }}>
               Nothing matches your search or filter.
             </div>
           </div>

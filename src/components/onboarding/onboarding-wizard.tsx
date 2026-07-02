@@ -4,6 +4,8 @@ import { useState, useCallback } from "react";
 import { Card } from "@/components/bulga/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { GuillochePattern } from "@/components/bulga/guilloche";
+import { BRAND_THEME } from "@/components/bulga/theme";
 import {
   DollarSign,
   Landmark,
@@ -301,7 +303,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
   if (mode === "choose") {
     return (
       <>
-        <Card className="p-8">
+        <Card className="relative overflow-hidden p-8">
+          <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="radial" opacity={0.14} />
+          <div className="relative">
           <h2 className={HEADING_CLASS}>Welcome, {userName.split(" ")[0]}!</h2>
           <p className="text-sm text-[var(--color-bk-muted)] mb-6">How would you like to set up your budget?</p>
 
@@ -351,6 +355,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               </div>
             </button>
           </div>
+          </div>
         </Card>
       </>
     );
@@ -389,7 +394,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
         ))}
       </div>
 
-      <Card className="p-8">
+      <Card className="relative overflow-hidden p-8">
+        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="left" opacity={0.13} />
+        <div className="relative">
         {/* ====== MANUAL MODE ====== */}
         {mode === "manual" && (
           <>
@@ -756,6 +763,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               {loading ? "Setting up..." : "Get Started"}
             </Button>
           )}
+        </div>
         </div>
       </Card>
 

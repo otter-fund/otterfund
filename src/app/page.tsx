@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
 import { ArrowRight, ListChecks, Wallet, Target, Sparkles } from "lucide-react";
 import { LogoMark, Wordmark } from "@/components/bulga/logo";
+import { GuillocheFlow } from "@/components/bulga/guilloche-flow";
+import { BRAND_THEME } from "@/components/bulga/theme";
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -50,20 +52,28 @@ export default async function LandingPage() {
 
       {/* Hero */}
       <main className="flex-1 flex flex-col items-center justify-center px-7 pb-24 text-center">
-        <div className="max-w-2xl">
+        <div className="relative max-w-2xl py-10">
+          {/* Gentle drifting banknote line-work behind the headline — freezes
+              under prefers-reduced-motion. */}
+          <GuillocheFlow
+            accent={BRAND_THEME.accent}
+            accentDeep={BRAND_THEME.accentDeep}
+            fade="radial"
+            opacity={0.12}
+          />
           <h1
-            className="text-[clamp(40px,6vw,64px)] tracking-[-0.03em] leading-[1.05] text-balance mb-5"
+            className="relative text-[clamp(40px,6vw,64px)] tracking-[-0.03em] leading-[1.05] text-balance mb-5"
             style={{ fontFamily: "var(--font-num), Georgia, serif", fontWeight: 500 }}
           >
             Your money,
             <br />
             <span className="text-[var(--color-primary)]">in balance.</span>
           </h1>
-          <p className="text-[17px] text-[var(--color-bk-muted)] leading-relaxed max-w-md mx-auto mb-9">
+          <p className="relative text-[17px] text-[var(--color-bk-muted)] leading-relaxed max-w-md mx-auto mb-9">
             Calm, confident budgeting that does the math so you don&apos;t have
             to. Import statements, track spending, reach your goals.
           </p>
-          <div className="flex items-center justify-center gap-3">
+          <div className="relative flex items-center justify-center gap-3">
             <Link
               href="/register"
               className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-[var(--color-primary)] px-6 py-3 rounded-full hover:brightness-[1.06] transition-[filter] shadow-[0_1px_2px_oklch(40%_0.1_158/0.3)]"

@@ -5,6 +5,7 @@ import type { GoalView } from "@/lib/types";
 import type { BulgaTheme } from "@/components/bulga/theme";
 import { Button } from "@/components/ui/button";
 import { ProgressRing } from "@/components/bulga/progress";
+import { GuillochePattern } from "@/components/bulga/guilloche";
 
 interface BulgaGoalsProps {
   goals: GoalView[];
@@ -45,13 +46,16 @@ export function BulgaGoals({ goals, accent, theme, currency = "CAD", onAdd, onEd
       <section
         className="bk-hero-row"
         style={{
+          position: "relative",
+          overflow: "hidden",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-end",
           padding: "0 4px 32px",
         }}
       >
-        <div>
+        <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.16} />
+        <div style={{ position: "relative" }}>
           <div
             style={{
               fontSize: 12,
@@ -81,7 +85,7 @@ export function BulgaGoals({ goals, accent, theme, currency = "CAD", onAdd, onEd
           </div>
         </div>
 
-        <div style={{ flexShrink: 0 }}>
+        <div style={{ position: "relative", flexShrink: 0 }}>
           <Button variant="outline" size="sm" onClick={() => onAdd?.()} className="border-dashed">
             <Plus data-icon="inline-start" size={16} strokeWidth={2.2} />
             New goal

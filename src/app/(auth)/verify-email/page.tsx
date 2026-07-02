@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { MailCheck } from "lucide-react";
 import { Card } from "@/components/bulga/card";
 import { Wordmark } from "@/components/bulga/logo";
+import { GuillochePattern, GuillocheSeal } from "@/components/bulga/guilloche";
+import { BRAND_THEME } from "@/components/bulga/theme";
 
 // Post-sign-up confirmation screen. When Supabase email confirmation is on,
 // sign-up returns no session — we send the user here (a calm success state)
@@ -21,13 +22,11 @@ export default async function VerifyEmailPage({
         </Link>
       </div>
 
-      <Card className="p-8">
-        <div className="flex flex-col items-center gap-5 text-center">
-          <div
-            className="grid place-items-center w-14 h-14 rounded-full"
-            style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
-          >
-            <MailCheck className="w-7 h-7" strokeWidth={1.75} />
+      <Card className="relative overflow-hidden p-8">
+        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="right" opacity={0.13} />
+        <div className="relative flex flex-col items-center gap-5 text-center">
+          <div className="w-16 h-16" aria-hidden="true">
+            <GuillocheSeal accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} label="✓" />
           </div>
 
           <div className="flex flex-col gap-2">

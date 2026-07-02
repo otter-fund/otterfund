@@ -9,6 +9,8 @@ import { Wordmark } from "@/components/bulga/logo";
 import { Field, TextInput, PasswordInput } from "@/components/bulga/form";
 import { Button } from "@/components/ui/button";
 import { GoogleAuthButton } from "@/components/auth/google-button";
+import { GuillochePattern } from "@/components/bulga/guilloche";
+import { BRAND_THEME } from "@/components/bulga/theme";
 
 // useSearchParams() must sit under a Suspense boundary or `next build` errors on
 // this route. The form is otherwise self-contained, so wrap the whole thing.
@@ -64,7 +66,9 @@ function LoginForm() {
         </p>
       </div>
 
-      <Card className="p-8">
+      <Card className="relative overflow-hidden p-8">
+        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="right" opacity={0.13} />
+        <div className="relative">
         <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <Field label="Email" htmlFor="email">
             <TextInput
@@ -119,6 +123,7 @@ function LoginForm() {
             Sign up
           </Link>
         </p>
+        </div>
       </Card>
     </>
   );

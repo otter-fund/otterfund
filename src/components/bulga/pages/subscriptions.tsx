@@ -12,6 +12,7 @@ import type { SubscriptionView } from "@/lib/types";
 import { type BulgaTheme } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
 import { ProgressBar } from "@/components/bulga/progress";
+import { GuillochePattern, GuillocheSeal } from "@/components/bulga/guilloche";
 
 interface BulgaSubscriptionsProps {
   subscriptions: SubscriptionView[];
@@ -57,7 +58,9 @@ export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: B
   return (
     <div className="bk-enter bk-page">
       {/* ── hero · subscription summary ── */}
-      <section style={{ padding: "0 4px 32px" }}>
+      <section style={{ position: "relative", overflow: "hidden", padding: "0 4px 32px" }}>
+        <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.16} />
+        <div style={{ position: "relative" }}>
         <div
           style={{
             fontSize: 12,
@@ -104,6 +107,7 @@ export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: B
               <span className="bk-num">{flaggedCount}</span> need attention
             </span>
           )}
+        </div>
         </div>
       </section>
 
@@ -182,7 +186,12 @@ export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: B
               ))}
             </div>
           ) : (
-            <p style={{ fontSize: 14, color: "var(--color-bk-muted)" }}>No subscriptions tracked yet.</p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, minHeight: 220, textAlign: "center" }}>
+              <div style={{ width: 72, height: 72 }} aria-hidden="true">
+                <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, color: "var(--color-bk-muted)" }}>No subscriptions tracked yet.</p>
+            </div>
           )}
         </div>
 
@@ -208,7 +217,12 @@ export function BulgaSubscriptions({ subscriptions, theme, currency = "CAD" }: B
               );
             })
           ) : (
-            <p style={{ fontSize: 14, color: "var(--color-bk-muted)" }}>No data.</p>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, minHeight: 220, textAlign: "center" }}>
+              <div style={{ width: 72, height: 72 }} aria-hidden="true">
+                <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
+              </div>
+              <p style={{ margin: 0, fontSize: 14, color: "var(--color-bk-muted)" }}>No data.</p>
+            </div>
           )}
         </div>
       </section>

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { AccountView } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { tintFor, type BulgaTheme } from "@/components/bulga/theme";
+import { GuillochePattern, braid } from "@/components/bulga/guilloche";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
 
 const SYNC_PLAID = /* GraphQL */ `
@@ -105,13 +106,16 @@ export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "C
       <section
         className="bk-hero-row"
         style={{
+          position: "relative",
+          overflow: "hidden",
           padding: "0 4px 32px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "flex-start",
         }}
       >
-        <div>
+        <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.16} />
+        <div style={{ position: "relative" }}>
           <div
             style={{
               fontSize: 12,
@@ -136,7 +140,7 @@ export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "C
             {fmt(netWorth, currency)}
           </div>
         </div>
-        <div className="bk-hero-actions" style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+        <div className="bk-hero-actions" style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
           <div style={{ display: "flex", gap: 10 }}>
           {hasLinkedBank && (
             <Button
@@ -202,6 +206,18 @@ export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "C
                 {(totalNegative ? "−" : "") + fmt(grp.total, currency)}
               </span>
             </div>
+
+            {/* Woven-ribbon rule — the lightest-touch guilloché divider between a
+                group label and its accounts. */}
+            <svg
+              viewBox="0 0 400 12"
+              preserveAspectRatio="none"
+              aria-hidden
+              style={{ display: "block", width: "calc(100% - 8px)", height: 8, margin: "0 4px 12px" }}
+            >
+              <path d={braid(400, 6, 3, 15, 0)} fill="none" stroke={theme.accentDeep} strokeWidth={0.9} opacity={0.4} />
+              <path d={braid(400, 6, 3, 15, Math.PI)} fill="none" stroke={theme.accent} strokeWidth={0.9} opacity={0.45} />
+            </svg>
 
             <div
               style={{

@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MailCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Card } from "@/components/bulga/card";
 import { Wordmark } from "@/components/bulga/logo";
 import { Field, TextInput } from "@/components/bulga/form";
 import { Button } from "@/components/ui/button";
+import { GuillochePattern, GuillocheSeal } from "@/components/bulga/guilloche";
+import { BRAND_THEME } from "@/components/bulga/theme";
 
 // Step 1 of the password-reset flow: request a recovery email. Supabase's
 // resetPasswordForEmail never reveals whether the address is registered, and we
@@ -56,14 +57,13 @@ export default function ForgotPasswordPage() {
         )}
       </div>
 
-      <Card className="p-8">
+      <Card className="relative overflow-hidden p-8">
+        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="right" opacity={0.13} />
+        <div className="relative">
         {sent ? (
           <div className="flex flex-col items-center gap-5 text-center">
-            <div
-              className="grid place-items-center w-14 h-14 rounded-full"
-              style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
-            >
-              <MailCheck className="w-7 h-7" strokeWidth={1.75} />
+            <div className="w-16 h-16" aria-hidden="true">
+              <GuillocheSeal accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} label="✓" />
             </div>
 
             <div className="flex flex-col gap-2">
@@ -138,6 +138,7 @@ export default function ForgotPasswordPage() {
             </p>
           </>
         )}
+        </div>
       </Card>
     </>
   );

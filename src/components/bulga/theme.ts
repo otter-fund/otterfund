@@ -124,6 +124,13 @@ export function deriveTheme(accent: string = DEFAULT_ACCENT): BulgaTheme {
 }
 
 /**
+ * The fixed evergreen brand theme. Pre-auth surfaces (landing, auth, onboarding)
+ * render before a user has picked an accent, so they texture with this rather
+ * than a live theme — keeping the guilloché line-work on-brand everywhere.
+ */
+export const BRAND_THEME = deriveTheme(DEFAULT_ACCENT);
+
+/**
  * Map the active theme onto the shadcn/base-ui `:root` tokens so the whole
  * primitive layer (Button, Input focus border, Badge, focus rings, accent
  * tints, chart-1) re-tints with the accent instead of staying evergreen.
