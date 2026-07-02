@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Tabs, type TabItem } from "@/components/bulga/tabs";
 import { Menu, MenuTrigger, MenuContent, MenuRadioGroup, MenuRadioItem } from "@/components/ui/menu";
 import { SchemePicker } from "@/components/bulga/scheme-picker";
+import { braid } from "@/components/bulga/guilloche";
+import { deriveTheme } from "@/components/bulga/theme";
 import { ConfirmButton } from "@/components/bulga/confirm-button";
 import { useBulgaChrome } from "@/components/bulga/chrome-context";
 import { createClient } from "@/lib/supabase/client";
@@ -120,6 +122,7 @@ function SectionHead({
 export function SettingsModal({ open, onClose, user, accent, onAccentChange, onSaved }: SettingsModalProps) {
   const router = useRouter();
   const { connectBank } = useBulgaChrome();
+  const theme = deriveTheme(accent);
   const [tab, setTab] = useState<SettingsTab>("profile");
 
   // ── Connections (linked banks) ──
@@ -291,9 +294,22 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
       }}
     >
       <DialogContent className="sm:max-w-[min(820px,calc(100%-2.5rem))] p-0 gap-0 block overflow-hidden">
-        <DialogHeader className="px-8 pt-7 pb-5 border-b border-[var(--color-bk-line-soft)]">
+        <DialogHeader className="px-8 pt-7 pb-5">
           <DialogTitle className="text-[22px]">Settings</DialogTitle>
         </DialogHeader>
+
+        {/* Woven-ribbon rule — the guilloché divider under the title, in place of
+            a plain hairline (the squiggle moved here from the accounts hero). */}
+        <svg
+          viewBox="0 0 400 12"
+          preserveAspectRatio="none"
+          aria-hidden
+          className="block w-full"
+          style={{ height: 8 }}
+        >
+          <path d={braid(400, 6, 3, 15, 0)} fill="none" stroke={theme.accentDeep} strokeWidth={0.9} opacity={0.4} />
+          <path d={braid(400, 6, 3, 15, Math.PI)} fill="none" stroke={theme.accent} strokeWidth={0.9} opacity={0.45} />
+        </svg>
 
         <div className="flex flex-col md:flex-row" style={{ height: "min(620px, 78vh)" }}>
           {/* ── Left rail (desktop) / top dropdown (mobile): tabs. On small

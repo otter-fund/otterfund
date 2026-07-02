@@ -186,7 +186,6 @@ export function Wordmark({
           color: textColor,
         }}
       >
-        Bulga
       </span>
     </div>
   );

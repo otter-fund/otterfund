@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import type { AccountView } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { tintFor, type BulgaTheme } from "@/components/bulga/theme";
-import { GuillochePattern, braid } from "@/components/bulga/guilloche";
+import { GuillochePattern } from "@/components/bulga/guilloche";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
 
 const SYNC_PLAID = /* GraphQL */ `
@@ -206,18 +206,6 @@ export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "C
                 {(totalNegative ? "−" : "") + fmt(grp.total, currency)}
               </span>
             </div>
-
-            {/* Woven-ribbon rule — the lightest-touch guilloché divider between a
-                group label and its accounts. */}
-            <svg
-              viewBox="0 0 400 12"
-              preserveAspectRatio="none"
-              aria-hidden
-              style={{ display: "block", width: "calc(100% - 8px)", height: 8, margin: "0 4px 12px" }}
-            >
-              <path d={braid(400, 6, 3, 15, 0)} fill="none" stroke={theme.accentDeep} strokeWidth={0.9} opacity={0.4} />
-              <path d={braid(400, 6, 3, 15, Math.PI)} fill="none" stroke={theme.accent} strokeWidth={0.9} opacity={0.45} />
-            </svg>
 
             <div
               style={{

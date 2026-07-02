@@ -306,19 +306,6 @@ export function LandingView() {
             fade="radial"
             opacity={0.12}
           />
-          <div className="bk-enter relative" style={{ animationDelay: "60ms" }}>
-            <span
-              className="inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 text-[11px] font-semibold tracking-[0.09em] uppercase"
-              style={{
-                borderColor: BRAND_THEME.accentTintBorder,
-                background: BRAND_THEME.accentTint,
-                color: BRAND_THEME.accentDeep,
-              }}
-            >
-              <span className="w-1.5 h-1.5 rounded-full" style={{ background: BRAND_THEME.accent }} />
-              Every dollar, accounted for
-            </span>
-          </div>
           <h1
             className="bk-enter relative text-[clamp(42px,6vw,68px)] tracking-[-0.03em] leading-[1.04] text-balance mt-6 mb-5"
             style={{ ...SERIF, fontWeight: 500, animationDelay: "140ms" }}
@@ -364,28 +351,6 @@ export function LandingView() {
             <DashboardPreview />
           </div>
         </div>
-
-        {/* ── Transaction ticker ── */}
-        <section className="w-full max-w-5xl mt-24">
-          <Reveal>
-            <CardLabel className="text-center mb-6">A month, at a glance</CardLabel>
-            {/* Decorative sample data — hidden from the accessibility tree. */}
-            <div className="bk-ticker-clip" aria-hidden>
-              <div className="bk-ticker">
-                <div className="flex gap-3 pr-3">
-                  {TICKER.map((t) => (
-                    <TickerChip key={t.name} {...t} />
-                  ))}
-                </div>
-                <div className="flex gap-3 pr-3">
-                  {TICKER.map((t) => (
-                    <TickerChip key={t.name} {...t} />
-                  ))}
-                </div>
-              </div>
-            </div>
-          </Reveal>
-        </section>
 
         {/* ── Features ── */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-24 max-w-4xl w-full">
