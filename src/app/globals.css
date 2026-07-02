@@ -411,16 +411,10 @@
 
 /* Bottom sheet — springs up from the bottom edge on open, drops back on close.
    Base UI keeps it mounted through data-closed so both directions animate.
-   Depth comes from a LAYERED shadow (wide ambient lift + a tighter contact
-   shadow) plus a 1px top inner-highlight that catches light like a real edge —
-   no flat hairline border, which reads dated on a floating surface. */
+   One quiet shadow; the surface does the rest. */
 .bk-sheet {
-  transition: transform 0.42s cubic-bezier(0.32, 0.72, 0, 1);
-  box-shadow:
-    inset 0 1px 0 oklch(100% 0 0 / 0.6),          /* top edge highlight */
-    0 -1px 0 oklch(20% 0.02 80 / 0.04),           /* faint ring */
-    0 -12px 32px oklch(20% 0.02 80 / 0.10),       /* contact shadow */
-    0 -32px 64px oklch(20% 0.02 80 / 0.14);       /* wide ambient lift */
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  box-shadow: 0 -8px 40px oklch(20% 0.02 80 / 0.12);
 }
 .bk-sheet[data-closed] { transform: translateY(100%); }
 .bk-sheet[data-open] { transform: translateY(0); }
