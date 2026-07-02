@@ -10,9 +10,9 @@ export async function getApiUser(
   _request?: Request,
 ): Promise<{ id: string } | null> {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
-  return { id: user.id };
+  // getClaims() verifies the JWT locally (asymmetric ES256 keys) against a
+  // cached JWKS — no per-request network hop, unlike getUser().
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) return null;
+  return { id: data.claims.sub };
 }

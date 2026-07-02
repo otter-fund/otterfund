@@ -6,13 +6,13 @@ import { Wordmark } from "@/components/bulga/logo";
 
 export default async function OnboardingPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  // getClaims() verifies the JWT locally (asymmetric ES256 keys) — no network
+  // round-trip to the Auth server, unlike getUser().
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) redirect("/login");
 
   const profile = await prisma.user.findUnique({
-    where: { id: user.id },
+    where: { id: data.claims.sub },
     select: { name: true, onboardingDone: true },
   });
   if (profile?.onboardingDone) redirect("/dashboard");

@@ -13,11 +13,11 @@ import {
 
 async function getUserId() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Unauthorized");
-  return user.id;
+  // getClaims() verifies the JWT locally (asymmetric ES256 keys) — no network
+  // round-trip to the Auth server, unlike getUser().
+  const { data } = await supabase.auth.getClaims();
+  if (!data?.claims) throw new Error("Unauthorized");
+  return data.claims.sub;
 }
 
 export async function fetchOverview(month: number, year: number) {
