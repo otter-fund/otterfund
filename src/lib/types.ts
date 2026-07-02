@@ -57,6 +57,7 @@ export interface SubscriptionView {
   amount: number;
   icon: string;
   color: string;
+  domain?: string;
   confirmedByUser: boolean;
   categoryId?: string;
   categoryName?: string;

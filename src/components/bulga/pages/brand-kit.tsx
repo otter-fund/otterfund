@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Field, TextInput, SelectInput } from "@/components/bulga/form";
 import { ProgressBar, ProgressRing } from "@/components/bulga/progress";
+import { StatPill } from "@/components/bulga/stat-pill";
 
 interface BulgaBrandKitProps {
   accent: string;
@@ -438,6 +439,22 @@ export function BulgaBrandKit({ accent, theme, onAccentChange }: BulgaBrandKitPr
             <Badge variant="secondary">Neutral</Badge>
             <Badge variant="destructive">Due soon</Badge>
             <Badge variant="outline">Draft</Badge>
+          </div>
+
+          {/* The real <StatPill> — the figure+label pill used for net-worth
+              change, budget remaining, subscriptions needing attention. */}
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8, marginBottom: 18 }}>
+            <StatPill
+              theme={previewTheme}
+              figure="+$1,240"
+              label="this month"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M7 17 17 7M9 7h8v8" />
+                </svg>
+              }
+            />
+            <StatPill theme={previewTheme} tone="clay" figure={3} label="need attention" />
           </div>
 
           {/* The real form controls (bulga/form) — the exact fields every modal

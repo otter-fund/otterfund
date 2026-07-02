@@ -14,6 +14,9 @@ export const ACCOUNT_TYPES = [
 
 export const CURRENCIES = ["CAD", "USD", "EUR", "GBP"] as const;
 
+/** Billing cadences a subscription can have. */
+export const SUBSCRIPTION_CYCLES = ["Monthly", "Annual"] as const;
+
 /** Full month names (1-indexed by `MONTH_NAMES[month - 1]`). */
 export const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",

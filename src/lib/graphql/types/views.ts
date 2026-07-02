@@ -67,6 +67,7 @@ export const SubscriptionRef = builder
       amount: t.exposeFloat("amount"),
       icon: t.exposeString("icon"),
       color: t.exposeString("color"),
+      domain: t.exposeString("domain", { nullable: true }),
       confirmedByUser: t.exposeBoolean("confirmedByUser"),
       categoryId: t.exposeID("categoryId", { nullable: true }),
       categoryName: t.exposeString("categoryName", { nullable: true }),

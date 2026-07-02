@@ -12,6 +12,7 @@ import { fmt } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { ProgressBar } from "@/components/bulga/progress";
 import { GuillochePattern } from "@/components/bulga/guilloche";
+import { StatPill } from "@/components/bulga/stat-pill";
 
 interface BulgaOverviewProps {
   overview: DashboardOverview;
@@ -113,25 +114,17 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
           >
             {money(overview.netWorth)}
           </div>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              marginTop: 14,
-              padding: "5px 11px",
-              borderRadius: 999,
-              background: theme.accentTint,
-              fontSize: 13,
-              fontWeight: 600,
-              color: theme.accentDeep,
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d={nwDown ? "M7 7 17 17M9 17h8V9" : "M7 17 17 7M9 7h8v8"} />
-            </svg>
-            <span className="bk-num">{signed(overview.netWorthChange)}</span>
-            <span>this month</span>
+          <div style={{ marginTop: 14 }}>
+            <StatPill
+              theme={theme}
+              figure={signed(overview.netWorthChange)}
+              label="this month"
+              icon={
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d={nwDown ? "M7 7 17 17M9 17h8V9" : "M7 17 17 7M9 7h8v8"} />
+                </svg>
+              }
+            />
           </div>
         </div>
         <svg className="bk-nw-spark" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ position: "relative", width: "100%", height: 110 }} aria-hidden="true">

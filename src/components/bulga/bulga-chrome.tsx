@@ -20,11 +20,13 @@ import { EditTransactionModal } from "@/components/dashboard/modals/edit-transac
 import { AddGoalModal } from "@/components/dashboard/modals/add-goal-modal";
 import { EditGoalModal } from "@/components/dashboard/modals/edit-goal-modal";
 import { AddAccountModal } from "@/components/dashboard/modals/add-account-modal";
+import { AddSubscriptionModal } from "@/components/dashboard/modals/add-subscription-modal";
+import { EditSubscriptionModal } from "@/components/dashboard/modals/edit-subscription-modal";
 import { EditAccountModal } from "@/components/dashboard/modals/edit-account-modal";
 import { ConnectBankModal } from "@/components/dashboard/modals/connect-bank-modal";
 import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { SettingsModal } from "@/components/dashboard/modals/settings-modal";
-import type { TransactionView, GoalView, AccountView, SpendCategory, BillView } from "@/lib/types";
+import type { TransactionView, GoalView, AccountView, SubscriptionView, SpendCategory, BillView } from "@/lib/types";
 import { DEFAULT_ACCENT, deriveTheme, themeVars } from "@/components/bulga/theme";
 import { LogoMark } from "@/components/bulga/logo";
 import { Button } from "@/components/ui/button";
@@ -158,6 +160,8 @@ export function BulgaChrome({
   const [showSettings, setShowSettings] = useState(false);
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
+  const [showAddSubscription, setShowAddSubscription] = useState(false);
+  const [editSubscription, setEditSubscription] = useState<SubscriptionView | null>(null);
   const [showConnectBank, setShowConnectBank] = useState(false);
   const [connectUpdateItemId, setConnectUpdateItemId] = useState<string | null>(null);
   const [editTx, setEditTx] = useState<TransactionView | null>(null);
@@ -309,6 +313,7 @@ export function BulgaChrome({
       addTransaction: () => setShowAdd(true),
       addGoal: () => setShowAddGoal(true),
       addAccount: () => setShowAddAccount(true),
+      addSubscription: () => setShowAddSubscription(true),
       connectBank: (updateItemId?: string) => {
         setConnectUpdateItemId(updateItemId ?? null);
         setShowConnectBank(true);
@@ -316,6 +321,7 @@ export function BulgaChrome({
       editTransaction: setEditTx,
       editGoal: setEditGoal,
       editAccount: setEditAccount,
+      editSubscription: setEditSubscription,
       refreshData: refresh,
       hrefFor,
       txCount,
@@ -522,6 +528,8 @@ export function BulgaChrome({
         <AddGoalModal open={showAddGoal} onClose={() => setShowAddGoal(false)} onAdded={() => { setShowAddGoal(false); refresh(); }} />
         <EditGoalModal open={!!editGoal} goal={editGoal} onClose={() => setEditGoal(null)} onUpdated={() => { setEditGoal(null); refresh(); }} />
         <AddAccountModal open={showAddAccount} onClose={() => setShowAddAccount(false)} onAdded={() => { setShowAddAccount(false); refresh(); }} />
+        <AddSubscriptionModal open={showAddSubscription} onClose={() => setShowAddSubscription(false)} onAdded={() => { setShowAddSubscription(false); refresh(); }} />
+        <EditSubscriptionModal open={!!editSubscription} subscription={editSubscription} onClose={() => setEditSubscription(null)} onUpdated={() => { setEditSubscription(null); refresh(); }} />
         <EditAccountModal open={!!editAccount} account={editAccount} onClose={() => setEditAccount(null)} onUpdated={() => { setEditAccount(null); refresh(); }} />
         <ConnectBankModal open={showConnectBank} updateItemId={connectUpdateItemId ?? undefined} onClose={() => setShowConnectBank(false)} onLinked={() => { refresh(); }} />
         <SettingsModal

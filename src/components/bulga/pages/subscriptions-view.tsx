@@ -5,6 +5,15 @@ import { useBulgaChrome } from "@/components/bulga/chrome-context";
 import type { SubscriptionView } from "@/lib/types";
 
 export function SubscriptionsView({ subscriptions, currency }: { subscriptions: SubscriptionView[]; currency: string }) {
-  const { accent, theme } = useBulgaChrome();
-  return <BulgaSubscriptions subscriptions={subscriptions} currency={currency} accent={accent} theme={theme} />;
+  const { accent, theme, addSubscription, editSubscription } = useBulgaChrome();
+  return (
+    <BulgaSubscriptions
+      subscriptions={subscriptions}
+      currency={currency}
+      accent={accent}
+      theme={theme}
+      onAdd={addSubscription}
+      onEdit={editSubscription}
+    />
+  );
 }

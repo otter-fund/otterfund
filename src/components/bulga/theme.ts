@@ -102,6 +102,7 @@ export interface BulgaTheme {
   accentDeep: string;    // deep tone for figures / emphasis
   accentTint: string;    // soft fill for insight card, badges
   accentTintBorder: string;
+  accentBorder: string;  // mid-strength accent border for hover/active edges
   clay: string;          // alert / negative
   clayTint: string;
   ink: string;
@@ -116,6 +117,7 @@ export function deriveTheme(accent: string = DEFAULT_ACCENT): BulgaTheme {
     accentDeep: `oklch(38% 0.092 ${hue})`,
     accentTint: `oklch(95.5% 0.03 ${hue})`,
     accentTintBorder: `oklch(90% 0.045 ${hue})`,
+    accentBorder: `oklch(78% 0.09 ${hue})`,
     clay: "oklch(52% 0.14 33)",
     clayTint: "oklch(95% 0.04 38)",
     ink: "oklch(24% 0.012 70)",
@@ -147,6 +149,21 @@ export function themeVars(theme: BulgaTheme): Record<string, string> {
     "--accent-foreground": theme.accentDeep,
     "--chart-1": theme.accent,
   };
+}
+
+/**
+ * A soft avatar tint that varies per item while staying in the active accent's
+ * family. We nudge the hue a little around the accent hue (a gentle spread) so a
+ * list of tiles reads as a related set of shades rather than one flat colour —
+ * cohesive, not a rainbow, and it re-tints with the scheme. Returns [bg, ink].
+ */
+export function accentFamilyTint(index: number, accent: string = DEFAULT_ACCENT): [string, string] {
+  const base = Number(hueOf(accent)) || 158;
+  // Spread across ±26° in 5 steps, cycling — enough to distinguish neighbours
+  // without leaving the accent's neighbourhood.
+  const offsets = [0, 16, -14, 26, -24];
+  const hue = base + offsets[index % offsets.length];
+  return [`oklch(95% 0.035 ${hue})`, `oklch(40% 0.09 ${hue})`];
 }
 
 /** Per-category tints for transaction / account avatars: [bg, ink]. */

@@ -336,7 +336,7 @@ export async function getSubscriptions(userId: string): Promise<SubscriptionView
     }
     const un = unusedMap.get(s.id);
     if (un) {
-      flags.push(`Possibly unused (${un.daysSinceLastTransaction} days)`);
+      flags.push(`No matching charge in ${un.daysSinceLastTransaction} days`);
     }
 
     return {
@@ -346,6 +346,7 @@ export async function getSubscriptions(userId: string): Promise<SubscriptionView
       amount: s.amount,
       icon: s.icon || "tv",
       color: s.color || "#fde8e8",
+      domain: s.domain ?? undefined,
       confirmedByUser: s.confirmedByUser,
       categoryId: s.categoryId ?? undefined,
       categoryName: s.category?.name ?? undefined,

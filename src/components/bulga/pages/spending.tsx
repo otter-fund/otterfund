@@ -13,6 +13,7 @@ import { type BulgaTheme } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
 import { ProgressBar } from "@/components/bulga/progress";
 import { GuillochePattern } from "@/components/bulga/guilloche";
+import { StatPill } from "@/components/bulga/stat-pill";
 
 interface BulgaSpendingProps {
   spending: SpendCategory[];
@@ -80,22 +81,13 @@ export function BulgaSpending({ spending, theme, currency = "CAD" }: BulgaSpendi
             </span>
           </div>
         </div>
-        <span
-          style={{
-            position: "relative",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            padding: "6px 13px",
-            borderRadius: 999,
-            fontSize: 13,
-            fontWeight: 600,
-            background: remaining >= 0 ? theme.accentTint : theme.clayTint,
-            color: remaining >= 0 ? theme.accentDeep : theme.clay,
-          }}
-        >
-          <span className="bk-num">{money(Math.abs(remaining))}</span>
-          {remaining >= 0 ? "remaining" : "over"}
+        <span style={{ position: "relative" }}>
+          <StatPill
+            theme={theme}
+            tone={remaining >= 0 ? "accent" : "clay"}
+            figure={money(Math.abs(remaining))}
+            label={remaining >= 0 ? "remaining" : "over"}
+          />
         </span>
       </section>
 

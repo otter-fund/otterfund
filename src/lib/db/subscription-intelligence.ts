@@ -70,6 +70,11 @@ export async function detectUnusedSubscriptions(
   const flagged: UnusedSubscription[] = [];
 
   for (const sub of subs) {
+    // Annual subscriptions legitimately charge only once a year, so a 60-day
+    // no-charge window would flag every one of them. Skip them — this signal
+    // only makes sense for cycles that should bill within the window.
+    if (sub.cycle === "Annual") continue;
+
     const needle = sub.name.toLowerCase();
     let mostRecent: Date | null = null;
     for (const t of recentTxs) {
