@@ -20,7 +20,7 @@ additional_redirect_urls = [
 # Never ship with confirmations off: an unconfirmed/typo/someone-else's email
 # must not yield an authenticated session.
 enable_confirmations = true
-secure_email_change_enabled = true
+# secure_email_change_enabled = true  # not a valid key in supabase CLI 2.109; only used for local/config push, not `db push`
 
 [auth.rate_limit]
 # Explicit caps on the auth surface (browser talks to Supabase directly, so the
