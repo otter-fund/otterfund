@@ -409,37 +409,32 @@
 .bk-hamburger[data-popup-open] .bk-burger > span:nth-child(2) { opacity: 0; }
 .bk-hamburger[data-popup-open] .bk-burger > span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
 
-/* Nav dropdown panel — spring scale-fade-down entrance from its anchor origin;
-   reverses on close (Base UI keeps it mounted through data-closed). */
-@keyframes bkNavIn {
-  from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-  to { opacity: 1; transform: none; }
+/* Bottom sheet — springs up from the bottom edge on open, drops back on close.
+   Base UI keeps it mounted through data-closed so both directions animate. */
+.bk-sheet {
+  transition: transform 0.34s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.bk-nav-panel[data-open] { animation: bkNavIn 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-.bk-nav-panel[data-closed] {
-  opacity: 0;
-  transform: translateY(-8px) scale(0.97);
-  transition: opacity 0.14s ease, transform 0.14s ease;
-}
+.bk-sheet[data-closed] { transform: translateY(100%); }
+.bk-sheet[data-open] { transform: translateY(0); }
 
-/* Staggered row reveal — each row eases up in sequence via its --i index. */
+/* Staggered row reveal — each row eases up in sequence via its --i index,
+   only on open. */
 @keyframes bkRowIn {
-  from { opacity: 0; transform: translateY(6px); }
+  from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
 }
-.bk-nav-panel[data-open] .bk-nav-row {
-  animation: bkRowIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
-  animation-delay: calc(60ms + var(--i, 0) * 28ms);
+.bk-sheet[data-open] .bk-nav-row {
+  animation: bkRowIn 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation-delay: calc(90ms + var(--i, 0) * 26ms);
 }
-.bk-nav-row:hover { background: var(--color-bk-line-soft); }
-/* Active row keeps its accent fill on hover (inline bg wins for the link, but
-   the Settings/Log out rows have no --i and shouldn't over-delay). */
+/* Hover only on inactive rows — active rows keep their accent tint (inline bg). */
+.bk-nav-row:not([aria-current="page"]):hover { background: var(--color-bk-line-soft); }
 
 @media (prefers-reduced-motion: reduce) {
   .bk-burger > span { transition: none; }
-  .bk-nav-panel[data-open],
-  .bk-nav-panel[data-open] .bk-nav-row { animation: none; }
-  .bk-nav-panel[data-closed] { transition: none; transform: none; }
+  .bk-sheet { transition: none; }
+  .bk-sheet[data-closed] { transform: none; opacity: 0; }
+  .bk-sheet[data-open] .bk-nav-row { animation: none; }
 }
 
 /* ── Generic responsive grids (apply on any inline-styled grid section) ── */
