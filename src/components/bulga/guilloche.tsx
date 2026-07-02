@@ -148,6 +148,9 @@ export function GuillochePattern({
 /**
  * A small self-contained guilloché seal — the medallion/mint-mark shape. Sizes
  * to its container. Good for badges, stamps and empty-state marks.
+ * `spin` slowly revolves the rosette ring (the glyph stays upright) — the
+ * engine-turned look; the `.bk-seal-spin` animation freezes under
+ * prefers-reduced-motion.
  */
 export function GuillocheSeal({
   accent,
@@ -156,6 +159,7 @@ export function GuillocheSeal({
   petals = 9,
   inner = 5,
   pen = 3,
+  spin = false,
   className,
 }: {
   accent: string;
@@ -164,6 +168,7 @@ export function GuillocheSeal({
   petals?: number;
   inner?: number;
   pen?: number;
+  spin?: boolean;
   className?: string;
 }) {
   const S = 120;
@@ -175,9 +180,11 @@ export function GuillocheSeal({
   const ring = hypotrochoid(petals, inner, pen, inner, S / 2, S / 2, scale);
   return (
     <svg viewBox={`0 0 ${S} ${S}`} className={cn("h-full w-full", className)} role="img" aria-label="Guilloché seal">
-      <circle cx={S / 2} cy={S / 2} r={S / 2 - 3} fill="none" stroke={accent} strokeWidth={0.8} />
-      <circle cx={S / 2} cy={S / 2} r={S / 2 - 8} fill="none" stroke={accentDeep} strokeWidth={0.5} opacity={0.6} />
-      <path d={ring} fill="none" stroke={accent} strokeWidth={0.6} opacity={0.85} />
+      <g className={spin ? "bk-seal-spin" : undefined}>
+        <circle cx={S / 2} cy={S / 2} r={S / 2 - 3} fill="none" stroke={accent} strokeWidth={0.8} />
+        <circle cx={S / 2} cy={S / 2} r={S / 2 - 8} fill="none" stroke={accentDeep} strokeWidth={0.5} opacity={0.6} />
+        <path d={ring} fill="none" stroke={accent} strokeWidth={0.6} opacity={0.85} />
+      </g>
       {/* clear disc so the glyph reads cleanly over the rosette */}
       <circle cx={S / 2} cy={S / 2} r={S * 0.17} fill="var(--color-bk-surface)" />
       {/* Center vertically with dy off the alphabetic baseline — more reliable
