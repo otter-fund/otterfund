@@ -2,14 +2,17 @@
 
 // Bulga month picker — the top-right period control.
 //
-// A pill trigger (Calendar · "June 2026" · chevron) that opens a calm popover:
-// a year stepper above a 3×4 month grid. Picking a month commits the period up
-// to the shell, which re-fetches the whole dashboard for it. Pure presentation
-// + an onSelect callback — no data or routing logic lives here. The palette is
+// One segmented control (‹ · "June 2026" · ›) in the outline-button language,
+// matching the topbar bell — a single bordered pill with the arrows fused to
+// the center label by hairline dividers, so it reads as ONE control. The arrows
+// nudge one month at a time (rolling the year at Dec↔Jan); the center opens a
+// year stepper above a 3×4 month grid. Picking commits the period up to the
+// shell, which re-fetches the whole dashboard for it. Pure presentation + an
+// onSelect callback — no data or routing logic lives here. The palette is
 // hue-derived from the active accent, so it tracks whatever theme is live.
 
 import { useEffect, useState } from "react";
-import { Calendar, ChevronDown, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
+import { ChevronLeft, ChevronRight, RotateCcw } from "lucide-react";
 import type { BulgaTheme } from "@/components/bulga/theme";
 import { MONTH_NAMES } from "@/lib/constants";
 // Browsable year range — the SAME constants the validators use (lib/period), so
@@ -71,49 +74,61 @@ export function MonthPicker({
     onSelect(m, viewYear);
   };
 
+  // Step one month, rolling the year at the Dec↔Jan boundary. The arrows share
+  // the picker's browsable range, so they disable at the edges rather than
+  // committing an out-of-range period the server would reject.
+  const step = (dir: -1 | 1) => {
+    let m = month + dir;
+    let y = year;
+    if (m < 1) { m = 12; y -= 1; }
+    else if (m > 12) { m = 1; y += 1; }
+    onSelect(m, y);
+  };
+  const atMin = year <= MIN_YEAR && month <= 1;
+  const atMax = year >= maxYear && month >= 12;
+
   return (
     <div style={{ position: "relative" }}>
-      {/* trigger pill */}
-      <button
-        type="button"
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={`Period: ${label}. Change month`}
-        onClick={() => {
-          if (!open) setViewYear(year); // entering open → start browsing at the live year
-          setOpen((v) => !v);
-        }}
-        disabled={pending}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 7,
-          height: 38,
-          padding: "0 13px 0 15px",
-          borderRadius: 999,
-          border: "1px solid oklch(91% 0.006 85)",
-          background: open ? "var(--color-bk-line-soft)" : "oklch(98% 0.004 90)",
-          fontFamily: "inherit",
-          fontSize: 13,
-          fontWeight: 600,
-          color: "oklch(40% 0.012 80)",
-          cursor: pending ? "wait" : "pointer",
-          opacity: pending ? 0.6 : 1,
-          transition: "background 0.14s, opacity 0.18s",
-        }}
-      >
-        <Calendar size={14} strokeWidth={2} aria-hidden="true" />
-        {label}
-        <ChevronDown
-          size={13}
-          strokeWidth={2.2}
-          aria-hidden="true"
-          style={{
-            transition: "transform 0.18s ease",
-            transform: open ? "rotate(180deg)" : "none",
+      {/* One segmented control — a single bordered pill in the outline-button
+          language, arrows fused to the center label by hairline dividers so it
+          reads as ONE control (not three buttons). Each region is still its own
+          button; the center opens the popover, the arrows step the month. */}
+      <div className="bk-month-nav" role="group" aria-label="Period" data-pending={pending || undefined}>
+        <button
+          type="button"
+          className="bk-month-nav-step"
+          aria-label="Previous month"
+          disabled={pending || atMin}
+          onClick={() => step(-1)}
+        >
+          <ChevronLeft size={17} strokeWidth={1.9} aria-hidden="true" />
+        </button>
+
+        <button
+          type="button"
+          className="bk-month-nav-label bk-num"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-label={`Period: ${label}. Change month`}
+          onClick={() => {
+            if (!open) setViewYear(year); // entering open → start browsing at the live year
+            setOpen((v) => !v);
           }}
-        />
-      </button>
+          disabled={pending}
+        >
+          {label}
+        </button>
+
+        <button
+          type="button"
+          className="bk-month-nav-step"
+          aria-label="Next month"
+          disabled={pending || atMax}
+          onClick={() => step(1)}
+        >
+          <ChevronRight size={17} strokeWidth={1.9} aria-hidden="true" />
+        </button>
+      </div>
 
       {open && (
         <>

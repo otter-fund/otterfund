@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/bulga/confirm-button";
 import { Trash2, ChevronDown } from "lucide-react";
 import type { TransactionView } from "@/lib/types";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
@@ -92,7 +93,6 @@ export function EditTransactionModal({
 
   const handleDelete = () => {
     if (!transaction) return;
-    if (!confirm("Delete this transaction?")) return;
     startTransition(async () => {
       try {
         await gqlClient.request(DELETE_TRANSACTION, { id: transaction.id });
@@ -194,27 +194,17 @@ export function EditTransactionModal({
           <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{error}</p>
         )}
 
-        <div className="flex gap-3 mt-7">
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isPending}
-            className="h-11 px-3 rounded-full text-sm"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1 h-11 rounded-full border border-[var(--color-bk-line)] bg-transparent text-sm font-medium text-[var(--color-bk-muted)]"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isPending}
-            className="flex-[2] h-11 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-90"
-          >
+        <div className="flex items-center gap-3 mt-7">
+          <ConfirmButton
+            onConfirm={handleDelete}
+            icon={Trash2}
+            confirmLabel="Are you sure?"
+            busyLabel="Deleting…"
+            busy={isPending}
+            restLabel="Delete transaction"
+            armedLabel="Confirm delete transaction"
+          />
+          <Button size="sm" onClick={handleSave} disabled={isPending} className="ml-auto">
             {isPending ? "Saving..." : "Save changes"}
           </Button>
         </div>

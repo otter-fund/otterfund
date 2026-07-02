@@ -10,9 +10,11 @@
 // inline. This is the page the overview's "See more insights" button opens.
 
 import { useState } from "react";
+import { Loader2, Sparkles } from "lucide-react";
 import type { InsightView } from "@/lib/types";
 import { type BulgaTheme } from "@/components/bulga/theme";
 import { gqlClient } from "@/lib/graphql/client";
+import { Button } from "@/components/ui/button";
 
 const GENERATE_INSIGHTS = /* GraphQL */ `
   mutation GenerateInsights {
@@ -100,38 +102,14 @@ export function BulgaInsights({ insights: initial, theme }: BulgaInsightsProps) 
                 : "Generate AI-powered insights about your spending patterns, savings opportunities, and trends."}
             </p>
           </div>
-          <button
-            onClick={generate}
-            disabled={generating}
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              flexShrink: 0,
-              fontFamily: "inherit",
-              border: "none",
-              background: theme.accent,
-              color: "#fff",
-              fontSize: 13.5,
-              fontWeight: 600,
-              padding: "10px 18px",
-              borderRadius: 999,
-              cursor: generating ? "default" : "pointer",
-              opacity: generating ? 0.6 : 1,
-              transition: "opacity .15s",
-            }}
-          >
+          <Button size="sm" onClick={generate} disabled={generating} className="shrink-0">
             {generating ? (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" className="bk-spin" aria-hidden="true">
-                <path d="M21 12a9 9 0 1 1-6.2-8.6" />
-              </svg>
+              <Loader2 data-icon="inline-start" size={15} className="bk-spin" />
             ) : (
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
-              </svg>
+              <Sparkles data-icon="inline-start" size={15} />
             )}
             {generating ? "Generating…" : "Generate insights"}
-          </button>
+          </Button>
         </div>
         {note && (
           <p style={{ margin: "14px 0 0", fontSize: 12.5, color: theme.accentDeep }}>{note}</p>

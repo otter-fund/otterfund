@@ -13,7 +13,6 @@ import type {
 } from "plaid";
 import type { PlaidItem } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
-import { computeAccountBalance } from "@/lib/db/calculations";
 import { decryptToken } from "@/lib/crypto";
 import { plaid } from "./client";
 import {
@@ -247,18 +246,19 @@ async function upsertTransaction(
 }
 
 /**
- * Set the account's stored (anchor) balance so that
- *   stored + SUM(transactions) === Plaid's reported balance.
- * Debt accounts (credit/loan) are shown negative so net worth stays correct.
+ * Store Plaid's reported balance DIRECTLY as the account balance. Synced
+ * accounts are the bank's source of truth, so their displayed balance must equal
+ * what Plaid reports and must NOT drift when local transactions are edited or
+ * deleted (getAccounts skips the tx-sum for synced accounts). Debt accounts
+ * (credit/loan) are shown negative so net worth stays correct.
  */
 async function reconcileAnchor(localAccountId: string, acct: AccountBase) {
   const base = acct.balances?.current ?? acct.balances?.available;
   if (base == null) return; // nothing to anchor to
   const target = isDebtAccount(String(acct.type)) ? -Math.abs(base) : base;
-  const txSum = await computeAccountBalance(localAccountId);
   await prisma.account.update({
     where: { id: localAccountId },
-    data: { balance: target - txSum },
+    data: { balance: target },
   });
 }
 

@@ -204,18 +204,10 @@ export function AddTransactionModal({
         )}
 
         <div className="flex gap-3 mt-7">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1 h-11 rounded-full border border-[var(--color-bk-line)] bg-transparent text-sm font-medium text-[var(--color-bk-muted)] hover:bg-[oklch(98%_0.004_90)]"
-          >
+          <Button variant="ghost" size="sm" onClick={onClose} className="flex-1">
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isPending}
-            className="flex-[2] h-11 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-90"
-          >
+          <Button size="sm" onClick={handleSubmit} disabled={isPending} className="flex-[2]">
             {isPending ? "Adding..." : "Add Transaction"}
           </Button>
         </div>

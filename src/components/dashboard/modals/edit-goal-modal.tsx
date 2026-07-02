@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { EmojiPicker } from "@/components/bulga/emoji-picker";
+import { ConfirmButton } from "@/components/bulga/confirm-button";
 import { Trash2 } from "lucide-react";
 import type { GoalView } from "@/lib/types";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
@@ -46,7 +47,6 @@ export function EditGoalModal({
   const [priority, setPriority] = useState("");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (goal && open) {
@@ -57,15 +57,8 @@ export function EditGoalModal({
       setDeadline(goal.deadlineISO || "");
       setPriority(goal.priority ? String(goal.priority) : "");
       setError("");
-      setConfirmDelete(false);
     }
   }, [goal, open]);
-
-  useEffect(() => {
-    if (!confirmDelete) return;
-    const t = setTimeout(() => setConfirmDelete(false), 4000);
-    return () => clearTimeout(t);
-  }, [confirmDelete]);
 
   const handleSave = () => {
     if (!goal) return;
@@ -97,10 +90,6 @@ export function EditGoalModal({
 
   const handleDelete = () => {
     if (!goal) return;
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
     startTransition(async () => {
       try {
         await gqlClient.request(DELETE_GOAL, { id: goal.id });
@@ -183,32 +172,16 @@ export function EditGoalModal({
         </div>
         {error && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{error}</p>}
         <div className="flex items-center gap-2.5 mt-6">
-          <button
-            type="button"
-            onClick={handleDelete}
-            disabled={isPending}
-            aria-label={confirmDelete ? "Confirm delete goal" : "Delete goal"}
-            aria-pressed={confirmDelete}
-            className={`h-11 rounded-full flex items-center justify-center shrink-0 min-w-0 cursor-pointer text-sm font-semibold text-white transition-[width,padding,gap,background-color] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] disabled:opacity-50 ${
-              confirmDelete
-                ? "w-[148px] gap-1.5 px-3 bg-[var(--color-bk-clay)] hover:opacity-90"
-                : "w-11 gap-0 px-0 bg-[var(--color-bk-clay)] hover:opacity-90"
-            }`}
-          >
-            <Trash2 className="w-4 h-4 shrink-0" />
-            <span
-              className={`whitespace-nowrap overflow-hidden text-[13px] font-semibold transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
-                confirmDelete ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
-              }`}
-            >
-              {isPending ? "Deleting…" : "Are you sure?"}
-            </span>
-          </button>
-          <Button
-            onClick={handleSave}
-            disabled={isPending || confirmDelete}
-            className="ml-auto h-11 px-6 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50"
-          >
+          <ConfirmButton
+            onConfirm={handleDelete}
+            icon={Trash2}
+            confirmLabel="Are you sure?"
+            busyLabel="Deleting…"
+            busy={isPending}
+            restLabel="Delete goal"
+            armedLabel="Confirm delete goal"
+          />
+          <Button size="sm" onClick={handleSave} disabled={isPending} className="ml-auto">
             {isPending ? "Saving..." : "Save Changes"}
           </Button>
         </div>

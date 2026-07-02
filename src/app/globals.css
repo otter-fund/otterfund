@@ -172,6 +172,78 @@
 }
 .bk-pop { animation: bkPop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1) both; transform-origin: top right; }
 
+/* Month period control — ONE segmented pill (‹ · label · ›) in the outline-
+   button language (matches the topbar bell). The container owns the border,
+   radius and surface fill; each region is a transparent button that only tints
+   on hover, so the three read as a single control. Hover turns the glyph/label
+   accent, mirroring the bell's outline-hover. */
+.bk-month-nav {
+  display: inline-flex;
+  align-items: stretch;
+  height: 40px;                        /* matches the sibling size="sm"/icon controls */
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  background: var(--color-background);
+  overflow: hidden;
+  transition: opacity 0.14s;
+}
+.bk-month-nav[data-pending] { opacity: 0.5; pointer-events: none; }
+
+.bk-month-nav-step,
+.bk-month-nav-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: var(--color-bk-ink);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.14s, color 0.14s, border-color 0.14s, box-shadow 0.14s;
+  outline: none;
+}
+.bk-month-nav-step:focus-visible,
+.bk-month-nav-label:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--color-ring);
+}
+
+/* Arrow regions — square-ish ghost ends. On hover the region draws an accent
+   ring (inset box-shadow, so it follows the pill's clip) with an accent glyph —
+   a restrained outline rather than a solid fill, matching the bell's outline
+   hover. */
+.bk-month-nav-step {
+  width: 40px;
+  color: var(--color-bk-muted);
+  box-shadow: inset 0 0 0 0 transparent;
+}
+/* Round the outer end so the hover ring follows the pill's curve, not a square
+   corner poking past it. */
+.bk-month-nav-step:first-child { border-radius: 9999px 0 0 9999px; }
+.bk-month-nav-step:last-child { border-radius: 0 9999px 9999px 0; }
+.bk-month-nav-step:hover:not(:disabled) {
+  color: var(--color-primary);
+  box-shadow: inset 0 0 0 1.5px var(--color-primary);
+}
+.bk-month-nav-step:disabled { opacity: 0.35; cursor: default; }
+
+/* Center trigger — the month label, framed by hairline dividers. */
+.bk-month-nav-label {
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border-left: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border);
+  box-shadow: inset 0 0 0 0 transparent;
+}
+.bk-month-nav-label:hover:not(:disabled),
+.bk-month-nav-label[aria-expanded="true"] {
+  color: var(--color-primary);
+  box-shadow: inset 0 0 0 1.5px var(--color-primary);
+  border-color: transparent; /* drop the grey hairlines so the accent ring is the only frame */
+}
+.bk-month-nav-label:disabled { cursor: default; }
+
 /* Round ghost icon button — the month picker's year stepper. */
 .bk-stepper-btn {
   display: grid;

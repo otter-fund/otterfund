@@ -165,7 +165,7 @@ export function ConnectBankModal({
                 ? "All set — your accounts are syncing."
                 : isUpdate
                   ? "Re-authenticate with your bank to resume automatic syncing."
-                  : "Securely link your bank so balances and transactions sync automatically. Bulga only ever reads your data."}
+                  : "Securely link your bank so balances and transactions sync automatically. Your credentials are encrypted and handled by Plaid — Bulga never sees or stores them."}
           </p>
 
           {message && (
@@ -179,27 +179,24 @@ export function ConnectBankModal({
             style={{ color: "var(--color-bk-faint)" }}
           >
             <ShieldCheck className="h-3.5 w-3.5" />
-            Bank-grade encryption · read-only
+            256-bit encryption · powered by Plaid
           </div>
         </div>
 
         <div className="mt-7 flex gap-3">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1 h-11 rounded-full border border-[var(--color-bk-line)] bg-transparent text-sm font-medium text-[var(--color-bk-muted)]"
-          >
+          <Button variant="ghost" size="sm" onClick={onClose} className="flex-1">
             {phase === "done" ? "Close" : "Cancel"}
           </Button>
           {phase !== "done" && (
             <Button
+              size="sm"
               onClick={() => (phase === "error" ? loadToken() : openPlaid())}
               disabled={
                 phase === "linking" ||
                 (phase === "ready" && !ready) ||
                 phase === "loading"
               }
-              className="flex-[2] h-11 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-85 disabled:opacity-50"
+              className="flex-[2]"
             >
               {phase === "loading" ? (
                 <>

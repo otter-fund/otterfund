@@ -261,11 +261,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
             {error && (
               <p className="text-sm text-[var(--color-bk-clay)] font-medium">{error}</p>
             )}
-            <Button
-              onClick={handleUpload}
-              disabled={!files.length}
-              className="w-full h-11 rounded-full bg-[var(--color-primary)] text-white font-semibold text-sm hover:opacity-90"
-            >
+            <Button size="sm" onClick={handleUpload} disabled={!files.length} className="w-full">
               Upload & Parse
             </Button>
           </div>
@@ -330,17 +326,10 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
             </div>
 
             <div className="flex gap-2.5">
-              <Button
-                variant="outline"
-                onClick={() => setStep("upload")}
-                className="flex-1 py-2.5 rounded-full border border-[var(--color-bk-line)] bg-transparent text-sm font-medium text-[var(--color-bk-muted)]"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setStep("upload")} className="flex-1">
                 Back
               </Button>
-              <Button
-                onClick={handleMapping}
-                className="flex-[2] py-2.5 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-90"
-              >
+              <Button size="sm" onClick={handleMapping} className="flex-[2]">
                 Parse {allRows.length} Transactions
               </Button>
             </div>
@@ -391,17 +380,10 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
               <p className="text-sm text-[var(--color-bk-clay)] font-medium">{error}</p>
             )}
             <div className="flex gap-2.5">
-              <Button
-                variant="outline"
-                onClick={() => setStep("upload")}
-                className="flex-1 py-2.5 rounded-full border border-[var(--color-bk-line)] bg-transparent text-sm font-medium text-[var(--color-bk-muted)]"
-              >
+              <Button variant="ghost" size="sm" onClick={() => setStep("upload")} className="flex-1">
                 Cancel
               </Button>
-              <Button
-                onClick={handleConfirm}
-                className="flex-[2] py-2.5 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-90"
-              >
+              <Button size="sm" onClick={handleConfirm} className="flex-[2]">
                 Import {transactions.length} Transactions
               </Button>
             </div>
@@ -418,10 +400,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
             <p className="text-sm text-[var(--color-bk-muted)] mt-1">
               {importCount} transactions imported and categorized
             </p>
-            <Button
-              onClick={handleClose}
-              className="mt-6 h-10 px-6 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-90"
-            >
+            <Button size="sm" onClick={handleClose} className="mt-6">
               Close
             </Button>
           </div>

@@ -72,7 +72,7 @@ One cohesive language. Build new UI from these primitives so everything stays on
 
 - **Files kebab-case; component exports PascalCase.** Modals end in `-modal`, noun spelled out (`add-transaction-modal`).
 - **Page = fetch + guard; component = render.** Server `page.tsx` does `auth()` guards + parallel data fetch, hands data to a client component as props. `dashboard/page.tsx` → `<BulgaShell initialData={...}>`.
-- **Server/client boundary is sacred.** Client components import only from `lib/types`, `lib/format`, `lib/utils`, `lib/constants`, `components/bulga/*`, `components/ui/*`. Never import `lib/db/*`, `lib/ai/*`, or `lib/auth` into a client component.
+- **Server/client boundary is sacred.** Client components import only from `lib/types`, `lib/format`, `lib/utils`, `lib/constants`, `lib/graphql/client` (the browser-side GraphQL client — how client components mutate/fetch), `components/bulga/*`, `components/ui/*`. Never import `lib/db/*`, `lib/ai/*`, or `lib/auth` into a client component.
 - **Layered imports flow one way:** `ui ← bulga (design system) ← feature components`. `ui/` stays generic; brand-specific reusables live in `components/bulga/`.
 - **Use the `@/` alias** for cross-folder imports; reserve `./` for same-folder siblings.
 - **No duplicated constants/types.** Shared lists/enums → `lib/constants.ts`; shared types → `lib/types.ts`.

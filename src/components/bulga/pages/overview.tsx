@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import type { DashboardOverview } from "@/lib/types";
 import { type BulgaTheme, tintFor } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
+import { Button } from "@/components/ui/button";
 
 interface BulgaOverviewProps {
   overview: DashboardOverview;
@@ -54,6 +55,9 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
 
   const cur = overview.currency;
   const money = (n: number) => fmt(n, cur);
+  const signed = (n: number) => `${n < 0 ? "−" : "+"}${money(n)}`;
+  const nwDown = overview.netWorthChange < 0;
+  const surplusDown = overview.monthlySurplus < 0;
   const spark = sparkline(overview.netWorthTrend);
 
   const cats = overview.spendingByCategory.slice(0, 5);
@@ -121,9 +125,9 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
             }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M7 17 17 7M9 7h8v8" />
+              <path d={nwDown ? "M7 7 17 17M9 17h8V9" : "M7 17 17 7M9 7h8v8"} />
             </svg>
-            <span className="bk-num">+{money(overview.netWorthChange)}</span>
+            <span className="bk-num">{signed(overview.netWorthChange)}</span>
             <span>this month</span>
           </div>
         </div>
@@ -162,9 +166,9 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
           </div>
         </div>
         <div style={{ background: theme.accent, borderRadius: 20, padding: "22px 24px", color: "#fff" }}>
-          <div style={{ fontSize: 12.5, opacity: 0.85, fontWeight: 500 }}>Left over</div>
+          <div style={{ fontSize: 12.5, opacity: 0.85, fontWeight: 500 }}>{surplusDown ? "Overspent" : "Left over"}</div>
           <div className="bk-num" style={{ fontSize: 30, letterSpacing: "-0.02em", marginTop: 8 }}>
-            +{money(overview.monthlySurplus)}
+            {signed(overview.monthlySurplus)}
           </div>
           <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>{savingsRate}% savings rate</div>
         </div>
@@ -324,24 +328,9 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
             {insight}
           </p>
           <div style={{ flex: 1 }} />
-          <button
-            onClick={() => onNavigate?.("insights")}
-            style={{
-              alignSelf: "flex-start",
-              marginTop: 20,
-              fontFamily: "inherit",
-              border: `1px solid ${theme.accentDeep}`,
-              background: "none",
-              color: theme.accentDeep,
-              fontSize: 13,
-              fontWeight: 600,
-              padding: "8px 16px",
-              borderRadius: 999,
-              cursor: "pointer",
-            }}
-          >
+          <Button size="sm" onClick={() => onNavigate?.("insights")} className="self-start mt-5">
             See more insights
-          </button>
+          </Button>
         </div>
       </section>
     </div>

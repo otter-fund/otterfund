@@ -5,7 +5,7 @@ import { useBulgaChrome } from "@/components/bulga/chrome-context";
 import type { AccountView } from "@/lib/types";
 
 export function AccountsView({ accounts, netWorth, currency }: { accounts: AccountView[]; netWorth: number; currency: string }) {
-  const { accent, theme, addAccount, connectBank, editAccount } = useBulgaChrome();
+  const { accent, theme, addAccount, connectBank, editAccount, refreshData } = useBulgaChrome();
   return (
     <BulgaAccounts
       accounts={accounts}
@@ -16,6 +16,7 @@ export function AccountsView({ accounts, netWorth, currency }: { accounts: Accou
       onAdd={addAccount}
       onConnect={connectBank}
       onEdit={editAccount}
+      onSynced={refreshData}
     />
   );
 }

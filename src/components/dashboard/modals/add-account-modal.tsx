@@ -97,18 +97,10 @@ export function AddAccountModal({
         {formError && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-3">{formError}</p>}
 
         <div className="flex gap-3 mt-7">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="flex-1 h-11 rounded-full border border-[var(--color-bk-line)] bg-transparent text-sm font-medium text-[var(--color-bk-muted)]"
-          >
+          <Button variant="ghost" size="sm" onClick={onClose} className="flex-1">
             Cancel
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={isPending}
-            className="flex-[2] h-11 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-85"
-          >
+          <Button size="sm" onClick={handleSubmit} disabled={isPending} className="flex-[2]">
             {isPending ? "Adding…" : "Add account"}
           </Button>
         </div>

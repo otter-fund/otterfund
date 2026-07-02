@@ -152,3 +152,21 @@ builder.mutationField("deleteTransaction", (t) =>
     },
   }),
 );
+
+builder.mutationField("deleteTransactions", (t) =>
+  t.field({
+    type: MutationResultRef,
+    args: { ids: t.arg({ type: ["ID"], required: true }) },
+    resolve: async (_root, { ids }, ctx) => {
+      const userId = requireUser(ctx);
+      if (ids.length === 0) badRequest("No transactions selected.");
+      if (ids.length > LIMITS.BULK) badRequest("Too many at once.");
+      // Scope the delete to the caller's own rows — ids they don't own simply
+      // don't match, so this is BOLA-safe without a separate ownership pass.
+      await prisma.transaction.deleteMany({
+        where: { id: { in: ids }, userId },
+      });
+      return { ok: true };
+    },
+  }),
+);

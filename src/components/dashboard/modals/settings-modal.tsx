@@ -11,10 +11,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, type TabItem } from "@/components/bulga/tabs";
 import { SchemePicker } from "@/components/bulga/scheme-picker";
+import { ConfirmButton } from "@/components/bulga/confirm-button";
 import { useBulgaChrome } from "@/components/bulga/chrome-context";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
-import { User, Wallet, ShieldAlert, Download, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus } from "lucide-react";
+import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus } from "lucide-react";
 import { CURRENCIES } from "@/lib/constants";
 
 const PLAID_ITEMS = /* GraphQL */ `
@@ -288,14 +289,14 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
         }
       }}
     >
-      <DialogContent className="sm:max-w-[760px] p-9 min-h-[520px]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[820px] p-0 gap-0 block overflow-hidden">
+        <DialogHeader className="px-8 pt-7 pb-5 border-b border-[var(--color-bk-line-soft)]">
           <DialogTitle className="text-[22px]">Settings</DialogTitle>
         </DialogHeader>
 
-        <div className="mt-5 flex flex-col gap-8 md:flex-row md:gap-9">
+        <div className="flex flex-col md:flex-row" style={{ height: "min(620px, 78vh)" }}>
           {/* ── Left rail: tabs ── */}
-          <div className="md:w-[164px] md:shrink-0 md:border-r md:border-[var(--color-bk-line-soft)] md:pr-5">
+          <div className="md:w-[196px] md:shrink-0 md:border-r md:border-[var(--color-bk-line-soft)] p-4 md:py-6 md:px-4">
             <Tabs
               items={TABS}
               value={tab}
@@ -307,9 +308,9 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
             />
           </div>
 
-          {/* ── Right: active panel — content reads top-down; fixed dialog
-               height keeps the footprint stable across tabs. ── */}
-          <div className="min-h-[360px] flex-1">
+          {/* ── Right: active panel — scrolls internally so the dialog footprint
+               stays fixed and roomy across every tab. ── */}
+          <div className="bk-scroll flex-1 overflow-y-auto px-8 py-7">
             {tab === "profile" && (
               <section className="bk-enter">
                 <SectionHead icon={User} title="Profile" desc="How you show up across Bulga." />
@@ -388,8 +389,8 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading…
                   </div>
                 ) : connections && connections.length > 0 ? (
-                  <div className="flex flex-col gap-2.5 max-w-[460px]">
-                    {connections.map((c) => {
+                  <div className="max-w-[460px] overflow-hidden rounded-[20px] border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)]">
+                    {connections.map((c, i) => {
                       const needsFix = c.status === "login_required" || c.status === "error";
                       const statusLabel =
                         c.status === "active" ? "Connected" : c.status === "login_required" ? "Needs reconnect" : "Sync error";
@@ -397,31 +398,32 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                       return (
                         <div
                           key={c.itemId}
-                          className="flex items-center gap-3 rounded-xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] p-3.5"
+                          className="flex items-center gap-[15px] px-[22px] py-[18px]"
+                          style={{ borderTop: i === 0 ? "none" : "1px solid var(--color-bk-line-soft)" }}
                         >
                           <div
-                            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px]"
+                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px]"
                             style={{ background: "var(--accent)", color: "var(--color-primary)" }}
                           >
-                            <Landmark className="w-[17px] h-[17px]" strokeWidth={1.9} />
+                            <Landmark className="w-[19px] h-[19px]" strokeWidth={1.9} />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
-                              <span className="truncate text-[13.5px] font-semibold text-[var(--color-bk-ink)]">
+                              <span className="truncate text-[14.5px] font-semibold text-[var(--color-bk-ink)]">
                                 {c.institutionName || "Bank"}
                               </span>
                               <span
-                                className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
+                                className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.02em]"
                                 style={
                                   needsFix
                                     ? { background: "var(--color-bk-clay-tint)", color: "var(--color-bk-clay)" }
-                                    : { background: "var(--accent)", color: "var(--color-primary)" }
+                                    : { background: "var(--accent)", color: "var(--accent-foreground)" }
                                 }
                               >
                                 {statusLabel}
                               </span>
                             </div>
-                            <div className="text-[12px] text-[var(--color-bk-muted)] mt-0.5">
+                            <div className="text-[12.5px] text-[var(--color-bk-muted)] mt-0.5">
                               {c.accountCount} {c.accountCount === 1 ? "account" : "accounts"}
                               {c.lastSyncedAt
                                 ? ` · Updated ${new Date(c.lastSyncedAt).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}`
@@ -429,24 +431,22 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                             </div>
                           </div>
                           {needsFix && (
-                            <button
-                              type="button"
-                              onClick={() => startConnect(c.itemId)}
-                              className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-[var(--color-primary)] px-3 text-[12.5px] font-semibold text-white hover:opacity-85"
-                            >
-                              <RefreshCw className="w-3.5 h-3.5" /> Reconnect
-                            </button>
+                            <Button size="sm" onClick={() => startConnect(c.itemId)}>
+                              <RefreshCw data-icon="inline-start" className="w-3.5 h-3.5" /> Reconnect
+                            </Button>
                           )}
-                          <button
-                            type="button"
-                            onClick={() => disconnect(c.itemId)}
-                            disabled={busy}
-                            aria-label={`Disconnect ${c.institutionName || "bank"}`}
-                            className="flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-bk-line)] px-3 text-[12.5px] font-medium text-[var(--color-bk-muted)] hover:border-[var(--color-bk-clay)] hover:text-[var(--color-bk-clay)] transition-colors disabled:opacity-50"
-                          >
-                            {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Unlink className="w-3.5 h-3.5" />}
-                            {busy ? "Removing…" : "Disconnect"}
-                          </button>
+                          <ConfirmButton
+                            onConfirm={() => disconnect(c.itemId)}
+                            icon={Unlink}
+                            busyIcon={Loader2}
+                            confirmLabel="Are you sure?"
+                            busyLabel="Disconnecting…"
+                            busy={busy}
+                            restLabel={`Disconnect ${c.institutionName || "bank"}`}
+                            armedLabel={`Confirm disconnect ${c.institutionName || "bank"}`}
+                            expandedWidth="w-[150px]"
+                            labelMaxWidth="max-w-[130px]"
+                          />
                         </div>
                       );
                     })}
@@ -457,13 +457,9 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                   </p>
                 )}
 
-                <button
-                  type="button"
-                  onClick={() => startConnect()}
-                  className="mt-4 flex h-10 items-center gap-2 rounded-full bg-[var(--color-primary)] px-4 text-[13px] font-semibold text-white hover:opacity-85"
-                >
-                  <Plus className="w-4 h-4" /> Connect a bank
-                </button>
+                <Button size="sm" onClick={() => startConnect()} className="mt-4">
+                  <Plus data-icon="inline-start" className="w-4 h-4" /> Connect a bank
+                </Button>
               </section>
             )}
 
@@ -476,11 +472,14 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
 
             {tab === "data" && (
               <div className="bk-enter flex flex-col gap-8">
-                {/* Export — benign, kept well away from delete */}
-                <section>
-                  <SectionHead icon={Download} title="Your data" desc="Export all of your user data." />
+                <section
+                  className="rounded-2xl p-6"
+                  style={{ background: "var(--color-bk-surface)", border: "1px solid var(--color-bk-line)" }}
+                >
+                  <SectionHead icon={Database} title="Your data" desc="Export all of your user data." />
                   <Button
                     variant="outline"
+                    size="sm"
                     onClick={async () => {
                       const res = await fetch("/api/settings/export");
                       if (res.ok) {
@@ -492,7 +491,6 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                         a.click();
                       }
                     }}
-                    className="h-10 shrink-0 rounded-full border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] px-4 text-[13px] font-medium text-[var(--color-bk-ink)]"
                   >
                     Export data
                   </Button>
@@ -510,15 +508,10 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                     tone="clay"
                   />
                   {!confirmDelete ? (
-                    <button
-                      type="button"
-                      onClick={armDelete}
-                      aria-label="Delete account"
-                      className="h-9 rounded-full flex items-center gap-2 px-4 shrink-0 cursor-pointer text-[13px] font-semibold text-white bg-[oklch(60%_0.16_25)] hover:bg-[var(--color-bk-clay)] transition-[background-color] duration-200"
-                    >
-                      <Trash2 className="w-4 h-4 shrink-0" />
-                      <span className="whitespace-nowrap">Delete account</span>
-                    </button>
+                    <Button variant="danger" size="sm" onClick={armDelete} aria-label="Delete account">
+                      <Trash2 data-icon="inline-start" className="w-4 h-4 shrink-0" />
+                      Delete account
+                    </Button>
                   ) : (
                     <div className="bk-enter">
                       <p className="text-[13px] font-semibold text-[var(--color-bk-clay)]">
@@ -540,24 +533,19 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                         className="bk-field mt-2 max-w-[300px] bg-[var(--color-bk-surface)]"
                       />
                       <div className="mt-3 flex items-center gap-2.5">
-                        <button
-                          type="button"
+                        <Button
+                          variant="danger"
+                          size="sm"
                           onClick={handleDeleteAccount}
                           disabled={!deleteUnlocked || deleting}
                           aria-label="Confirm delete account"
-                          className="h-9 rounded-full flex items-center gap-2 px-4 shrink-0 cursor-pointer text-[13px] font-semibold text-white bg-[var(--color-bk-clay)] hover:bg-[oklch(58%_0.12_38)] transition-[background-color,opacity] duration-200 disabled:opacity-45 disabled:cursor-not-allowed"
                         >
-                          <Trash2 className="w-4 h-4 shrink-0" />
-                          <span className="whitespace-nowrap">{deleting ? "Deleting…" : "Delete account"}</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={disarmDelete}
-                          disabled={deleting}
-                          className="h-9 rounded-full px-4 shrink-0 cursor-pointer text-[13px] font-medium text-[var(--color-bk-muted)] hover:text-[var(--color-bk-ink)] hover:bg-[var(--color-bk-surface)] transition-colors disabled:opacity-50"
-                        >
+                          <Trash2 data-icon="inline-start" className="w-4 h-4 shrink-0" />
+                          {deleting ? "Deleting…" : "Delete account"}
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={disarmDelete} disabled={deleting}>
                           Cancel
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   )}

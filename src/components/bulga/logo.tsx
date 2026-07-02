@@ -38,14 +38,26 @@ const D_LEAF_GRAIN =
 
 /** The engraved mark, drawn in currentColor at viewBox "8 8 80 80". IDs are
     fixed but the geometry + color are identical everywhere, so repeated
-    instances (and duplicate defs) resolve to the same thing — safe. */
-function EngravedMark() {
+    instances (and duplicate defs) resolve to the same thing — safe.
+
+    `detail` (0–1) scales how much of the fine intaglio line-work shows. At small
+    render sizes the hairlines fall below a device pixel and muddy into a smudge,
+    so we fade them out and lean on the tonal base + crisp outline to carry the
+    "B". At full size the complete engraving shows. */
+function EngravedMark({ detail = 1 }: { detail?: number }) {
+  // Below full detail, deepen the tonal base so the letterform keeps its mass as
+  // the interior lines fade, and thicken the capping outline so the silhouette
+  // stays sharp. lineOpacity drives the fine engraving; it reaches 0 when tiny.
+  const baseTop = 0.5 + (1 - detail) * 0.34;   // 0.5 → 0.84
+  const baseBottom = 0.24 + (1 - detail) * 0.3; // 0.24 → 0.54
+  const outlineWidth = 1.4 + (1 - detail) * 0.8; // 1.4 → 2.2
+  const lineOpacity = detail; // fine line-work fades with size
   return (
     <>
       <defs>
         <linearGradient id="bulga-base" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="currentColor" stopOpacity={0.5} />
-          <stop offset="1" stopColor="currentColor" stopOpacity={0.24} />
+          <stop offset="0" stopColor="currentColor" stopOpacity={baseTop} />
+          <stop offset="1" stopColor="currentColor" stopOpacity={baseBottom} />
         </linearGradient>
         <clipPath id="bulga-mark" clipRule="evenodd">
           <path d={D_BODY} />
@@ -68,7 +80,7 @@ function EngravedMark() {
       {/* engraved fill: tonal base + form-following line-work, ink only */}
       <g clipPath="url(#bulga-mark)">
         <rect x="8" y="8" width="80" height="80" fill="url(#bulga-base)" />
-        <g fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round">
+        <g fill="none" stroke="currentColor" strokeWidth="0.8" strokeLinecap="round" opacity={lineOpacity}>
           <g clipPath="url(#bulga-stem)">
             <path d={D_STEM} />
             {/* woven cross-hatch over the verticals — the $100-bill texture */}
@@ -96,7 +108,7 @@ function EngravedMark() {
       </g>
 
       {/* crisp outline caps the engraving — smooth all around, no serif slabs */}
-      <g fill="none" stroke="currentColor" strokeWidth="1.4" fillRule="evenodd">
+      <g fill="none" stroke="currentColor" strokeWidth={outlineWidth} fillRule="evenodd">
         <path d={D_BODY} />
         <path d={D_LEAF} />
       </g>
@@ -117,6 +129,9 @@ interface LogoMarkProps {
 /** The brand mark — used standalone, in the sidebar rail, and as the favicon. */
 export function LogoMark({ size = 30, bg = "transparent", fg = LOGO_CORAL, className }: LogoMarkProps) {
   const r = size * 0.3;
+  // Fade the fine engraving as the mark shrinks: full detail at ≥64px, minimal
+  // interior line-work at ≤28px so the "B" reads cleanly on the small rail.
+  const detail = Math.max(0, Math.min(1, (size - 28) / (64 - 28)));
   return (
     <div
       className={className}
@@ -138,7 +153,7 @@ export function LogoMark({ size = 30, bg = "transparent", fg = LOGO_CORAL, class
         aria-hidden="true"
         style={{ color: fg }}
       >
-        <EngravedMark />
+        <EngravedMark detail={detail} />
       </svg>
     </div>
   );
