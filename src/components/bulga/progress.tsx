@@ -8,14 +8,24 @@
 
 import { useEffect, useState } from "react";
 
-/** rAF-gated mount flag: false on first paint, true next frame → CSS tweens. */
-function useMounted() {
-  const [mounted, setMounted] = useState(false);
+/** Drives the fill sweep. Returns `filled` (start empty, flip full next frame so
+    the CSS transition tweens) and `animate` (whether to apply the transition at
+    all). Respects reduced-motion: there we render at the value on first paint
+    with NO transition, so nothing sweeps — the inline transitions can't be
+    caught by the CSS @media reduced-motion blocks, so the gate lives here. */
+function useSweep() {
+  const [filled, setFilled] = useState(false);
+  const [animate, setAnimate] = useState(true);
   useEffect(() => {
-    const raf = requestAnimationFrame(() => setMounted(true));
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+      setAnimate(false);
+      setFilled(true);
+      return;
+    }
+    const raf = requestAnimationFrame(() => setFilled(true));
     return () => cancelAnimationFrame(raf);
   }, []);
-  return mounted;
+  return { filled, animate };
 }
 
 export interface ProgressBarProps {
@@ -38,7 +48,7 @@ export function ProgressBar({
   duration = 0.9,
   className,
 }: ProgressBarProps) {
-  const mounted = useMounted();
+  const { filled, animate } = useSweep();
   const pct = Math.max(0, Math.min(value, 100));
   return (
     <div
@@ -48,10 +58,10 @@ export function ProgressBar({
       <div
         style={{
           height: "100%",
-          width: mounted ? `${pct}%` : "0%",
+          width: filled ? `${pct}%` : "0%",
           borderRadius: 999,
           background: color,
-          transition: `width ${duration}s cubic-bezier(.22,.61,.36,1)`,
+          transition: animate ? `width ${duration}s cubic-bezier(.22,.61,.36,1)` : "none",
         }}
       />
     </div>
@@ -82,16 +92,16 @@ export function ProgressRing({
   children,
   className,
 }: ProgressRingProps) {
-  const mounted = useMounted();
+  const { filled, animate } = useSweep();
   const r = (size - stroke) / 2;
   const circ = 2 * Math.PI * r;
   const clamped = Math.max(0, Math.min(value, 100));
-  const offset = mounted ? circ * (1 - clamped / 100) : circ;
+  const offset = filled ? circ * (1 - clamped / 100) : circ;
   const c = size / 2;
   return (
     <div className={className} style={{ position: "relative", width: size, height: size, flexShrink: 0 }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: "rotate(-90deg)" }} aria-hidden="true">
-        <circle cx={c} cy={c} r={r} fill="none" stroke="oklch(93% 0.005 85)" strokeWidth={stroke} />
+        <circle cx={c} cy={c} r={r} fill="none" stroke="var(--color-bk-track)" strokeWidth={stroke} />
         <circle
           cx={c}
           cy={c}
@@ -102,7 +112,7 @@ export function ProgressRing({
           strokeLinecap="round"
           strokeDasharray={circ.toFixed(1)}
           strokeDashoffset={offset.toFixed(1)}
-          style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.22,.61,.36,1)" }}
+          style={{ transition: animate ? "stroke-dashoffset 1.1s cubic-bezier(.22,.61,.36,1)" : "none" }}
         />
       </svg>
       {children != null && (

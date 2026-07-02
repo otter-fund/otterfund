@@ -469,11 +469,13 @@ export function BulgaTransactions({ transactions, accounts, theme, currency = "C
           `both`) doesn't re-root this fixed element to the content column. */}
       {selected.size > 0 && (
         <div
-          className="bk-pop"
+          className="bk-pop bk-bulkbar"
           style={{
             // Center over the CONTENT area (right of the 60px icon rail) via
             // symmetric insets + margin auto — NOT translateX, which the bk-pop
-            // animation's own transform would override.
+            // animation's own transform would override. On mobile the rail is
+            // hidden, so .bk-bulkbar resets left:0 (see globals.css) to keep it
+            // centered on the full-width viewport.
             position: "fixed",
             left: 60,
             right: 0,

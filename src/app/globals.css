@@ -453,12 +453,9 @@
 .bk-grid-split > *,
 .bk-grid-3 > * { min-width: 0; }
 
-/* Two-up → single column on tablet & below. */
+/* Two-up + asymmetric split (1.5fr 1fr) → single column on tablet & below. */
 @media (max-width: 1024px) {
-  .bk-grid-2up { grid-template-columns: 1fr !important; }
-}
-/* Asymmetric two-up (e.g. 1.5fr 1fr) → single column on tablet & below. */
-@media (max-width: 1024px) {
+  .bk-grid-2up,
   .bk-grid-split { grid-template-columns: 1fr !important; }
 }
 /* Three-up stat row → 1 column on phone (stays 3-up on tablet, it fits). */
@@ -495,6 +492,8 @@
    one row. Each card keeps a readable min width; the strip scrolls inside its
    own bounds so it never widens the page. */
 @media (max-width: 1024px) {
+  /* Scheme cards → horizontal snap-scroll strip (comparing palettes is the
+     point; don't crush 8 into one row). */
   .bk-scheme-grid {
     display: flex !important;
     overflow-x: auto;
@@ -507,23 +506,14 @@
     width: 220px;
     scroll-snap-align: start;
   }
-}
-/* Swatch strip: 7 across is far too tight on small screens. */
-@media (max-width: 1024px) {
+  /* Swatch strip: 7 across is far too tight. Motion demo: 4 → 2. */
   .bk-grid-swatches { grid-template-columns: repeat(4, 1fr) !important; }
-}
-@media (max-width: 640px) {
-  .bk-grid-swatches { grid-template-columns: repeat(3, 1fr) !important; }
-}
-/* Motion demo: 4 → 2 on tablet → 1 on phone. */
-@media (max-width: 1024px) {
   .bk-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 640px) {
+  .bk-grid-swatches { grid-template-columns: repeat(3, 1fr) !important; }
   .bk-grid-4 { grid-template-columns: 1fr !important; }
-}
-/* Brand hero: 52px padding is huge on a phone. */
-@media (max-width: 640px) {
+  /* Brand hero: 52px padding is huge on a phone. */
   .bk-brand-hero { padding: 28px 22px !important; }
   .bk-brand-hero span { font-size: 30px !important; }
 }
@@ -549,6 +539,13 @@
     padding-right: 14px !important;
   }
   .bk-tx-col-cat { display: none !important; }
+}
+
+/* Bulk-action bar: its inline `left: 60` clears the desktop icon rail so it
+   centers over the content column. At/below the hamburger breakpoint the rail
+   is hidden, so reset to the full-width viewport to keep it centered. */
+@media (max-width: 768px) {
+  .bk-bulkbar { left: 0 !important; }
 }
 
 /* ── Popovers ──
