@@ -3,8 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/bulga/card";
-import { Wordmark } from "@/components/bulga/logo";
 import {
   Field,
   TextInput,
@@ -14,8 +12,6 @@ import {
 } from "@/components/bulga/form";
 import { Button } from "@/components/ui/button";
 import { GoogleAuthButton } from "@/components/auth/google-button";
-import { GuillochePattern } from "@/components/bulga/guilloche";
-import { BRAND_THEME } from "@/components/bulga/theme";
 
 type FieldErrors = { name?: string; password?: string; confirm?: string };
 
@@ -87,105 +83,102 @@ export default function RegisterPage() {
   }
 
   return (
-    <>
-      <div className="flex flex-col items-center gap-3 text-center">
-        <Link href="/" aria-label="Bulga home">
-          <Wordmark size={34} />
+    <div className="bk-enter">
+      <header className="mb-8">
+        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          Create your account
+        </h1>
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-bk-muted)]">
+          Start budgeting with Bulga — it only takes a minute.
+        </p>
+      </header>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <Field label="Name" htmlFor="name" error={fieldErrors.name}>
+          <TextInput
+            id="name"
+            type="text"
+            value={name}
+            invalid={!!fieldErrors.name}
+            onChange={(e) => {
+              setName(e.target.value);
+              clearErrors("name");
+            }}
+            placeholder="Your name"
+            autoComplete="name"
+            required
+          />
+        </Field>
+
+        <Field label="Email" htmlFor="email">
+          <TextInput
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            autoComplete="email"
+            required
+          />
+        </Field>
+
+        <Field label="Password" htmlFor="password" error={fieldErrors.password}>
+          <PasswordInput
+            id="password"
+            value={password}
+            invalid={!!fieldErrors.password}
+            onChange={(e) => {
+              setPassword(e.target.value);
+              // Editing the password can also resolve a prior mismatch.
+              clearErrors("password", "confirm");
+            }}
+            placeholder="At least 8 characters"
+            required
+            minLength={8}
+            autoComplete="new-password"
+          />
+          <PasswordStrength value={password} />
+        </Field>
+
+        <Field label="Confirm password" htmlFor="confirm-password" error={fieldErrors.confirm}>
+          <PasswordInput
+            id="confirm-password"
+            value={confirm}
+            invalid={!!fieldErrors.confirm}
+            onChange={(e) => {
+              setConfirm(e.target.value);
+              clearErrors("confirm");
+            }}
+            placeholder="Re-enter your password"
+            required
+            autoComplete="new-password"
+          />
+        </Field>
+
+        {error && (
+          <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
+        )}
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="h-11 w-full rounded-full text-sm font-semibold"
+        >
+          {loading ? "Creating account…" : "Create account"}
+        </Button>
+      </form>
+
+      <GoogleAuthButton label="Sign up with Google" />
+
+      <p className="mt-8 text-center text-sm text-[var(--color-bk-muted)]">
+        Already have an account?{" "}
+        <Link
+          href="/login"
+          className="font-semibold text-[var(--color-primary)] hover:underline"
+        >
+          Sign in
         </Link>
-        <p className="text-[13px] text-[var(--color-bk-muted)]">
-          Create your account to get started
-        </p>
-      </div>
-
-      <Card className="relative overflow-hidden p-8">
-        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="right" opacity={0.13} />
-        <div className="relative">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <Field label="Name" htmlFor="name" error={fieldErrors.name}>
-            <TextInput
-              id="name"
-              type="text"
-              value={name}
-              invalid={!!fieldErrors.name}
-              onChange={(e) => {
-                setName(e.target.value);
-                clearErrors("name");
-              }}
-              placeholder="Your name"
-              required
-            />
-          </Field>
-
-          <Field label="Email" htmlFor="email">
-            <TextInput
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-          </Field>
-
-          <Field label="Password" htmlFor="password" error={fieldErrors.password}>
-            <PasswordInput
-              id="password"
-              value={password}
-              invalid={!!fieldErrors.password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                // Editing the password can also resolve a prior mismatch.
-                clearErrors("password", "confirm");
-              }}
-              placeholder="At least 8 characters"
-              required
-              minLength={8}
-              autoComplete="new-password"
-            />
-            <PasswordStrength value={password} />
-          </Field>
-
-          <Field label="Confirm password" htmlFor="confirm-password" error={fieldErrors.confirm}>
-            <PasswordInput
-              id="confirm-password"
-              value={confirm}
-              invalid={!!fieldErrors.confirm}
-              onChange={(e) => {
-                setConfirm(e.target.value);
-                clearErrors("confirm");
-              }}
-              placeholder="Re-enter your password"
-              required
-              autoComplete="new-password"
-            />
-          </Field>
-
-          {error && (
-            <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
-          )}
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full h-11 rounded-full text-sm font-semibold"
-          >
-            {loading ? "Creating account…" : "Create account"}
-          </Button>
-        </form>
-
-        <GoogleAuthButton label="Sign up with Google" />
-
-        <p className="text-center text-sm text-[var(--color-bk-muted)] mt-6">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-semibold text-[var(--color-primary)] hover:underline"
-          >
-            Sign in
-          </Link>
-        </p>
-        </div>
-      </Card>
-    </>
+      </p>
+    </div>
   );
 }

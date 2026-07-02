@@ -4,13 +4,9 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Card } from "@/components/bulga/card";
-import { Wordmark } from "@/components/bulga/logo";
 import { Field, TextInput, PasswordInput } from "@/components/bulga/form";
 import { Button } from "@/components/ui/button";
 import { GoogleAuthButton } from "@/components/auth/google-button";
-import { GuillochePattern } from "@/components/bulga/guilloche";
-import { BRAND_THEME } from "@/components/bulga/theme";
 
 // useSearchParams() must sit under a Suspense boundary or `next build` errors on
 // this route. The form is otherwise self-contained, so wrap the whole thing.
@@ -56,75 +52,72 @@ function LoginForm() {
   }
 
   return (
-    <>
-      <div className="flex flex-col items-center gap-3 text-center">
-        <Link href="/" aria-label="Bulga home">
-          <Wordmark size={34} />
+    <div className="bk-enter">
+      <header className="mb-8">
+        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          Welcome back
+        </h1>
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-bk-muted)]">
+          Sign in to pick up where you left off.
+        </p>
+      </header>
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <Field label="Email" htmlFor="email">
+          <TextInput
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            autoComplete="email"
+            required
+          />
+        </Field>
+
+        <Field label="Password" htmlFor="password">
+          <PasswordInput
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="••••••••"
+            autoComplete="current-password"
+            required
+          />
+          <div className="mt-2 flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-[13px] font-medium text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)]"
+            >
+              Forgot password?
+            </Link>
+          </div>
+        </Field>
+
+        {error && (
+          <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
+        )}
+
+        <Button
+          type="submit"
+          disabled={loading}
+          className="h-11 w-full rounded-full text-sm font-semibold"
+        >
+          {loading ? "Signing in…" : "Sign in"}
+        </Button>
+      </form>
+
+      <GoogleAuthButton label="Continue with Google" />
+
+      <p className="mt-8 text-center text-sm text-[var(--color-bk-muted)]">
+        Don&apos;t have an account?{" "}
+        <Link
+          href="/register"
+          className="font-semibold text-[var(--color-primary)] hover:underline"
+        >
+          Sign up
         </Link>
-        <p className="text-[13px] text-[var(--color-bk-muted)]">
-          Sign in to your budget dashboard
-        </p>
-      </div>
-
-      <Card className="relative overflow-hidden p-8">
-        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="right" opacity={0.13} />
-        <div className="relative">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <Field label="Email" htmlFor="email">
-            <TextInput
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-          </Field>
-
-          <Field label="Password" htmlFor="password">
-            <PasswordInput
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-            <div className="mt-2 flex justify-end">
-              <Link
-                href="/forgot-password"
-                className="text-[13px] font-medium text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)]"
-              >
-                Forgot password?
-              </Link>
-            </div>
-          </Field>
-
-          {error && (
-            <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
-          )}
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full h-11 rounded-full text-sm font-semibold"
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </Button>
-        </form>
-
-        <GoogleAuthButton label="Continue with Google" />
-
-        <p className="text-center text-sm text-[var(--color-bk-muted)] mt-6">
-          Don&apos;t have an account?{" "}
-          <Link
-            href="/register"
-            className="font-semibold text-[var(--color-primary)] hover:underline"
-          >
-            Sign up
-          </Link>
-        </p>
-        </div>
-      </Card>
-    </>
+      </p>
+    </div>
   );
 }

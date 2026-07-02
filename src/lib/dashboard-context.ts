@@ -64,9 +64,16 @@ export const monthlyTxCount = cache((userId: string, month: number, year: number
  */
 export const userPrefs = cache(async (userId: string) => {
   const u = await prisma.user
-    .findUnique({ where: { id: userId }, select: { accent: true, currency: true } })
+    .findUnique({
+      where: { id: userId },
+      select: { accent: true, currency: true, budgetPlan: true },
+    })
     .catch(() => null);
-  return { accent: u?.accent ?? null, currency: u?.currency ?? "CAD" };
+  return {
+    accent: u?.accent ?? null,
+    currency: u?.currency ?? "CAD",
+    budgetPlan: u?.budgetPlan ?? null,
+  };
 });
 
 /** Convenience: the user's currency, reusing the cached userPrefs row read. */

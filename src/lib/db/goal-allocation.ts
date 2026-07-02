@@ -1,9 +1,51 @@
 import { prisma } from "./prisma";
 import { computeMonthlySurplus } from "./calculations";
+import { allocatePool } from "@/lib/goal-split";
+
+// Re-exported so existing server callers keep importing the allocator from here;
+// the implementation lives in the client-safe `@/lib/goal-split`.
+export { allocatePool } from "@/lib/goal-split";
+export type { AllocatableGoal } from "@/lib/goal-split";
 
 export interface GoalAllocationPlan {
   goalId: string;
   amount: number;
+}
+
+/**
+ * Immediately moves a lump sum into the user's goals: splits `amount` across
+ * under-funded goals by priority (via `allocatePool`) and increments each
+ * goal's `saved` in a single transaction. This is the deliberate "assign my
+ * savings to goals" action — unlike the monthly `GoalAllocation` pipeline it
+ * keeps no pending rows, so the caller controls exactly when money is applied.
+ *
+ * @param userId - Owner of the goals.
+ * @param amount - Dollars to distribute (values <= 0 are a no-op).
+ * @returns The total actually assigned (may be less than `amount` when goals
+ *          fill up) and the number of goals funded.
+ */
+export async function assignSavingsToGoals(
+  userId: string,
+  amount: number
+): Promise<{ assigned: number; goalsFunded: number }> {
+  if (!(amount > 0)) return { assigned: 0, goalsFunded: 0 };
+
+  const goals = await prisma.goal.findMany({ where: { userId } });
+  const split = allocatePool(goals, amount);
+  if (split.size === 0) return { assigned: 0, goalsFunded: 0 };
+
+  let assigned = 0;
+  await prisma.$transaction(
+    [...split.entries()].map(([id, amt]) => {
+      assigned += amt;
+      return prisma.goal.update({
+        where: { id },
+        data: { saved: { increment: amt } },
+      });
+    })
+  );
+
+  return { assigned: Math.round(assigned * 100) / 100, goalsFunded: split.size };
 }
 
 /**
@@ -30,54 +72,8 @@ export async function computeGoalAllocations(
 
   if (summary.surplus <= 0) return [];
 
-  const eligible = goals.filter((g) => g.target - g.saved > 0);
-  if (eligible.length === 0) return [];
-
-  // Each goal carries: priority weight, remaining capacity (target - saved),
-  // and a running allocation that we adjust as we cap and redistribute.
-  type Slot = { goalId: string; weight: number; cap: number; amount: number };
-  const slots: Slot[] = eligible.map((g) => ({
-    goalId: g.id,
-    weight: g.priority,
-    cap: g.target - g.saved,
-    amount: 0,
-  }));
-
-  let remaining = summary.surplus;
-
-  // Iteratively allocate by weight, then cap. Any excess from capped goals is
-  // redistributed across the still-uncapped goals on the next pass.
-  while (remaining > 0.0001) {
-    const open = slots.filter((s) => s.cap - s.amount > 0.0001);
-    if (open.length === 0) break;
-
-    const totalWeight = open.reduce((s, x) => s + x.weight, 0);
-    const useEvenSplit = totalWeight <= 0;
-
-    let distributedThisPass = 0;
-    for (const slot of open) {
-      const share = useEvenSplit
-        ? remaining / open.length
-        : (remaining * slot.weight) / totalWeight;
-      const room = slot.cap - slot.amount;
-      const take = Math.min(share, room);
-      slot.amount += take;
-      distributedThisPass += take;
-    }
-
-    remaining -= distributedThisPass;
-    // Stop if a pass distributed effectively nothing — avoids infinite loops
-    // when only zero-weight slots remain alongside positive-weight slots that
-    // are fully capped (uncommon but possible with fractional rounding).
-    if (distributedThisPass < 0.0001) break;
-  }
-
-  return slots
-    .filter((s) => s.amount > 0)
-    .map((s) => ({
-      goalId: s.goalId,
-      amount: Math.round(s.amount * 100) / 100,
-    }));
+  const alloc = allocatePool(goals, summary.surplus);
+  return [...alloc.entries()].map(([goalId, amount]) => ({ goalId, amount }));
 }
 
 /**

@@ -18,8 +18,9 @@ import { ConfirmButton } from "@/components/bulga/confirm-button";
 import { useBulgaChrome } from "@/components/bulga/chrome-context";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
+import { BudgetPlanPicker } from "@/components/bulga/budget-plan-picker";
 import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus } from "lucide-react";
-import { CURRENCIES } from "@/lib/constants";
+import { CURRENCIES, getBudgetPlan } from "@/lib/constants";
 
 const PLAID_ITEMS = /* GraphQL */ `
   query PlaidItems {
@@ -42,6 +43,12 @@ const UNLINK_PLAID_ITEM = /* GraphQL */ `
 const UPDATE_SETTINGS = /* GraphQL */ `
   mutation UpdateSettings($input: SettingsUpdateInput!) {
     updateSettings(input: $input) { ok }
+  }
+`;
+
+const UPDATE_BUDGET_PLAN = /* GraphQL */ `
+  mutation UpdateBudgetPlan($planId: String!) {
+    updateBudgetPlan(planId: $planId) { ok }
   }
 `;
 
@@ -78,6 +85,7 @@ interface SettingsModalProps {
     monthlyIncome: number;
     currency: string;
     budgetTarget: number;
+    budgetPlan: string;
   };
   /** Active accent + setter — the Appearance tab hosts the theme picker. */
   accent: string;
@@ -169,6 +177,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
   const [monthlyIncome, setMonthlyIncome] = useState(String(user.monthlyIncome));
   const [currency, setCurrency] = useState(user.currency);
   const [budgetTarget, setBudgetTarget] = useState(String(user.budgetTarget));
+  const [planId, setPlanId] = useState(user.budgetPlan);
 
   // Inline autosave status: fields persist ~800ms after the last edit, so there
   // is no Save button. `nameError` is the only blocking validation (name is
@@ -193,12 +202,13 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
       setMonthlyIncome(String(user.monthlyIncome));
       setCurrency(user.currency);
       setBudgetTarget(String(user.budgetTarget));
+      setPlanId(user.budgetPlan);
       setSaveStatus("idle");
       setNameError("");
     } else if (!open && seededRef.current) {
       seededRef.current = false;
     }
-  }, [open, user.name, user.monthlyIncome, user.currency, user.budgetTarget]);
+  }, [open, user.name, user.monthlyIncome, user.currency, user.budgetTarget, user.budgetPlan]);
 
   // Cancel any pending autosave when the modal unmounts.
   useEffect(() => () => { if (debounceRef.current) clearTimeout(debounceRef.current); }, []);
@@ -282,6 +292,40 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
   const editIncome = (v: string) => { setMonthlyIncome(v); scheduleSave({ name, monthlyIncome: v, currency, budgetTarget }); };
   const editCurrency = (v: string) => { setCurrency(v); scheduleSave({ name, monthlyIncome, currency: v, budgetTarget }); };
   const editBudget = (v: string) => { setBudgetTarget(v); scheduleSave({ name, monthlyIncome, currency, budgetTarget: v }); };
+
+  // Switching the plan is immediate (not debounced) — it recomputes the spend
+  // allowance + this month's category budgets server-side. We mirror the derived
+  // budget target locally so the field above reflects it without a reseed.
+  const changePlan = async (id: string) => {
+    if (id === planId) return;
+    const prevPlan = planId;
+    const prevBudget = budgetTarget;
+    // Cancel any pending debounced autosave so its stale budgetTarget can't land
+    // after — and overwrite — the plan-derived value the switch persists.
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const plan = getBudgetPlan(id);
+    setPlanId(id);
+    setBudgetTarget(String(Math.round((Number(monthlyIncome) * (plan.needs + plan.wants)) / 100)));
+    setSaveStatus("saving");
+    try {
+      // Flush the latest income/currency first so the server (which reads income
+      // from the DB) recomputes the plan from the same figures shown here.
+      if (name.trim()) {
+        await gqlClient.request(UPDATE_SETTINGS, {
+          input: { name: name.trim(), monthlyIncome: Number(monthlyIncome) || 0, currency },
+        });
+      }
+      await gqlClient.request(UPDATE_BUDGET_PLAN, { planId: id });
+      setSaveStatus("saved");
+      router.refresh();
+      onSaved?.();
+    } catch {
+      // Roll the optimistic selection back so the picker matches what's saved.
+      setPlanId(prevPlan);
+      setBudgetTarget(prevBudget);
+      setSaveStatus("error");
+    }
+  };
 
   return (
     <Dialog
@@ -435,6 +479,14 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                       <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-bk-muted)]" />
                     </div>
                   </div>
+                </div>
+
+                <div className="mt-7 max-w-[540px]">
+                  <label className={fieldLabelCls}>Budget plan</label>
+                  <BudgetPlanPicker value={planId} onChange={changePlan} accent={accent} />
+                  <p className="mt-2 text-[12px] text-[var(--color-bk-muted)]">
+                    Splits your income across needs, wants, and savings — powers the Spending page. Switching recomputes this month&apos;s category budgets.
+                  </p>
                 </div>
               </section>
             )}

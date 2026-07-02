@@ -22,3 +22,39 @@ export const DEFAULT_BUDGET_SPLITS: Record<string, number> = {
   Bills: 0.12,
   Other: 0.05,
 };
+
+import { CATEGORY_BUCKETS, type BudgetPlan } from "@/lib/constants";
+
+/**
+ * Per-category budget amounts (in dollars) for a given plan + monthly income.
+ *
+ * The plan defines the bucket targets (needs/wants % of income). Within each
+ * bucket, the target dollars are distributed across that bucket's categories in
+ * proportion to their DEFAULT_BUDGET_SPLITS weight (renormalized within the
+ * bucket) — so the per-category budgets always sum to the plan's bucket targets.
+ * Returns a `{ categoryName: amount }` map covering only the default categories.
+ */
+export function budgetAmountsForPlan(
+  plan: BudgetPlan,
+  monthlyIncome: number
+): Record<string, number> {
+  const bucketTarget: Record<"needs" | "wants", number> = {
+    needs: (monthlyIncome * plan.needs) / 100,
+    wants: (monthlyIncome * plan.wants) / 100,
+  };
+
+  const weightSum: Record<"needs" | "wants", number> = { needs: 0, wants: 0 };
+  for (const [name, weight] of Object.entries(DEFAULT_BUDGET_SPLITS)) {
+    const bucket = CATEGORY_BUCKETS[name];
+    if (bucket) weightSum[bucket] += weight;
+  }
+
+  const amounts: Record<string, number> = {};
+  for (const [name, weight] of Object.entries(DEFAULT_BUDGET_SPLITS)) {
+    const bucket = CATEGORY_BUCKETS[name];
+    if (!bucket) continue;
+    const share = weightSum[bucket] > 0 ? weight / weightSum[bucket] : 0;
+    amounts[name] = Math.round(bucketTarget[bucket] * share);
+  }
+  return amounts;
+}

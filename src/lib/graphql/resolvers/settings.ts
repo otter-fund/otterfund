@@ -4,7 +4,8 @@ import { MutationResultRef } from "../types/results";
 import { prisma } from "@/lib/db/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { okString, okMoney, okEnum, LIMITS } from "@/lib/validate";
-import { CURRENCIES } from "@/lib/constants";
+import { CURRENCIES, getBudgetPlan } from "@/lib/constants";
+import { budgetAmountsForPlan } from "@/lib/db/seed-categories";
 import { logSecurityEvent } from "@/lib/log";
 import { rateLimit, MINUTE, HOUR } from "@/lib/rate-limit";
 
@@ -43,6 +44,58 @@ builder.mutationField("updateSettings", (t) =>
           ...(input.accent !== undefined && { accent: input.accent }),
         },
       });
+      return { ok: true, id: userId };
+    },
+  }),
+);
+
+// Switch the user's budget plan. The plan drives the spend allowance and the
+// per-category budgets for the current month, so both are recomputed here in
+// one transaction — keeping the Spending page, Overview, and Settings coherent.
+builder.mutationField("updateBudgetPlan", (t) =>
+  t.field({
+    type: MutationResultRef,
+    args: { planId: t.arg.string({ required: true }) },
+    resolve: async (_root, { planId }, ctx) => {
+      const userId = requireUser(ctx);
+      const plan = getBudgetPlan(planId);
+      if (plan.id !== planId) badRequest("Unknown budget plan.");
+
+      const now = new Date();
+      const month = now.getMonth() + 1;
+      const year = now.getFullYear();
+
+      await prisma.$transaction(async (tx) => {
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { monthlyIncome: true },
+        });
+        const income = user?.monthlyIncome ?? 0;
+        const budgetTarget = Math.round((income * (plan.needs + plan.wants)) / 100);
+
+        await tx.user.update({
+          where: { id: userId },
+          data: { budgetPlan: plan.id, budgetTarget },
+        });
+
+        const amounts = budgetAmountsForPlan(plan, income);
+        const cats = await tx.category.findMany({
+          where: { userId },
+          select: { id: true, name: true },
+        });
+        const idByName = new Map(cats.map((c) => [c.name, c.id]));
+
+        for (const [name, amount] of Object.entries(amounts)) {
+          const categoryId = idByName.get(name);
+          if (!categoryId) continue;
+          await tx.budget.upsert({
+            where: { userId_categoryId_month_year: { userId, categoryId, month, year } },
+            create: { userId, categoryId, amount, month, year },
+            update: { amount },
+          });
+        }
+      });
+
       return { ok: true, id: userId };
     },
   }),

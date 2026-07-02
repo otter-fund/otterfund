@@ -3,6 +3,7 @@ import { requireUser, notFound, badRequest } from "../errors";
 import { GoalRef } from "../types/views";
 import { MutationResultRef } from "../types/results";
 import { getGoals } from "@/lib/db/queries";
+import { assignSavingsToGoals } from "@/lib/db/goal-allocation";
 import { prisma } from "@/lib/db/prisma";
 import { okString, okMoney, okColor, LIMITS } from "@/lib/validate";
 
@@ -106,6 +107,21 @@ builder.mutationField("updateGoal", (t) =>
         },
       });
       return { ok: true, id };
+    },
+  }),
+);
+
+builder.mutationField("assignSavingsToGoals", (t) =>
+  t.field({
+    type: MutationResultRef,
+    args: { amount: t.arg.float({ required: true }) },
+    resolve: async (_root, { amount }, ctx) => {
+      const userId = requireUser(ctx);
+      if (!Number.isFinite(amount) || amount <= 0 || amount > 1e12) {
+        badRequest("Amount is out of range.");
+      }
+      await assignSavingsToGoals(userId, amount);
+      return { ok: true, id: userId };
     },
   }),
 );

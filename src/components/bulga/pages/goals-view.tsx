@@ -2,14 +2,13 @@
 
 import { BulgaGoals } from "@/components/bulga/pages/goals";
 import { useBulgaChrome } from "@/components/bulga/chrome-context";
-import type { GoalView } from "@/lib/types";
+import type { GoalsPlanView } from "@/lib/types";
 
-export function GoalsView({ goals, currency }: { goals: GoalView[]; currency: string }) {
+export function GoalsView({ plan }: { plan: GoalsPlanView }) {
   const { accent, theme, addGoal, editGoal } = useBulgaChrome();
   return (
     <BulgaGoals
-      goals={goals}
-      currency={currency}
+      plan={plan}
       accent={accent}
       theme={theme}
       onAdd={addGoal}

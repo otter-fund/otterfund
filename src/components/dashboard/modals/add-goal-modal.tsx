@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { EmojiPicker } from "@/components/bulga/emoji-picker";
+import { PriorityPicker } from "@/components/bulga/priority-picker";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
 
 const CREATE_GOAL = /* GraphQL */ `
@@ -31,7 +32,7 @@ export function AddGoalModal({
   const [target, setTarget] = useState("");
   const [saved, setSaved] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [priority, setPriority] = useState("");
+  const [priority, setPriority] = useState(2);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
 
@@ -49,7 +50,7 @@ export function AddGoalModal({
             emoji: emoji || undefined,
             target: Number(target),
             saved: Number(saved) || 0,
-            priority: priority === "" ? 0 : Number(priority),
+            priority,
             deadline: deadline || undefined,
           },
         });
@@ -58,7 +59,7 @@ export function AddGoalModal({
         setTarget("");
         setSaved("");
         setDeadline("");
-        setPriority("");
+        setPriority(2);
         onAdded();
       } catch (e) {
         setError(errMessage(e));
@@ -111,16 +112,8 @@ export function AddGoalModal({
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Priority Weight (%)</label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                placeholder="0 = equal split"
-                className="bk-field"
-              />
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Priority</label>
+              <PriorityPicker value={priority} onChange={setPriority} />
             </div>
             <div className="flex-1">
               <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Deadline</label>
@@ -132,6 +125,9 @@ export function AddGoalModal({
               />
             </div>
           </div>
+          <p className="text-[12px] text-[var(--color-bk-muted)]">
+            Higher priority claims a bigger share of your monthly savings. Goals of equal priority split it evenly.
+          </p>
         </div>
         {error && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{error}</p>}
         <div className="flex gap-3 mt-7">

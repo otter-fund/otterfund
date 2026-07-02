@@ -121,6 +121,7 @@ export interface ChromeUser {
   monthlyIncome: number;
   currency: string;
   budgetTarget: number;
+  budgetPlan: string;
 }
 
 /** Notification inputs — read from the overview on the server. */
@@ -356,7 +357,7 @@ export function BulgaChrome({
         >
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", padding: "20px 0" }}>
             <div style={{ marginBottom: 12 }}>
-              <LogoMark size={42} />
+              <LogoMark size={50} />
             </div>
 
             <nav aria-label="Primary" style={{ display: "flex", flexDirection: "column", gap: 6 }}>

@@ -17,6 +17,7 @@ model User {
   monthlyIncome  Float?
   currency       String   @default("CAD")
   budgetTarget   Float?
+  budgetPlan     String?  @default("50-30-20") // Needs/Wants/Savings plan id (see lib/constants BUDGET_PLANS)
   accent         String?  // Brand-kit accent (oklch); null = the default evergreen
   onboardingDone Boolean  @default(false)
   createdAt      DateTime @default(now())

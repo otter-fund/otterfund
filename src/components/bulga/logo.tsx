@@ -147,11 +147,11 @@ export function LogoMark({ size = 30, bg = "transparent", fg = LOGO_CORAL, class
       }}
     >
       <svg
-        width={size * 0.66}
-        height={size * 0.66}
-        viewBox="8 8 80 80"
+        width={size * 0.72}
+        height={size * 0.72}
+        viewBox="4 4 88 88"
         aria-hidden="true"
-        style={{ color: fg }}
+        style={{ color: fg, overflow: "visible" }}
       >
         <EngravedMark detail={detail} />
       </svg>
@@ -159,34 +159,3 @@ export function LogoMark({ size = 30, bg = "transparent", fg = LOGO_CORAL, class
   );
 }
 
-interface WordmarkProps {
-  /** Mark tile size; wordmark text scales with it. */
-  size?: number;
-  bg?: string;
-  textColor?: string;
-  className?: string;
-}
-
-/** Full lockup: mark + "Bulga" wordmark. */
-export function Wordmark({
-  size = 30,
-  bg = "transparent",
-  textColor = "var(--color-bk-ink)",
-  className,
-}: WordmarkProps) {
-  return (
-    <div className={className} style={{ display: "flex", alignItems: "center", gap: size * 0.37 }}>
-      <LogoMark size={size} bg={bg} />
-      <span
-        style={{
-          fontFamily: "var(--font-ui), system-ui, sans-serif",
-          fontSize: size * 0.63,
-          fontWeight: 700,
-          letterSpacing: "-0.03em",
-          color: textColor,
-        }}
-      >
-      </span>
-    </div>
-  );
-}

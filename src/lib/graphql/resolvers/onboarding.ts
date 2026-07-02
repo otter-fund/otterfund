@@ -6,8 +6,9 @@ import { anthropic } from "@/lib/ai/client";
 import { parsePdfStatement } from "@/lib/ai/parse-pdf";
 import {
   DEFAULT_CATEGORIES,
-  DEFAULT_BUDGET_SPLITS,
+  budgetAmountsForPlan,
 } from "@/lib/db/seed-categories";
+import { getBudgetPlan } from "@/lib/constants";
 import { rateLimit, MINUTE, HOUR } from "@/lib/rate-limit";
 import { LIMITS, okMoney } from "@/lib/validate";
 
@@ -35,6 +36,7 @@ const OnboardingInput = builder.inputType("OnboardingInput", {
     monthlyIncome: t.float({ required: true }),
     currency: t.string(),
     budgetTarget: t.float({ required: true }),
+    budgetPlan: t.string(),
     accounts: t.field({ type: [OnboardingAccountInput] }),
     recurringExpenses: t.field({ type: [OnboardingRecurringInput] }),
   }),
@@ -61,13 +63,21 @@ builder.mutationField("completeOnboarding", (t) =>
       const currentMonth = now.getMonth() + 1;
       const currentYear = now.getFullYear();
 
+      // The chosen plan is the source of truth: the spend allowance (budgetTarget)
+      // and the per-category budgets both derive from it, so they can't drift.
+      const plan = getBudgetPlan(input.budgetPlan);
+      const budgetTarget = Math.round(
+        (input.monthlyIncome * (plan.needs + plan.wants)) / 100
+      );
+
       await prisma.$transaction(async (tx) => {
         await tx.user.update({
           where: { id: userId },
           data: {
             monthlyIncome: input.monthlyIncome,
             currency: input.currency || "CAD",
-            budgetTarget: input.budgetTarget,
+            budgetTarget,
+            budgetPlan: plan.id,
             onboardingDone: true,
           },
         });
@@ -91,12 +101,14 @@ builder.mutationField("completeOnboarding", (t) =>
         );
 
         const categoryMap = new Map(categoryRecords.map((c) => [c.name, c.id]));
-        const budgetEntries = Object.entries(DEFAULT_BUDGET_SPLITS)
+        const budgetEntries = Object.entries(
+          budgetAmountsForPlan(plan, input.monthlyIncome)
+        )
           .filter(([name]) => categoryMap.has(name))
-          .map(([name, pct]) => ({
+          .map(([name, amount]) => ({
             userId,
             categoryId: categoryMap.get(name)!,
-            amount: Math.round(input.budgetTarget * pct),
+            amount,
             month: currentMonth,
             year: currentYear,
           }));

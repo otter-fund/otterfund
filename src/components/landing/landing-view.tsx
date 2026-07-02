@@ -16,7 +16,7 @@ import { ArrowRight, ListChecks, Sparkles, Target, Wallet } from "lucide-react";
 import { Card, CardLabel } from "@/components/bulga/card";
 import { GuillocheSeal } from "@/components/bulga/guilloche";
 import { GuillocheFlow } from "@/components/bulga/guilloche-flow";
-import { LogoMark, Wordmark } from "@/components/bulga/logo";
+import { LogoMark } from "@/components/bulga/logo";
 import { BRAND_THEME, SCHEMES, tintFor } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -278,7 +278,9 @@ export function LandingView() {
     <div className="bk-paper min-h-screen flex flex-col bg-[var(--color-bk-canvas)] text-[var(--color-bk-ink)] overflow-x-hidden">
       {/* Nav */}
       <nav className="flex items-center justify-between px-7 py-6 shrink-0 max-w-[1100px] mx-auto w-full">
-        <Wordmark size={30} />
+        <Link href="/" aria-label="Bulga home" className="inline-flex items-center">
+          <LogoMark size={40} />
+        </Link>
         <div className="flex items-center gap-2">
           <Link
             href="/login"

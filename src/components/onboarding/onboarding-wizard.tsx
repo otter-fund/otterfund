@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Card } from "@/components/bulga/card";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { GuillochePattern } from "@/components/bulga/guilloche";
 import { BRAND_THEME } from "@/components/bulga/theme";
+import { LogoMark } from "@/components/bulga/logo";
 import {
   DollarSign,
   Landmark,
@@ -20,8 +20,12 @@ import {
   PenLine,
   Check,
   ChevronDown,
+  ArrowRight,
+  type LucideIcon,
 } from "lucide-react";
-import { ACCOUNT_TYPES, CURRENCIES } from "@/lib/constants";
+import { ACCOUNT_TYPES, CURRENCIES, getBudgetPlan, DEFAULT_BUDGET_PLAN_ID } from "@/lib/constants";
+import { BudgetPlanPicker } from "@/components/bulga/budget-plan-picker";
+import { OnboardingBrandPanel, type PanelStep } from "@/components/onboarding/onboarding-brand-panel";
 import { ConnectBankModal } from "@/components/dashboard/modals/connect-bank-modal";
 import { gqlClient, gqlUpload, errMessage } from "@/lib/graphql/client";
 
@@ -72,6 +76,29 @@ const CONNECT_STEPS = [
   { label: "Connect", icon: Landmark },
 ];
 
+// The three ways to begin, shown as stacked rows on the chooser screen.
+const MODE_OPTIONS: { mode: Mode; icon: LucideIcon; title: string; desc: string; badge?: string }[] = [
+  {
+    mode: "connect",
+    icon: Landmark,
+    title: "Connect a bank",
+    desc: "Link your bank to sync accounts and transactions automatically.",
+    badge: "Fastest",
+  },
+  {
+    mode: "auto",
+    icon: Upload,
+    title: "Upload statements",
+    desc: "Add PDF or CSV statements — AI extracts your accounts and expenses.",
+  },
+  {
+    mode: "manual",
+    icon: PenLine,
+    title: "Enter manually",
+    desc: "Type in your income, accounts, and expenses by hand.",
+  },
+];
+
 // Full-size fields use the shared system class (one source of truth). The
 // compact variant keeps the same look at a smaller scale for dense rows.
 const FIELD_CLASS = "bk-field";
@@ -118,10 +145,14 @@ export function OnboardingWizard({ userName }: { userName: string }) {
   // Manual fields
   const [monthlyIncome, setMonthlyIncome] = useState("");
   const [currency, setCurrency] = useState("CAD");
-  const [monthlySavings, setMonthlySavings] = useState("");
-  const budgetTarget = monthlyIncome && monthlySavings
-    ? String(Number(monthlyIncome) - Number(monthlySavings))
-    : "";
+  // Budget plan drives the split: savings + spend allowance both derive from it.
+  const [plan, setPlan] = useState(DEFAULT_BUDGET_PLAN_ID);
+  const selectedPlan = getBudgetPlan(plan);
+  const incomeNum = Number(monthlyIncome) || 0;
+  const derivedSavings = Math.round((incomeNum * selectedPlan.savings) / 100);
+  const budgetTarget = String(
+    Math.max(0, Math.round((incomeNum * (selectedPlan.needs + selectedPlan.wants)) / 100))
+  );
   const [accounts, setAccounts] = useState<AccountEntry[]>([
     { name: "", type: "Chequing", balance: "" },
   ]);
@@ -154,7 +185,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
     if (mode === "manual") {
       switch (step) {
         case 0: return Number(monthlyIncome) > 0;
-        case 1: return Number(monthlySavings) > 0;
+        case 1: return true; // a plan is always selected
         default: return true;
       }
     }
@@ -162,8 +193,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
       return step === 0 ? files.length > 0 : true;
     }
     if (mode === "connect") {
-      // Income isn't asked here — it's read from the bank after linking.
-      return step === 0 ? Number(monthlySavings) > 0 : true;
+      // Income isn't asked here — it's read from the bank after linking. A plan
+      // is preselected, so the setup step can always advance.
+      return true;
     }
     return false;
   };
@@ -218,10 +250,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
       );
       setAutoAnalysis(data.analysis);
 
-      // Pre-fill editable fields from analysis
+      // Pre-fill editable fields from analysis. Savings/budget aren't asked for
+      // here — they derive from the chosen plan applied to this income.
       setMonthlyIncome(String(data.analysis.monthlyIncome));
-      const estSavings = data.analysis.monthlyIncome - data.analysis.budgetTarget;
-      setMonthlySavings(String(Math.max(0, Math.round(estSavings))));
       setAccounts(
         data.analysis.accounts.length > 0
           ? data.analysis.accounts.map((a: { name: string; type: string; balance: number }) => ({
@@ -262,8 +293,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
         input: {
           monthlyIncome: Number(monthlyIncome),
           currency,
-          // Never negative — detected income can come in under the savings goal.
+          // Server re-derives from the plan; sent for validation/back-compat.
           budgetTarget: Math.max(0, Number(budgetTarget) || 0),
+          budgetPlan: plan,
           accounts: validAccounts.map((a) => ({
             name: a.name,
             type: a.type.toLowerCase().replace(" ", "-"),
@@ -299,104 +331,106 @@ export function OnboardingWizard({ userName }: { userName: string }) {
     }
   };
 
-  // --- Mode chooser ---
-  if (mode === "choose") {
-    return (
-      <>
-        <Card className="relative overflow-hidden p-8">
-          <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="radial" opacity={0.14} />
-          <div className="relative">
-          <h2 className={HEADING_CLASS}>Welcome, {userName.split(" ")[0]}!</h2>
-          <p className="text-sm text-[var(--color-bk-muted)] mb-6">How would you like to set up your budget?</p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <button
-              onClick={() => setMode("connect")}
-              className="flex flex-col items-center gap-3 p-7 rounded-2xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] hover:border-[var(--color-primary)] transition-colors text-center group"
-            >
-              <div className="w-12 h-12 rounded-full bg-[var(--accent)] flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Landmark className="w-6 h-6 text-[var(--color-primary)]" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">Connect a bank</div>
-                <div className="text-[11px] text-[var(--color-bk-muted)] mt-1 leading-relaxed">
-                  Link your bank to sync accounts &amp; transactions automatically
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setMode("auto")}
-              className="flex flex-col items-center gap-3 p-7 rounded-2xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] hover:border-[var(--color-primary)] transition-colors text-center group"
-            >
-              <div className="w-12 h-12 rounded-full bg-[var(--color-sage-light)] flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Upload className="w-6 h-6 text-[var(--color-primary)]" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">Upload statements</div>
-                <div className="text-[11px] text-[var(--color-bk-muted)] mt-1 leading-relaxed">
-                  Upload PDF or CSV statements &mdash; AI extracts your accounts &amp; expenses
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setMode("manual")}
-              className="flex flex-col items-center gap-3 p-7 rounded-2xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] hover:border-[var(--color-primary)] transition-colors text-center group"
-            >
-              <div className="w-12 h-12 rounded-full bg-[var(--color-slate-light)] flex items-center justify-center group-hover:scale-110 transition-transform">
-                <PenLine className="w-6 h-6 text-[var(--color-slate-brand)]" />
-              </div>
-              <div>
-                <div className="text-sm font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">Manual</div>
-                <div className="text-[11px] text-[var(--color-bk-muted)] mt-1 leading-relaxed">
-                  Enter your income, accounts, and expenses by hand
-                </div>
-              </div>
-            </button>
-          </div>
-          </div>
-        </Card>
-      </>
-    );
-  }
-
-  // --- Determine steps based on mode ---
-  const steps = mode === "manual" ? MANUAL_STEPS : mode === "connect" ? CONNECT_STEPS : AUTO_STEPS;
+  // Steps for the active flow (empty on the chooser screen).
+  const steps: PanelStep[] =
+    mode === "manual" ? MANUAL_STEPS : mode === "connect" ? CONNECT_STEPS : mode === "auto" ? AUTO_STEPS : [];
   const totalSteps = steps.length;
   const isLastStep = step === totalSteps - 1;
+  const inFlow = mode !== "choose";
+
+  const changeMode = () => {
+    setMode("choose");
+    setStep(0);
+    setError("");
+  };
 
   return (
-    <>
-      {/* Progress */}
-      <div className="flex items-center justify-center gap-2 mb-8 sm:mb-10">
-        <button
-          onClick={() => { setMode("choose"); setStep(0); }}
-          className="text-xs text-[var(--color-bk-muted)] hover:text-[var(--color-bk-ink)] mr-2"
-        >
-          ← Change mode
-        </button>
-        {steps.map((s, i) => (
-          <button
-            key={s.label}
-            onClick={() => i < step && setStep(i)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-              i === step
-                ? "bg-[var(--color-primary)] text-white"
-                : i < step
-                ? "text-[var(--color-primary)] cursor-pointer"
-                : "text-[var(--color-bk-muted)]"
-            }`}
-          >
-            <s.icon className="w-3 h-3" />
-            {s.label}
-          </button>
-        ))}
-      </div>
+    <div className="min-h-screen w-full bg-[var(--color-bk-canvas)] lg:grid lg:grid-cols-[1.02fr_1fr] xl:grid-cols-[1.08fr_1fr]">
+      <OnboardingBrandPanel userName={userName} steps={inFlow ? steps : null} step={step} />
 
-      <Card className="relative overflow-hidden p-8">
-        <GuillochePattern accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} fade="left" opacity={0.13} />
-        <div className="relative">
+      <main className="relative flex min-h-screen flex-col px-6 py-8 sm:px-10">
+        {/* compact brand header — the panel owns branding on lg+ */}
+        <div className="flex items-center justify-between lg:hidden">
+          <Link href="/" aria-label="Bulga home" className="inline-flex items-center">
+            <LogoMark size={38} />
+          </Link>
+          {inFlow && (
+            <button
+              onClick={changeMode}
+              className="text-[13px] font-medium text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)]"
+            >
+              Change path
+            </button>
+          )}
+        </div>
+
+        <div className="flex flex-1 items-center justify-center py-10">
+          <div className="w-full max-w-xl">
+            {inFlow && (
+              <button
+                onClick={changeMode}
+                className="mb-7 hidden items-center gap-1.5 text-[13px] font-medium text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)] lg:inline-flex"
+              >
+                <span aria-hidden>←</span> Change path
+              </button>
+            )}
+
+            {/* mobile step progress — the panel's tracker is hidden on small screens */}
+            {inFlow && (
+              <div className="mb-7 lg:hidden">
+                <div className="mb-2 flex items-center justify-between text-[12px]">
+                  <span className="font-semibold text-[var(--color-bk-ink)]">{steps[step].label}</span>
+                  <span className="bk-num text-[var(--color-bk-muted)]">
+                    Step {step + 1} of {totalSteps}
+                  </span>
+                </div>
+                <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--color-bk-line)]">
+                  <div
+                    className="h-full rounded-full bg-[var(--color-primary)] transition-[width] duration-300"
+                    style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {mode === "choose" ? (
+              <div className="bk-enter">
+                <h2 className={HEADING_CLASS}>How would you like to start?</h2>
+                <p className="mb-7 text-sm text-[var(--color-bk-muted)]">
+                  Pick a path — you can switch anytime.
+                </p>
+                <div className="flex flex-col gap-3">
+                  {MODE_OPTIONS.map((o) => (
+                    <button
+                      key={o.mode}
+                      onClick={() => setMode(o.mode)}
+                      className="group flex w-full items-center gap-4 rounded-2xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] p-4 text-left transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-bk-surface)] sm:p-5"
+                    >
+                      <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]">
+                        <o.icon className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={1.9} />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="flex items-center gap-2">
+                          <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--color-bk-ink)]">
+                            {o.title}
+                          </span>
+                          {o.badge && (
+                            <span className="rounded-full bg-[var(--accent)] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--color-primary)]">
+                              {o.badge}
+                            </span>
+                          )}
+                        </span>
+                        <span className="mt-0.5 block text-[12.5px] leading-relaxed text-[var(--color-bk-muted)]">
+                          {o.desc}
+                        </span>
+                      </span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-[var(--color-bk-faint)] transition-colors group-hover:text-[var(--color-primary)]" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div key={`${mode}-${step}`} className="bk-enter">
         {/* ====== MANUAL MODE ====== */}
         {mode === "manual" && (
           <>
@@ -420,22 +454,19 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               </div>
             )}
 
-            {/* Step 2: Budget */}
+            {/* Step 2: Budget plan */}
             {step === 1 && (
               <div className="space-y-6 sm:space-y-7" key="budget">
                 <div>
-                  <h2 className={HEADING_CLASS}>Savings Goal</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">How much do you want to save each month?</p>
+                  <h2 className={HEADING_CLASS}>Your budget plan</h2>
+                  <p className="text-sm text-[var(--color-bk-muted)]">Pick how to split your income across needs, wants, and savings. You can change this anytime in Settings.</p>
                 </div>
-                <div>
-                  <label className={LABEL_CLASS}>Monthly Savings</label>
-                  <Input type="number" value={monthlySavings} onChange={(e) => setMonthlySavings(e.target.value)} placeholder={monthlyIncome ? String(Math.round(Number(monthlyIncome) * 0.2)) : "1000"} min="0" step="100" className={FIELD_CLASS} />
-                  {monthlyIncome && Number(monthlySavings) > 0 && (
-                    <p className="text-xs text-[var(--color-bk-muted)] mt-1.5">
-                      That&apos;s {Math.round((Number(monthlySavings) / Number(monthlyIncome)) * 100)}% of your income — leaving {fmtCurrency(Number(monthlyIncome) - Number(monthlySavings))}/mo to spend
-                    </p>
-                  )}
-                </div>
+                <BudgetPlanPicker value={plan} onChange={setPlan} accent={BRAND_THEME.accent} />
+                {incomeNum > 0 && (
+                  <p className="text-xs text-[var(--color-bk-muted)]">
+                    On {fmtCurrency(incomeNum)}/mo, that&apos;s {fmtCurrency(derivedSavings)} saved and {fmtCurrency(Number(budgetTarget))} to spend each month.
+                  </p>
+                )}
               </div>
             )}
 
@@ -511,7 +542,8 @@ export function OnboardingWizard({ userName }: { userName: string }) {
             {step === 4 && (
               <ReviewStep
                 monthlyIncome={monthlyIncome}
-                monthlySavings={monthlySavings}
+                planName={selectedPlan.name}
+                savings={String(derivedSavings)}
                 budgetTarget={budgetTarget}
                 currency={currency}
                 accounts={accounts}
@@ -526,19 +558,16 @@ export function OnboardingWizard({ userName }: { userName: string }) {
         {/* ====== CONNECT (Plaid) MODE ====== */}
         {mode === "connect" && (
           <>
-            {/* Step 1: Setup (savings goal + currency — income comes from the bank) */}
+            {/* Step 1: Setup (budget plan + currency — income comes from the bank) */}
             {step === 0 && (
               <div className="space-y-6 sm:space-y-7" key="connect-setup">
                 <div>
                   <h2 className={HEADING_CLASS}>A few basics</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">Set your savings goal and currency — we&apos;ll read your income straight from your bank.</p>
+                  <p className="text-sm text-[var(--color-bk-muted)]">Choose a budget plan and your currency — we&apos;ll read your income straight from your bank.</p>
                 </div>
                 <div>
-                  <label className={LABEL_CLASS}>Monthly Savings</label>
-                  <Input type="number" value={monthlySavings} onChange={(e) => setMonthlySavings(e.target.value)} placeholder="1000" min="0" step="100" className={FIELD_CLASS} />
-                  <p className="text-xs text-[var(--color-bk-muted)] mt-1.5">
-                    How much you want to set aside each month. We&apos;ll subtract this from your income to set your spending budget.
-                  </p>
+                  <label className={LABEL_CLASS}>Budget plan</label>
+                  <BudgetPlanPicker value={plan} onChange={setPlan} accent={BRAND_THEME.accent} />
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Currency</label>
@@ -574,6 +603,11 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                             : "Reading your deposits…"}
                       </p>
                     </div>
+                    {incomeNum > 0 && (
+                      <p className="text-xs text-[var(--color-bk-muted)]">
+                        On {fmtCurrency(incomeNum)}/mo with the {selectedPlan.name}, that&apos;s {fmtCurrency(derivedSavings)} saved and {fmtCurrency(Number(budgetTarget))} to spend each month.
+                      </p>
+                    )}
                   </>
                 ) : (
                   <Button size="sm" onClick={() => setShowConnect(true)} className="w-full">
@@ -669,16 +703,19 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   </p>
                 </div>
 
-                {/* Editable income & budget */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className={LABEL_CLASS}>Monthly Income</label>
-                    <Input type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} className={FIELD_SM_CLASS} />
-                  </div>
-                  <div>
-                    <label className={LABEL_CLASS}>Monthly Savings</label>
-                    <Input type="number" value={monthlySavings} onChange={(e) => setMonthlySavings(e.target.value)} className={FIELD_SM_CLASS} />
-                  </div>
+                {/* Editable income + budget plan */}
+                <div>
+                  <label className={LABEL_CLASS}>Monthly Income</label>
+                  <Input type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} className={FIELD_SM_CLASS} />
+                </div>
+                <div>
+                  <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-2">Budget plan</div>
+                  <BudgetPlanPicker value={plan} onChange={setPlan} accent={BRAND_THEME.accent} />
+                  {incomeNum > 0 && (
+                    <p className="text-xs text-[var(--color-bk-muted)] mt-2">
+                      On {fmtCurrency(incomeNum)}/mo, that&apos;s {fmtCurrency(derivedSavings)} saved and {fmtCurrency(Number(budgetTarget))} to spend each month.
+                    </p>
+                  )}
                 </div>
 
                 {/* Accounts */}
@@ -763,9 +800,12 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               {loading ? "Setting up..." : "Get Started"}
             </Button>
           )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        </div>
-      </Card>
+      </main>
 
       <ConnectBankModal
         open={showConnect}
@@ -789,15 +829,15 @@ export function OnboardingWizard({ userName }: { userName: string }) {
           }
         }}
       />
-    </>
+    </div>
   );
 }
 
 // --- Review step (shared UI) ---
 function ReviewStep({
-  monthlyIncome, monthlySavings, budgetTarget, currency, accounts, recurring, fmtCurrency, error,
+  monthlyIncome, planName, savings, budgetTarget, currency, accounts, recurring, fmtCurrency, error,
 }: {
-  monthlyIncome: string; monthlySavings: string; budgetTarget: string; currency: string;
+  monthlyIncome: string; planName: string; savings: string; budgetTarget: string; currency: string;
   accounts: AccountEntry[]; recurring: RecurringEntry[];
   fmtCurrency: (v: string | number) => string; error: string;
 }) {
@@ -813,8 +853,8 @@ function ReviewStep({
           <div className="bk-num text-lg text-[var(--color-bk-ink)]">{fmtCurrency(monthlyIncome)} {currency}</div>
         </div>
         <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
-          <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1">Monthly Savings</div>
-          <div className="bk-num text-lg text-[var(--color-bk-ink)]">{fmtCurrency(monthlySavings)}/mo <span className="text-sm text-[var(--color-bk-muted)] font-sans font-normal">({Math.round((Number(monthlySavings) / Number(monthlyIncome)) * 100) || 0}% of income)</span></div>
+          <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1">Budget Plan</div>
+          <div className="text-lg font-semibold text-[var(--color-bk-ink)]">{planName} <span className="bk-num text-sm text-[var(--color-bk-muted)] font-normal">· {fmtCurrency(savings)}/mo saved ({Math.round((Number(savings) / Number(monthlyIncome)) * 100) || 0}% of income)</span></div>
         </div>
         <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
           <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1">Spending Budget</div>

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { EmojiPicker } from "@/components/bulga/emoji-picker";
+import { PriorityPicker, toPriorityLevel } from "@/components/bulga/priority-picker";
 import { ConfirmButton } from "@/components/bulga/confirm-button";
 import { Trash2 } from "lucide-react";
 import type { GoalView } from "@/lib/types";
@@ -44,7 +45,7 @@ export function EditGoalModal({
   const [target, setTarget] = useState("");
   const [saved, setSaved] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [priority, setPriority] = useState("");
+  const [priority, setPriority] = useState(2);
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
 
@@ -55,7 +56,7 @@ export function EditGoalModal({
       setTarget(String(goal.target));
       setSaved(String(goal.saved));
       setDeadline(goal.deadlineISO || "");
-      setPriority(goal.priority ? String(goal.priority) : "");
+      setPriority(toPriorityLevel(goal.priority));
       setError("");
     }
   }, [goal, open]);
@@ -76,7 +77,7 @@ export function EditGoalModal({
             emoji: emoji || null,
             target: Number(target),
             saved: Number(saved) || 0,
-            priority: priority === "" ? 0 : Number(priority),
+            priority,
             deadline: deadline || null,
           },
         });
@@ -148,16 +149,8 @@ export function EditGoalModal({
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Priority Weight (%)</label>
-              <input
-                type="number"
-                min="0"
-                max="100"
-                value={priority}
-                onChange={(e) => setPriority(e.target.value)}
-                placeholder="0 = equal split"
-                className="bk-field"
-              />
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Priority</label>
+              <PriorityPicker value={priority} onChange={setPriority} />
             </div>
             <div className="flex-1">
               <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Deadline</label>
@@ -169,6 +162,9 @@ export function EditGoalModal({
               />
             </div>
           </div>
+          <p className="text-[12px] text-[var(--color-bk-muted)]">
+            Higher priority claims a bigger share of your monthly savings. Goals of equal priority split it evenly.
+          </p>
         </div>
         {error && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{error}</p>}
         <div className="flex items-center gap-2.5 mt-6">

@@ -6,6 +6,7 @@ import {
   monthlyTxCount,
   userPrefs,
 } from "@/lib/dashboard-context";
+import { DEFAULT_BUDGET_PLAN_ID } from "@/lib/constants";
 
 // Persistent dashboard shell. A Next layout does NOT remount when navigating
 // between its child routes, so the chrome (rail, topbar, modals, accent state)
@@ -37,6 +38,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         monthlyIncome: overview?.monthlyIncome ?? 0,
         currency: overview?.currency ?? "CAD",
         budgetTarget: overview?.budgetTarget ?? 0,
+        budgetPlan: prefs.budgetPlan ?? DEFAULT_BUDGET_PLAN_ID,
       }}
       notice={{
         budgetTarget: overview?.budgetTarget ?? 0,

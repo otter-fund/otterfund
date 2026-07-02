@@ -11,10 +11,17 @@ import {
   computeSubscriptionBudgetImpact,
 } from "./subscription-intelligence";
 import { fmt } from "@/lib/format";
+import { getBudgetPlan, bucketOf } from "@/lib/constants";
+import { allocatePool } from "./goal-allocation";
 import type {
   DashboardOverview,
   SpendCategory,
+  SpendingPlanView,
+  SpendingBucket,
+  SpendingCategorySlice,
   GoalView,
+  GoalPlanItem,
+  GoalsPlanView,
   TransactionView,
   BillView,
   SubscriptionView,
@@ -249,6 +256,150 @@ export async function getSpendingData(userId: string, month: number, year: numbe
   return spendCategories;
 }
 
+/**
+ * The Spending page view-model: the user's active budget plan, monthly income,
+ * and this month's actual utilization grouped into Needs / Wants / Savings
+ * buckets. Needs & Wants roll up category spend (via CATEGORY_BUCKETS); Savings
+ * is virtual — income minus total spend, floored at 0 (matching the app's
+ * "surplus" definition). Bucket targets come from the plan's percentages of
+ * income, so target and actual are directly comparable.
+ */
+export async function getSpendingPlan(
+  userId: string,
+  month: number,
+  year: number
+): Promise<SpendingPlanView> {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 1);
+  const [user, categorySpentMap, categories, spendAgg, goals] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthlyIncome: true, currency: true, budgetPlan: true },
+    }),
+    computeAllBudgetSpent(userId, month, year),
+    prisma.category.findMany({ where: { userId } }),
+    // Canonical monthly spend — ALL negative transactions (matches Overview's
+    // monthlySpend/surplus). Used to reconcile the buckets so the two pages agree.
+    prisma.transaction.aggregate({
+      where: { userId, amount: { lt: 0 }, date: { gte: startDate, lt: endDate } },
+      _sum: { amount: true },
+    }),
+    prisma.goal.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
+  ]);
+
+  const plan = getBudgetPlan(user?.budgetPlan);
+  const monthlyIncome = user?.monthlyIncome ?? 0;
+  const currency = user?.currency ?? "CAD";
+
+  const slices: Record<"needs" | "wants", SpendingCategorySlice[]> = {
+    needs: [],
+    wants: [],
+  };
+  const bucketActual: Record<"needs" | "wants", number> = { needs: 0, wants: 0 };
+
+  for (const c of categories) {
+    const bucket = bucketOf(c.name); // null for Income
+    if (!bucket) continue;
+    const amount = categorySpentMap.get(c.id) ?? 0;
+    if (amount <= 0) continue;
+    slices[bucket].push({
+      categoryId: c.id,
+      name: c.name,
+      amount,
+      color: c.color || "oklch(68% 0.04 80)",
+      pctOfBucket: 0,
+    });
+    bucketActual[bucket] += amount;
+  }
+
+  // Fold any spend the buckets missed — uncategorized negatives and negatives
+  // tagged "Income" (both dropped by the category rollup) — into Wants as an
+  // explicit slice, so totalSpent equals the canonical monthly spend and savings
+  // equals the surplus the Overview shows.
+  const canonicalSpend = Math.abs(spendAgg._sum.amount ?? 0);
+  const uncategorized = Math.max(0, canonicalSpend - (bucketActual.needs + bucketActual.wants));
+  if (uncategorized > 0.005) {
+    slices.wants.push({
+      categoryId: "uncategorized",
+      name: "Uncategorized",
+      amount: uncategorized,
+      color: "oklch(80% 0.015 80)",
+      pctOfBucket: 0,
+    });
+    bucketActual.wants += uncategorized;
+  }
+
+  for (const key of ["needs", "wants"] as const) {
+    slices[key].sort((a, b) => b.amount - a.amount);
+    const total = bucketActual[key];
+    for (const s of slices[key]) {
+      s.pctOfBucket = total > 0 ? Math.round((s.amount / total) * 100) : 0;
+    }
+  }
+
+  const totalSpent = bucketActual.needs + bucketActual.wants;
+  const savingsActual = Math.max(0, monthlyIncome - totalSpent);
+  const targetAmount = (pct: number) => Math.round((monthlyIncome * pct) / 100);
+
+  // Savings breakdown = where the planned savings goes. Split the savings
+  // target across the user's goals (same allocator the Goals page uses) so the
+  // Savings bucket shows the goals it funds, not an empty list.
+  const savingsTarget = targetAmount(plan.savings);
+  const goalAlloc = allocatePool(
+    goals.map((g) => ({ id: g.id, priority: g.priority, saved: g.saved, target: g.target })),
+    savingsTarget,
+  );
+  const savingsSlices: SpendingCategorySlice[] = goals
+    .filter((g) => (goalAlloc.get(g.id) ?? 0) > 0)
+    .map((g) => {
+      const amount = goalAlloc.get(g.id) ?? 0;
+      return {
+        categoryId: g.id,
+        name: g.name,
+        amount,
+        color: g.color || "oklch(60% 0.09 155)",
+        pctOfBucket: savingsTarget > 0 ? Math.round((amount / savingsTarget) * 100) : 0,
+      };
+    })
+    .sort((a, b) => b.amount - a.amount);
+
+  const buckets: SpendingBucket[] = [
+    {
+      key: "needs",
+      label: "Needs",
+      targetPct: plan.needs,
+      targetAmount: targetAmount(plan.needs),
+      actualAmount: bucketActual.needs,
+      categories: slices.needs,
+    },
+    {
+      key: "wants",
+      label: "Wants",
+      targetPct: plan.wants,
+      targetAmount: targetAmount(plan.wants),
+      actualAmount: bucketActual.wants,
+      categories: slices.wants,
+    },
+    {
+      key: "savings",
+      label: "Savings",
+      targetPct: plan.savings,
+      targetAmount: savingsTarget,
+      actualAmount: savingsActual,
+      categories: savingsSlices,
+    },
+  ];
+
+  return {
+    planId: plan.id,
+    planName: plan.name,
+    monthlyIncome,
+    currency,
+    totalSpent,
+    buckets,
+  };
+}
+
 export async function getGoals(userId: string): Promise<GoalView[]> {
   const goals = await prisma.goal.findMany({
     where: { userId },
@@ -268,6 +419,116 @@ export async function getGoals(userId: string): Promise<GoalView[]> {
       : "",
     deadlineISO: g.deadline ? g.deadline.toISOString().slice(0, 10) : undefined,
   }));
+}
+
+/**
+ * The Goals page view-model. Derives the monthly savings pool from the user's
+ * budget plan (income × savings%), splits it across under-funded goals by
+ * priority (via `allocatePool`), and enriches each goal with its funded share,
+ * monthly contribution, projected finish date, and deadline pacing. This is the
+ * single source that connects goals to the plan-driven Savings bucket shown on
+ * the Spending page.
+ *
+ * @param userId - Owner of the goals.
+ * @param month - 1-indexed month the projection starts from.
+ * @param year - 4-digit year the projection starts from.
+ */
+export async function getGoalsPlan(
+  userId: string,
+  month: number,
+  year: number,
+): Promise<GoalsPlanView> {
+  const [user, goals, summary] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { monthlyIncome: true, currency: true, budgetPlan: true },
+    }),
+    prisma.goal.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
+    computeMonthlySurplus(userId, month, year),
+  ]);
+
+  const plan = getBudgetPlan(user?.budgetPlan);
+  const monthlyIncome = user?.monthlyIncome ?? 0;
+  const currency = user?.currency ?? "CAD";
+  const monthlySavings = Math.round((monthlyIncome * plan.savings) / 100);
+  const monthlySpent = Math.round(summary.spending * 100) / 100;
+  const surplus = Math.max(0, Math.round(summary.surplus * 100) / 100);
+
+  const alloc = allocatePool(
+    goals.map((g) => ({ id: g.id, priority: g.priority, saved: g.saved, target: g.target })),
+    monthlySavings,
+  );
+
+  let totalSaved = 0;
+  let totalTarget = 0;
+  let allocated = 0;
+
+  const items: GoalPlanItem[] = goals.map((g) => {
+    totalSaved += g.saved;
+    totalTarget += g.target;
+
+    const remaining = Math.max(g.target - g.saved, 0);
+    const pct = g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0;
+    const done = g.target > 0 && g.saved >= g.target;
+    const monthlyContribution = alloc.get(g.id) ?? 0;
+    allocated += monthlyContribution;
+    const share = monthlySavings > 0 ? Math.round((monthlyContribution / monthlySavings) * 100) : 0;
+
+    let etaMonths: number | null = null;
+    let etaLabel: string | null = null;
+    let onTrack: boolean | null = null;
+
+    if (!done && monthlyContribution > 0) {
+      etaMonths = Math.ceil(remaining / monthlyContribution);
+      const finish = new Date(year, month - 1 + etaMonths, 1);
+      etaLabel = `${MONTH_NAMES[finish.getMonth()]} ${finish.getFullYear()}`;
+      if (g.deadline) {
+        // On track when the projected finish month is on/before the deadline month.
+        onTrack = finish <= new Date(g.deadline.getFullYear(), g.deadline.getMonth() + 1, 1);
+      }
+    } else if (!done && g.deadline) {
+      // Has a deadline but nothing funding it — behind by definition.
+      onTrack = false;
+    }
+
+    return {
+      id: g.id,
+      name: g.name,
+      emoji: g.emoji || "",
+      saved: g.saved,
+      target: g.target,
+      priority: g.priority,
+      color: g.color || "oklch(60% 0.09 155)",
+      deadline: g.deadline
+        ? `${MONTH_NAMES[g.deadline.getMonth()]} ${g.deadline.getFullYear()}`
+        : "",
+      deadlineISO: g.deadline ? g.deadline.toISOString().slice(0, 10) : undefined,
+      pct,
+      remaining,
+      done,
+      monthlyContribution,
+      share,
+      etaMonths,
+      etaLabel,
+      onTrack,
+    };
+  });
+
+  return {
+    currency,
+    monthlyIncome,
+    monthlySavings,
+    monthlySpent,
+    surplus,
+    savingsPct: plan.savings,
+    planId: plan.id,
+    planName: plan.name,
+    totalSaved,
+    totalTarget,
+    allocated: Math.round(allocated * 100) / 100,
+    unallocated: Math.max(0, Math.round((monthlySavings - allocated) * 100) / 100),
+    goals: items,
+  };
 }
 
 export async function getTransactions(
