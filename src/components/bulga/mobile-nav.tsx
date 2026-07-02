@@ -109,8 +109,8 @@ export function MobileNav({
       </Dialog.Trigger>
 
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-[60] bg-[oklch(20%_0.02_80/0.34)] backdrop-blur-[2px] transition-opacity duration-300 data-closed:opacity-0 data-open:opacity-100" />
-        <Dialog.Popup className="bk-sheet fixed inset-x-0 bottom-0 z-[61] mx-auto flex max-h-[86vh] w-full max-w-[520px] flex-col rounded-t-[24px] border-x border-t border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] pt-1.5 pb-[max(16px,env(safe-area-inset-bottom))] shadow-[0_-8px_40px_oklch(20%_0.02_80/0.16)] outline-none">
+        <Dialog.Backdrop className="fixed inset-0 z-[60] bg-[oklch(18%_0.02_80/0.4)] backdrop-blur-[3px] transition-opacity duration-[400ms] data-closed:opacity-0 data-open:opacity-100" />
+        <Dialog.Popup className="bk-sheet fixed inset-x-0 bottom-0 z-[61] mx-auto flex max-h-[86vh] w-full max-w-[520px] flex-col rounded-t-[30px] bg-[var(--color-bk-surface)] pt-2 pb-[max(16px,env(safe-area-inset-bottom))] outline-none">
           {/* nav rows — scroll if a short screen can't fit them all. No grab
               handle: it implied a drag gesture the sheet doesn't support;
               dismiss via backdrop tap, a row tap, or Escape. */}
