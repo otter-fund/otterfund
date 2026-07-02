@@ -5,11 +5,18 @@
 // Net-worth hero + accounts grouped by derived section (Cash & savings /
 // Investments / Credit), wired to real AccountView data passed in as props.
 
-import { Plus, Landmark } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Plus, Landmark, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 import type { AccountView } from "@/lib/types";
 import { fmt } from "@/lib/format";
 import { tintFor, type BulgaTheme } from "@/components/bulga/theme";
+import { gqlClient, errMessage } from "@/lib/graphql/client";
+
+const SYNC_PLAID = /* GraphQL */ `
+  mutation SyncPlaid { syncPlaid }
+`;
 
 interface BulgaAccountsProps {
   accounts: AccountView[];
@@ -20,6 +27,8 @@ interface BulgaAccountsProps {
   onAdd?: () => void;
   onConnect?: () => void;
   onEdit?: (a: AccountView) => void;
+  /** Re-fetch the page's RSC after a successful sync. */
+  onSynced?: () => void;
 }
 
 type GroupKey = "cash" | "invest" | "credit";
@@ -62,7 +71,24 @@ function initialOf(name: string): string {
   return (letters[0] ?? name[0] ?? "?").toUpperCase();
 }
 
-export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "CAD", onAdd, onConnect, onEdit }: BulgaAccountsProps) {
+export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "CAD", onAdd, onConnect, onEdit, onSynced }: BulgaAccountsProps) {
+  const hasLinkedBank = accounts.some((a) => a.synced);
+  const [isSyncing, startSync] = useTransition();
+  const [syncError, setSyncError] = useState("");
+
+  const handleSync = () => {
+    setSyncError("");
+    startSync(async () => {
+      try {
+        await gqlClient.request(SYNC_PLAID);
+        onSynced?.();
+      } catch (e) {
+        // Rate-limit ("syncing too often") and other failures surface inline.
+        setSyncError(errMessage(e));
+      }
+    });
+  };
+
   // Bucket the accounts, preserving their incoming order within each group.
   const buckets: Record<GroupKey, AccountView[]> = { cash: [], invest: [], credit: [] };
   for (const a of accounts) buckets[groupOf(a.type)].push(a);
@@ -109,63 +135,40 @@ export function BulgaAccounts({ accounts, netWorth, accent, theme, currency = "C
             {fmt(netWorth, currency)}
           </div>
         </div>
-        <div style={{ display: "flex", gap: 10, flexShrink: 0 }}>
-          <button
-            type="button"
-            onClick={() => onConnect?.()}
-            aria-label="Connect a bank"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              height: 39,
-              padding: "0 18px",
-              borderRadius: 9999,
-              border: "none",
-              background: "var(--bk-accent)",
-              fontSize: 13.5,
-              fontWeight: 600,
-              color: "#fff",
-              cursor: "pointer",
-              transition: "opacity .15s",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            <Landmark size={16} strokeWidth={2} aria-hidden="true" />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8, flexShrink: 0 }}>
+          <div style={{ display: "flex", gap: 10 }}>
+          {hasLinkedBank && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSync}
+              disabled={isSyncing}
+              aria-label="Sync linked banks"
+            >
+              <RefreshCw data-icon="inline-start" size={15} strokeWidth={2} className={isSyncing ? "bk-spin" : undefined} />
+              {isSyncing ? "Syncing…" : "Sync"}
+            </Button>
+          )}
+          <Button size="sm" onClick={() => onConnect?.()} aria-label="Connect a bank">
+            <Landmark data-icon="inline-start" size={16} strokeWidth={2} />
             Connect a bank
-          </button>
-          <button
-            type="button"
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => onAdd?.()}
             aria-label="Add account"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 7,
-              height: 39,
-              padding: "0 18px",
-              borderRadius: 9999,
-              border: "1px dashed var(--color-bk-line)",
-              background: "transparent",
-              fontSize: 13.5,
-              fontWeight: 600,
-              color: "var(--color-bk-muted)",
-              cursor: "pointer",
-              transition: "border-color .15s, color .15s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = "var(--color-primary)";
-              e.currentTarget.style.color = "var(--color-primary)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = "var(--color-bk-line)";
-              e.currentTarget.style.color = "var(--color-bk-muted)";
-            }}
+            className="border-dashed"
           >
-            <Plus size={16} strokeWidth={2} aria-hidden="true" />
+            <Plus data-icon="inline-start" size={16} strokeWidth={2} />
             Add account
-          </button>
+          </Button>
+          </div>
+          {syncError && (
+            <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--color-bk-clay)", textAlign: "right", maxWidth: 320 }}>
+              {syncError}
+            </span>
+          )}
         </div>
       </section>
 

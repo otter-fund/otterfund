@@ -6,6 +6,9 @@ export interface TransactionView {
   amount: number;
   icon: string;
   color: string;
+  /** Owning account — null for transactions with no account (rare/manual). */
+  accountId: string | null;
+  accountName: string | null;
 }
 
 export interface SpendCategory {

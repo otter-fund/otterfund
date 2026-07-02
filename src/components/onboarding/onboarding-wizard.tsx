@@ -569,13 +569,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                     </div>
                   </>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowConnect(true)}
-                    className="flex items-center justify-center gap-2 w-full h-12 rounded-2xl bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-90 transition-opacity"
-                  >
-                    <Landmark className="w-4 h-4" /> Connect a bank
-                  </button>
+                  <Button size="sm" onClick={() => setShowConnect(true)} className="w-full">
+                    <Landmark data-icon="inline-start" className="w-4 h-4" /> Connect a bank
+                  </Button>
                 )}
 
                 <p className="text-xs text-[var(--color-bk-muted)]">
@@ -737,10 +733,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
         {/* Navigation */}
         <div className="flex justify-between mt-8 gap-3">
           {step > 0 && !(mode === "auto" && step === 1) ? (
-            <Button
-              onClick={() => setStep(step - 1)}
-              className="h-11 px-6 rounded-full border border-[var(--color-bk-line)] bg-transparent text-[var(--color-bk-muted)] font-semibold text-sm hover:bg-transparent"
-            >
+            <Button variant="ghost" size="sm" onClick={() => setStep(step - 1)} className="px-6 text-[var(--color-bk-muted)]">
               Back
             </Button>
           ) : (
@@ -748,30 +741,18 @@ export function OnboardingWizard({ userName }: { userName: string }) {
           )}
 
           {mode === "auto" && step === 0 ? (
-            <Button
-              onClick={handleAutoAnalyze}
-              disabled={files.length === 0}
-              className="h-11 px-6 rounded-full bg-[var(--color-primary)] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
-              <Brain className="w-4 h-4 mr-2" />
+            <Button size="sm" onClick={handleAutoAnalyze} disabled={files.length === 0} className="px-6">
+              <Brain data-icon="inline-start" className="w-4 h-4" />
               Analyze {files.length} file{files.length !== 1 ? "s" : ""}
             </Button>
           ) : mode === "auto" && step === 1 ? (
             <div />
           ) : !isLastStep ? (
-            <Button
-              onClick={() => setStep(step + 1)}
-              disabled={!canAdvance()}
-              className="h-11 px-6 rounded-full bg-[var(--color-primary)] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
+            <Button size="sm" onClick={() => setStep(step + 1)} disabled={!canAdvance()} className="px-6">
               Continue
             </Button>
           ) : (
-            <Button
-              onClick={handleSubmit}
-              disabled={loading}
-              className="h-11 px-6 rounded-full bg-[var(--color-primary)] text-white font-semibold text-sm hover:opacity-90 transition-opacity"
-            >
+            <Button size="sm" onClick={handleSubmit} disabled={loading} className="px-6">
               {loading ? "Setting up..." : "Get Started"}
             </Button>
           )}

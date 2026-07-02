@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ConfirmButton } from "@/components/bulga/confirm-button";
 import { Trash2, Unlink } from "lucide-react";
 import type { AccountView } from "@/lib/types";
 import { ACCOUNT_TYPES } from "@/lib/constants";
@@ -60,7 +61,6 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
   const [errors, setErrors] = useState<AccountFormErrors>({});
   const [formError, setFormError] = useState("");
   const [isPending, startTransition] = useTransition();
-  const [confirmDelete, setConfirmDelete] = useState(false);
 
   const synced = !!account?.synced;
 
@@ -75,16 +75,8 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
       });
       setErrors({});
       setFormError("");
-      setConfirmDelete(false);
     }
   }, [account, open]);
-
-  // Auto-reset the "Are you sure?" state after 4s if the user doesn't follow through.
-  useEffect(() => {
-    if (!confirmDelete) return;
-    const t = setTimeout(() => setConfirmDelete(false), 4000);
-    return () => clearTimeout(t);
-  }, [confirmDelete]);
 
   const change = (patch: Partial<AccountFormValues>) => {
     setValues((v) => ({ ...v, ...patch }));
@@ -128,10 +120,6 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
   // transactions). Manual accounts are simply deleted.
   const handleRemove = () => {
     if (!account) return;
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-      return;
-    }
     startTransition(async () => {
       try {
         if (synced) {
@@ -175,40 +163,18 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
         {formError && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-3">{formError}</p>}
 
         <div className="flex items-center gap-2.5 mt-7">
-          <button
-            type="button"
-            onClick={handleRemove}
-            disabled={isPending}
-            aria-label={
-              confirmDelete
-                ? synced
-                  ? "Confirm disconnect account"
-                  : "Confirm delete account"
-                : synced
-                  ? "Disconnect account"
-                  : "Delete account"
-            }
-            aria-pressed={confirmDelete}
-            className={`h-11 rounded-full flex items-center justify-center shrink-0 min-w-0 cursor-pointer text-sm font-semibold text-white transition-[width,padding,gap,background-color] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] disabled:opacity-50 ${
-              confirmDelete
-                ? "w-[148px] gap-1.5 px-3 bg-[var(--color-bk-clay)] hover:bg-[oklch(58%_0.12_38)]"
-                : "w-11 gap-0 px-0 bg-[oklch(60%_0.16_25)] hover:bg-[var(--color-bk-clay)]"
-            }`}
-          >
-            {synced ? <Unlink className="w-4 h-4 shrink-0" /> : <Trash2 className="w-4 h-4 shrink-0" />}
-            <span
-              className={`whitespace-nowrap overflow-hidden text-[13px] font-semibold transition-[max-width,opacity] duration-300 ease-[cubic-bezier(0.25,0.46,0.45,0.94)] ${
-                confirmDelete ? "max-w-[140px] opacity-100" : "max-w-0 opacity-0"
-              }`}
-            >
-              {isPending ? (synced ? "Disconnecting…" : "Deleting…") : "Are you sure?"}
-            </span>
-          </button>
-          <Button
-            onClick={handleSave}
-            disabled={isPending || confirmDelete}
-            className="ml-auto h-11 px-6 rounded-full bg-[var(--color-primary)] text-white text-sm font-semibold hover:opacity-85 disabled:opacity-50"
-          >
+          <ConfirmButton
+            onConfirm={handleRemove}
+            icon={synced ? Unlink : Trash2}
+            confirmLabel="Are you sure?"
+            busyLabel={synced ? "Disconnecting…" : "Deleting…"}
+            busy={isPending}
+            restLabel={synced ? "Disconnect account" : "Delete account"}
+            armedLabel={synced ? "Confirm disconnect account" : "Confirm delete account"}
+            expandedWidth={synced ? "w-[172px]" : "w-[148px]"}
+            labelMaxWidth={synced ? "max-w-[160px]" : "max-w-[140px]"}
+          />
+          <Button size="sm" onClick={handleSave} disabled={isPending} className="ml-auto">
             {isPending ? "Saving…" : "Save changes"}
           </Button>
         </div>

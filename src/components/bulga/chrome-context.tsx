@@ -27,6 +27,18 @@ export interface BulgaChromeValue {
   editTransaction: (tx: TransactionView) => void;
   editGoal: (goal: GoalView) => void;
   editAccount: (account: AccountView) => void;
+  /** Re-run the current route's RSC to pick up mutated server data. */
+  refreshData: () => void;
+  /** Build a route href that preserves the remembered period on period-scoped
+      routes (and stays clean elsewhere). Use for ALL cross-route navigation so
+      the selected month survives — the rail and in-page links both go through
+      it, and the destination URL is born correct (no post-mount redirect). */
+  hrefFor: (href: string) => string;
+  /** Period-scoped transaction count for the topbar subtitle. A period page
+      reports its real count here (chrome can't know it — it's the page's data);
+      null when the current route doesn't track one. */
+  txCount: number | null;
+  setTxCount: (n: number | null) => void;
 }
 
 const BulgaChromeContext = createContext<BulgaChromeValue | null>(null);

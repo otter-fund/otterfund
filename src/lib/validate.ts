@@ -13,6 +13,8 @@ export const LIMITS = {
   MONEY_MAX: 1e12,
   /** Max transactions accepted by confirmImport in one call (fan-out guard). */
   IMPORT_TRANSACTIONS: 1000,
+  /** Max ids accepted by a bulk delete in one call. */
+  BULK: 1000,
   /** Max files accepted by autoOnboardFromFiles in one call. */
   UPLOAD_FILES: 10,
   /** Max bytes for a single uploaded statement (before buffering to memory). */

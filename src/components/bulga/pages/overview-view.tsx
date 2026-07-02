@@ -13,13 +13,15 @@ const ROUTE_FOR: Record<string, string> = {
 
 export function OverviewView({ overview }: { overview: DashboardOverview }) {
   const router = useRouter();
-  const { accent, theme } = useBulgaChrome();
+  const { accent, theme, hrefFor } = useBulgaChrome();
   return (
     <BulgaOverview
       overview={overview}
       accent={accent}
       theme={theme}
-      onNavigate={(v) => router.push(ROUTE_FOR[v] ?? "/dashboard")}
+      // hrefFor preserves the selected month when landing on a period-scoped
+      // route (e.g. Transactions), and stays clean for the others.
+      onNavigate={(v) => router.push(hrefFor(ROUTE_FOR[v] ?? "/dashboard"))}
     />
   );
 }

@@ -71,7 +71,7 @@ export async function getDashboardOverview(
     }),
     prisma.transaction.findMany({
       where: { userId },
-      include: { category: true },
+      include: { category: true, account: true },
       orderBy: { date: "desc" },
       take: 7,
     }),
@@ -82,10 +82,11 @@ export async function getDashboardOverview(
     }),
   ]);
 
-  // An account's current balance is its stored (starting) balance plus the
-  // net of any transactions booked against it.
+  // Synced accounts store Plaid's reported balance directly (bank truth, immune
+  // to local tx edits); manual accounts are a starting balance plus their tx net.
+  // Must match getAccounts so net worth and the accounts page agree.
   const netWorth = accounts.reduce(
-    (sum, a) => sum + a.balance + (accountBalances.get(a.id) ?? 0),
+    (sum, a) => sum + (a.plaidItemId ? a.balance : a.balance + (accountBalances.get(a.id) ?? 0)),
     0
   );
   const monthlyIncome = summary.income;
@@ -188,6 +189,8 @@ export async function getDashboardOverview(
     amount: t.amount,
     icon: t.icon || "circle",
     color: t.color || "#f0f0f0",
+    accountId: t.accountId,
+    accountName: t.account?.name ?? null,
   }));
 
   return {
@@ -288,7 +291,7 @@ export async function getTransactions(
   const [transactions, total] = await Promise.all([
     prisma.transaction.findMany({
       where,
-      include: { category: true },
+      include: { category: true, account: true },
       orderBy: { date: "desc" },
       skip: (page - 1) * limit,
       take: limit,
@@ -304,6 +307,8 @@ export async function getTransactions(
     amount: t.amount,
     icon: t.icon || "circle",
     color: t.color || "#f0f0f0",
+    accountId: t.accountId,
+    accountName: t.account?.name ?? null,
   }));
 
   return { transactions: txViews, total, totalPages: Math.ceil(total / limit) };
@@ -363,10 +368,10 @@ export async function getAccounts(userId: string): Promise<AccountView[]> {
     name: a.name,
     type: a.type,
     num: a.number || "",
-    // Stored (starting) balance plus the net of transactions on this account.
-    // For synced accounts the stored balance is an anchor set so this equals
-    // the bank-reported balance.
-    balance: a.balance + (balances.get(a.id) ?? 0),
+    // Synced accounts store Plaid's reported balance directly — the bank's
+    // truth, immune to local transaction edits. Manual accounts are a starting
+    // balance plus the net of their transactions.
+    balance: a.plaidItemId ? a.balance : a.balance + (balances.get(a.id) ?? 0),
     change: "",
     bg: a.gradient || ACCOUNT_GRADIENTS[a.type] || ACCOUNT_GRADIENTS.other,
     synced: !!a.plaidItemId,

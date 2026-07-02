@@ -7,18 +7,30 @@
 // filters by merchant name / category, and an All / Income / Spending segmented
 // filter. Every row is wired to a real TransactionView — no sample data ships.
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { Trash2, Check, ChevronDown } from "lucide-react";
 import type { TransactionView } from "@/lib/types";
 import type { BulgaTheme } from "@/components/bulga/theme";
 import { tintFor } from "@/components/bulga/theme";
 import { fmt } from "@/lib/format";
+import { gqlClient } from "@/lib/graphql/client";
+import { Button } from "@/components/ui/button";
+
+const DELETE_TRANSACTIONS = /* GraphQL */ `
+  mutation DeleteTransactions($ids: [ID!]!) {
+    deleteTransactions(ids: $ids) { ok }
+  }
+`;
 
 interface BulgaTransactionsProps {
   transactions: TransactionView[];
+  accounts: { id: string; name: string }[];
   accent: string;
   theme: BulgaTheme;
   currency?: string;
   onEdit?: (t: TransactionView) => void;
+  /** Called after a successful bulk delete so the RSC re-fetches. */
+  onBulkDeleted?: () => void;
 }
 
 type Segment = "all" | "income" | "spending";
@@ -29,24 +41,120 @@ const SEGMENTS: { id: Segment; label: string }[] = [
   { id: "spending", label: "Spending" },
 ];
 
-export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdit }: BulgaTransactionsProps) {
+export function BulgaTransactions({ transactions, accounts, theme, currency = "CAD", onEdit, onBulkDeleted }: BulgaTransactionsProps) {
   const [query, setQuery] = useState("");
   const [segment, setSegment] = useState<Segment>("all");
+  // Empty set = all accounts. Otherwise, only these account ids are shown.
+  const [acctFilter, setAcctFilter] = useState<Set<string>>(new Set());
+  const [acctMenuOpen, setAcctMenuOpen] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [isDeleting, startDelete] = useTransition();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState(false);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return transactions.filter((t) => {
       if (segment === "income" && t.amount <= 0) return false;
       if (segment === "spending" && t.amount >= 0) return false;
+      if (acctFilter.size > 0 && !(t.accountId && acctFilter.has(t.accountId))) return false;
       if (!q) return true;
       return (
         t.name.toLowerCase().includes(q) ||
         t.category.toLowerCase().includes(q)
       );
     });
-  }, [transactions, query, segment]);
+  }, [transactions, query, segment, acctFilter]);
+
+  const toggleAcct = (id: string) => {
+    setAcctFilter((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const acctLabel =
+    acctFilter.size === 0
+      ? "All accounts"
+      : acctFilter.size === 1
+        ? accounts.find((a) => acctFilter.has(a.id))?.name ?? "1 account"
+        : `${acctFilter.size} accounts`;
+
+  // Only ids currently visible can be selected; "select all" targets the filter.
+  const visibleIds = useMemo(() => filtered.map((t) => t.id), [filtered]);
+  const allVisibleSelected = visibleIds.length > 0 && visibleIds.every((id) => selected.has(id));
+
+  const clearSelection = () => {
+    setSelected(new Set());
+    setConfirmingDelete(false);
+    setDeleteError(false);
+  };
+
+  // Anchor for shift-range selection — the last checkbox toggled without shift.
+  const [anchorId, setAnchorId] = useState<string | null>(null);
+
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Mail-client selection on a checkbox: shift = select the contiguous range
+  // from the anchor to this row; plain/⌘ = toggle one. Ranges respect the
+  // current filter (operate over visibleIds, in displayed order).
+  const selectAt = (id: string, e: { shiftKey: boolean }) => {
+    if (e.shiftKey && anchorId && anchorId !== id) {
+      const from = visibleIds.indexOf(anchorId);
+      const to = visibleIds.indexOf(id);
+      if (from !== -1 && to !== -1) {
+        const [lo, hi] = from < to ? [from, to] : [to, from];
+        const range = visibleIds.slice(lo, hi + 1);
+        setSelected((prev) => new Set([...prev, ...range]));
+        return; // keep the existing anchor for further shift-clicks
+      }
+    }
+    toggleOne(id);
+    setAnchorId(id);
+  };
+
+  const toggleAllVisible = () => {
+    setSelected((prev) => {
+      if (allVisibleSelected) {
+        const next = new Set(prev);
+        for (const id of visibleIds) next.delete(id);
+        return next;
+      }
+      return new Set([...prev, ...visibleIds]);
+    });
+  };
+
+  const handleBulkDelete = () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+    if (!confirmingDelete) {
+      setConfirmingDelete(true);
+      return;
+    }
+    setDeleteError(false);
+    startDelete(async () => {
+      try {
+        await gqlClient.request(DELETE_TRANSACTIONS, { ids });
+        clearSelection();
+        onBulkDeleted?.();
+      } catch {
+        setDeleteError(true);
+        setConfirmingDelete(false);
+      }
+    });
+  };
 
   return (
+    <>
     <div
       className="bk-enter"
       style={{ maxWidth: 1000, margin: "0 auto" }}
@@ -124,6 +232,78 @@ export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdi
             );
           })}
         </div>
+
+        {/* account filter */}
+        {accounts.length > 0 && (
+          <div style={{ position: "relative" }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setAcctMenuOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={acctMenuOpen}
+              style={acctFilter.size > 0 ? { background: theme.accentTint, color: theme.accentDeep, borderColor: "transparent" } : undefined}
+            >
+              {acctLabel}
+              <ChevronDown size={14} strokeWidth={2.2} style={{ transition: "transform .18s", transform: acctMenuOpen ? "rotate(180deg)" : "none" }} aria-hidden="true" />
+            </Button>
+            {acctMenuOpen && (
+              <>
+                {/* Oversized inset: this sits inside the page's .bk-enter
+                    transform, which re-roots `fixed` to the content column — a
+                    plain inset:0 wouldn't cover the rail/margins. -100vw claws
+                    the catcher back out to blanket the whole viewport. */}
+                <div onClick={() => setAcctMenuOpen(false)} style={{ position: "fixed", inset: "-100vh -100vw", zIndex: 40 }} aria-hidden="true" />
+                <div
+                  className="bk-pop"
+                  role="menu"
+                  style={{
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    right: 0,
+                    zIndex: 41,
+                    minWidth: 220,
+                    padding: 6,
+                    borderRadius: 14,
+                    background: "var(--color-bk-surface)",
+                    border: "1px solid var(--color-bk-line)",
+                    boxShadow: "0 12px 32px oklch(20% 0.02 80 / 0.14)",
+                  }}
+                >
+                  <button
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={acctFilter.size === 0}
+                    onClick={() => setAcctFilter(new Set())}
+                    className="bk-menu-item"
+                    style={{ justifyContent: "space-between" }}
+                  >
+                    All accounts
+                    {acctFilter.size === 0 && <Check size={15} strokeWidth={2.5} style={{ color: theme.accent }} aria-hidden="true" />}
+                  </button>
+                  <div style={{ height: 1, background: "var(--color-bk-line-soft)", margin: "5px 4px" }} />
+                  {accounts.map((a) => {
+                    const on = acctFilter.has(a.id);
+                    return (
+                      <button
+                        key={a.id}
+                        type="button"
+                        role="menuitemcheckbox"
+                        aria-checked={on}
+                        onClick={() => toggleAcct(a.id)}
+                        className="bk-menu-item"
+                        style={{ justifyContent: "space-between" }}
+                      >
+                        {a.name}
+                        {on && <Check size={15} strokeWidth={2.5} style={{ color: theme.accent }} aria-hidden="true" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* table card */}
@@ -139,7 +319,7 @@ export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdi
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "2.4fr 1.3fr 1fr 1fr",
+            gridTemplateColumns: "26px 2.4fr 1.3fr 1fr 1fr",
             gap: 16,
             padding: "14px 24px",
             background: "var(--color-bk-surface)",
@@ -151,6 +331,12 @@ export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdi
             color: "var(--color-bk-muted)",
           }}
         >
+          <BkCheckbox
+            checked={allVisibleSelected}
+            onToggle={toggleAllVisible}
+            theme={theme}
+            ariaLabel="Select all"
+          />
           <span>Merchant</span>
           <span>Category</span>
           <span>Date</span>
@@ -181,6 +367,7 @@ export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdi
             const [tint, ink] = tintFor(t.category);
             const income = t.amount > 0;
             const amountLabel = (income ? "+" : "−") + fmt(t.amount, currency);
+            const isSelected = selected.has(t.id);
             return (
               <div
                 key={t.id}
@@ -195,21 +382,29 @@ export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdi
                 }}
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "2.4fr 1.3fr 1fr 1fr",
+                  gridTemplateColumns: "26px 2.4fr 1.3fr 1fr 1fr",
                   gap: 16,
                   alignItems: "center",
                   padding: "13px 24px",
                   borderTop: "1px solid var(--color-bk-line-soft)",
                   cursor: "pointer",
+                  background: isSelected ? theme.accentTint : "transparent",
                   transition: "background .15s",
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.background = "oklch(97.5% 0.005 90)";
+                  if (!isSelected) e.currentTarget.style.background = "oklch(97.5% 0.005 90)";
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.background = "transparent";
+                  e.currentTarget.style.background = isSelected ? theme.accentTint : "transparent";
                 }}
               >
+                <BkCheckbox
+                  checked={isSelected}
+                  onToggle={(e) => selectAt(t.id, e)}
+                  theme={theme}
+                  ariaLabel={`Select ${t.name}`}
+                  stopPropagation
+                />
                 <div style={{ display: "flex", alignItems: "center", gap: 13, minWidth: 0 }}>
                   <div
                     style={{
@@ -228,17 +423,34 @@ export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdi
                   >
                     {t.name.charAt(0).toUpperCase()}
                   </div>
-                  <span
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 600,
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                    }}
-                  >
-                    {t.name}
-                  </span>
+                  <div style={{ minWidth: 0 }}>
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 600,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
+                      {t.name}
+                    </div>
+                    {/* Account name — hidden when filtered to one account (redundant). */}
+                    {t.accountName && acctFilter.size !== 1 && (
+                      <div
+                        style={{
+                          fontSize: 12,
+                          color: "var(--color-bk-faint)",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          marginTop: 1,
+                        }}
+                      >
+                        {t.accountName}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <span
@@ -273,5 +485,110 @@ export function BulgaTransactions({ transactions, theme, currency = "CAD", onEdi
         )}
       </div>
     </div>
+
+      {/* bulk-action bar — fixed to the viewport bottom, screen-centered. Kept a
+          sibling of the .bk-enter wrapper so its permanent transform (animation
+          `both`) doesn't re-root this fixed element to the content column. */}
+      {selected.size > 0 && (
+        <div
+          className="bk-pop"
+          style={{
+            // Center over the CONTENT area (right of the 60px icon rail) via
+            // symmetric insets + margin auto — NOT translateX, which the bk-pop
+            // animation's own transform would override.
+            position: "fixed",
+            left: 60,
+            right: 0,
+            bottom: 28,
+            marginInline: "auto",
+            width: "fit-content",
+            zIndex: 40,
+            display: "flex",
+            alignItems: "center",
+            gap: 14,
+            padding: "10px 12px 10px 20px",
+            borderRadius: 999,
+            background: "var(--color-bk-ink)",
+            boxShadow: "0 16px 40px oklch(20% 0.02 80 / 0.28)",
+          }}
+        >
+          <span style={{ fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap", color: deleteError ? "oklch(78% 0.09 33)" : "#fff" }}>
+            {deleteError
+              ? "Couldn't delete — try again"
+              : confirmingDelete
+                ? "Are you sure?"
+                : `${selected.size} selected`}
+          </span>
+          <Button
+            size="sm"
+            onClick={clearSelection}
+            disabled={isDeleting}
+            className="bg-transparent text-white/70 hover:bg-white/10 hover:text-white"
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" size="sm" onClick={handleBulkDelete} disabled={isDeleting}>
+            <Trash2 data-icon="inline-start" style={{ width: 15, height: 15 }} />
+            {isDeleting ? "Deleting…" : confirmingDelete ? "Confirm" : "Delete"}
+          </Button>
+        </div>
+      )}
+    </>
+  );
+}
+
+/** On-brand checkbox — rounded square, hairline when empty, accent fill + check
+    when on. Used for row selection; matches the app's radius + accent language. */
+function BkCheckbox({
+  checked,
+  onToggle,
+  theme,
+  ariaLabel,
+  stopPropagation = false,
+}: {
+  checked: boolean;
+  onToggle: (e: React.MouseEvent) => void;
+  theme: BulgaTheme;
+  ariaLabel: string;
+  stopPropagation?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      role="checkbox"
+      aria-checked={checked}
+      aria-label={ariaLabel}
+      onClick={(e) => {
+        if (stopPropagation) e.stopPropagation();
+        onToggle(e);
+      }}
+      // Large, full-cell hit area (negative margin claws back the row/header
+      // padding) so the whole box is clickable — not just the 18px glyph.
+      style={{
+        display: "grid",
+        placeItems: "center",
+        alignSelf: "stretch",
+        margin: "-13px -8px -13px -24px",
+        padding: "13px 8px 13px 24px",
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+      }}
+    >
+      <span
+        style={{
+          display: "grid",
+          placeItems: "center",
+          width: 18,
+          height: 18,
+          borderRadius: 6,
+          border: checked ? "none" : "1.5px solid var(--color-bk-line)",
+          background: checked ? theme.accent : "var(--color-bk-surface)",
+          transition: "background .14s, border-color .14s",
+        }}
+      >
+        {checked && <Check size={12} strokeWidth={3} color="#fff" aria-hidden="true" />}
+      </span>
+    </button>
   );
 }

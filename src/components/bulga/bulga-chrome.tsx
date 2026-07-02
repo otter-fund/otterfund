@@ -27,16 +27,22 @@ import { SettingsModal } from "@/components/dashboard/modals/settings-modal";
 import type { TransactionView, GoalView, AccountView, SpendCategory, BillView } from "@/lib/types";
 import { DEFAULT_ACCENT, deriveTheme, themeVars } from "@/components/bulga/theme";
 import { LogoMark } from "@/components/bulga/logo";
+import { Button } from "@/components/ui/button";
 import { MonthPicker } from "@/components/bulga/month-picker";
 import { BulgaChromeProvider } from "@/components/bulga/chrome-context";
 import { MONTH_NAMES } from "@/lib/constants";
-import { resolvePeriod } from "@/lib/period";
+import { resolvePeriod, type Period } from "@/lib/period";
 
 const UPDATE_ACCENT = /* GraphQL */ `
   mutation UpdateAccent($accent: String) {
     updateSettings(input: { accent: $accent }) { ok }
   }
 `;
+
+// Where the last-picked period is remembered so it survives navigating through
+// pages that DON'T carry it in the URL (Accounts, Goals, …). sessionStorage —
+// so it persists page-to-page within a visit but resets on a fresh tab/visit.
+const PERIOD_KEY = "bulga:period";
 
 interface NavItem {
   href: string;
@@ -79,8 +85,8 @@ const TITLES: Record<string, RouteMeta> = {
 };
 
 /** Icon-rail nav link with a tooltip that flies out to the right of the dark rail. */
-function RailLink({ item, active, accent }: { item: NavItem; active: boolean; accent: string }) {
-  const { Icon, label, href } = item;
+function RailLink({ item, active, accent, href }: { item: NavItem; active: boolean; accent: string; href: string }) {
+  const { Icon, label } = item;
   return (
     <div className="group relative flex justify-center">
       <Link
@@ -157,6 +163,12 @@ export function BulgaChrome({
   const [editTx, setEditTx] = useState<TransactionView | null>(null);
   const [editGoal, setEditGoal] = useState<GoalView | null>(null);
   const [editAccount, setEditAccount] = useState<AccountView | null>(null);
+  // Period-scoped tx count reported by the transactions page (see chrome-context).
+  const [txCount, setTxCount] = useState<number | null>(null);
+  // Clear it when leaving the transactions route so no stale count lingers.
+  useEffect(() => {
+    if (pathname !== "/dashboard/transactions") setTxCount(null);
+  }, [pathname]);
 
   // Mutations live in the modals; refetch server data by re-running the active RSC.
   const refresh = () => router.refresh();
@@ -189,23 +201,90 @@ export function BulgaChrome({
 
   // The selected period is the URL's source of truth (?month=&year=), resolved
   // the SAME way the server pages do (shared resolvePeriod) so URL == data.
+  const urlMonth = searchParams.get("month");
+  const urlYear = searchParams.get("year");
   const { month, year } = resolvePeriod(
-    { month: searchParams.get("month"), year: searchParams.get("year") },
+    { month: urlMonth, year: urlYear },
     { month: todayMonth, year: todayYear }
   );
   const monthLabel = `${MONTH_NAMES[month - 1]} ${year}`;
 
   // Commit a new period to the URL, preserving the active route so switching
   // month on /transactions stays on /transactions. The transition keeps the
-  // current UI on screen (no blank flash) while the RSC refetches.
+  // current UI on screen (no blank flash) while the RSC refetches. Persistence
+  // (state + storage) is handled by the URL-sync effect below — this push
+  // updates the URL, which the effect observes; one owner for storage.
   const selectPeriod = useCallback(
     (m: number, y: number) => {
+      const isToday = m === todayMonth && y === todayYear;
       startPeriodTransition(() => {
-        const isToday = m === todayMonth && y === todayYear;
         router.push(isToday ? pathname : `${pathname}?month=${m}&year=${y}`, { scroll: false });
       });
     },
     [router, pathname, todayMonth, todayYear]
+  );
+
+  const meta = TITLES[pathname] ?? TITLES["/dashboard"];
+  const routeIsPeriodic = !!meta.periodic;
+
+  // The period remembered across navigation, held as React state (not read from
+  // storage during render — storage isn't reactive, and reading it in the
+  // initializer would make the first client render differ from the server's
+  // (null), causing a hydration mismatch on the nav hrefs). Always starts null
+  // to match SSR; the effect below hydrates it from sessionStorage AFTER mount.
+  const [remembered, setRemembered] = useState<Period | null>(null);
+
+  // Post-hydration seed: pull the last-picked period from sessionStorage once,
+  // but only if the URL isn't already authoritative here (a periodic route with
+  // ?month=&year= wins — the URL-sync effect handles that). Runs client-only,
+  // so it never affects SSR output. Nav hrefs pick up the value on the render
+  // after mount, which is fine — links aren't clicked during hydration.
+  useEffect(() => {
+    if (routeIsPeriodic && urlMonth != null) return; // URL wins; sync effect owns it
+    try {
+      const stored = sessionStorage.getItem(PERIOD_KEY);
+      if (!stored) return;
+      const [sm, sy] = stored.split("-").map(Number);
+      const p = resolvePeriod({ month: String(sm), year: String(sy) }, { month: todayMonth, year: todayYear });
+      const next = p.month === todayMonth && p.year === todayYear ? null : p;
+      setRemembered((prev) =>
+        prev?.month === next?.month && prev?.year === next?.year ? prev : next
+      );
+    } catch {}
+    // Run once on mount; the URL-sync effect keeps it current thereafter.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // On a periodic route the URL is authoritative — sync it into `remembered` +
+  // storage. A BARE url (no ?month=&year=) means "this month", which must CLEAR
+  // the memory, not be skipped: going back to today drops the params, and if we
+  // bailed on the missing params the stale month would linger and re-attach to
+  // the next nav link. Non-periodic routes leave the memory untouched (their
+  // bare URL says nothing about the period). No router.replace → no "jumpy"
+  // second fetch on load.
+  useEffect(() => {
+    if (!routeIsPeriodic) return;
+    const isToday = month === todayMonth && year === todayYear;
+    const next = isToday ? null : { month, year };
+    setRemembered((prev) =>
+      prev?.month === next?.month && prev?.year === next?.year ? prev : next
+    );
+    try {
+      if (isToday) sessionStorage.removeItem(PERIOD_KEY);
+      else sessionStorage.setItem(PERIOD_KEY, `${month}-${year}`);
+    } catch {}
+  }, [routeIsPeriodic, urlMonth, urlYear, month, year, todayMonth, todayYear]);
+
+  // Append the remembered period to periodic-route hrefs so navigating there
+  // preserves the month; non-periodic routes stay clean (period is inert there).
+  // Destination URLs are born correct — the RSC fetches the right month on its
+  // FIRST render, with no post-mount redirect.
+  const hrefFor = useCallback(
+    (href: string) =>
+      remembered && !!TITLES[href]?.periodic
+        ? `${href}?month=${remembered.month}&year=${remembered.year}`
+        : href,
+    [remembered]
   );
 
   const userName = user.name ?? null;
@@ -213,10 +292,11 @@ export function BulgaChrome({
     ? userName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
     : null;
 
-  const meta = TITLES[pathname] ?? TITLES["/dashboard"];
   const pageTitle = meta.title;
-  const pageSub = meta.sub({ monthLabel, txThisMonth });
-  const showPicker = !!meta.periodic;
+  // Prefer the count the active period page reported (accurate for the SELECTED
+  // month); fall back to the layout's current-month count before it reports.
+  const pageSub = meta.sub({ monthLabel, txThisMonth: txCount ?? txThisMonth });
+  const showPicker = routeIsPeriodic;
 
   // Memoized so context consumers (every routed page) don't re-render on every
   // chrome render (modal open, menu toggle, period transition). The state
@@ -236,8 +316,12 @@ export function BulgaChrome({
       editTransaction: setEditTx,
       editGoal: setEditGoal,
       editAccount: setEditAccount,
+      refreshData: refresh,
+      hrefFor,
+      txCount,
+      setTxCount,
     }),
-    [accent, theme, setAccent]
+    [accent, theme, setAccent, hrefFor, txCount]
   );
 
   return (
@@ -264,13 +348,13 @@ export function BulgaChrome({
           }}
         >
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", padding: "20px 0" }}>
-            <div style={{ marginBottom: 24 }}>
-              <LogoMark size={22} />
+            <div style={{ marginBottom: 12 }}>
+              <LogoMark size={42} />
             </div>
 
             <nav aria-label="Primary" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {PRIMARY_NAV.map((item) => (
-                <RailLink key={item.href} item={item} active={pathname === item.href} accent={accent} />
+                <RailLink key={item.href} item={item} href={hrefFor(item.href)} active={pathname === item.href} accent={accent} />
               ))}
             </nav>
 
@@ -278,7 +362,7 @@ export function BulgaChrome({
 
             <nav aria-label="Brand" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {SECONDARY_NAV.map((item) => (
-                <RailLink key={item.href} item={item} active={pathname === item.href} accent={accent} />
+                <RailLink key={item.href} item={item} href={hrefFor(item.href)} active={pathname === item.href} accent={accent} />
               ))}
             </nav>
 
@@ -373,18 +457,15 @@ export function BulgaChrome({
 
               {/* bell */}
               <div style={{ position: "relative" }}>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
+                  size="icon"
                   aria-label="Notifications"
                   aria-expanded={showNotifications}
                   onClick={() => setShowNotifications((v) => !v)}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", width: 38, height: 38, borderRadius: 999,
-                    border: "1px solid oklch(91% 0.006 85)", background: "oklch(98% 0.004 90)", color: "oklch(40% 0.012 80)", cursor: "pointer",
-                  }}
                 >
                   <Bell size={17} strokeWidth={1.9} aria-hidden="true" />
-                </button>
+                </Button>
                 {showNotifications && (
                   <NotificationsPanel
                     budgetTarget={notice.budgetTarget}
@@ -398,21 +479,16 @@ export function BulgaChrome({
 
               {/* add */}
               <div style={{ position: "relative" }}>
-                <button
-                  type="button"
+                <Button
+                  size="sm"
                   aria-label="Add"
                   aria-haspopup="menu"
                   aria-expanded={showAddMenu}
                   onClick={() => setShowAddMenu((v) => !v)}
-                  style={{
-                    display: "flex", alignItems: "center", gap: 8, height: 38, padding: "0 17px 0 14px", borderRadius: 999,
-                    border: "none", background: "var(--bk-accent)", color: "#fff", fontFamily: "inherit", fontSize: 13.5,
-                    fontWeight: 600, cursor: "pointer",
-                  }}
                 >
-                  <Plus size={16} strokeWidth={2.4} aria-hidden="true" />
+                  <Plus data-icon="inline-start" size={16} strokeWidth={2.4} aria-hidden="true" />
                   Add
-                </button>
+                </Button>
                 {showAddMenu && (
                   <>
                     <div onClick={() => setShowAddMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 40 }} aria-hidden="true" />

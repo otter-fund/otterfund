@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import type { GoalView } from "@/lib/types";
 import type { BulgaTheme } from "@/components/bulga/theme";
+import { Button } from "@/components/ui/button";
 
 interface BulgaGoalsProps {
   goals: GoalView[];
@@ -92,48 +94,10 @@ export function BulgaGoals({ goals, accent, theme, currency = "CAD", onAdd, onEd
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => onAdd?.()}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-            height: 40,
-            padding: "0 18px",
-            borderRadius: 999,
-            border: "1px dashed oklch(78% 0.01 85)",
-            background: "none",
-            fontFamily: "inherit",
-            fontSize: 13.5,
-            fontWeight: 600,
-            color: "oklch(42% 0.012 80)",
-            cursor: "pointer",
-            transition: "border-color .18s, color .18s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = accent;
-            e.currentTarget.style.color = accent;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "oklch(78% 0.01 85)";
-            e.currentTarget.style.color = "oklch(42% 0.012 80)";
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            aria-hidden="true"
-          >
-            <path d="M12 5v14M5 12h14" />
-          </svg>
+        <Button variant="outline" size="sm" onClick={() => onAdd?.()} className="border-dashed">
+          <Plus data-icon="inline-start" size={16} strokeWidth={2.2} />
           New goal
-        </button>
+        </Button>
       </section>
 
       {/* ── goal cards ── */}
