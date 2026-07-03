@@ -3,6 +3,7 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
+import { getUserRow } from "@/lib/db/user";
 import { getDashboardOverview } from "@/lib/db/queries";
 
 // Period resolution + bounds live in the client-safe lib/period so the chrome,
@@ -27,10 +28,8 @@ export const requireUser = cache(async () => {
   if (!data?.claims) redirect("/login");
 
   // Profile row (id === Supabase auth uuid) carries name + onboarding state.
-  const profile = await prisma.user.findUnique({
-    where: { id: data.claims.sub },
-    select: { id: true, name: true, email: true, onboardingDone: true },
-  });
+  // Shares the per-request getUserRow read with prefs and the page queries.
+  const profile = await getUserRow(data.claims.sub);
   if (!profile) redirect("/login");
   if (!profile.onboardingDone) redirect("/onboarding");
   return profile;
@@ -59,22 +58,17 @@ export const monthlyTxCount = cache((userId: string, month: number, year: number
 );
 
 /**
- * The user's display prefs (brand accent + currency) in ONE row read, memoized
- * per request so the layout (accent) and pages (currency) share a single query.
+ * The user's display prefs (brand accent + currency), served from the shared
+ * per-request getUserRow read — no extra query.
  */
-export const userPrefs = cache(async (userId: string) => {
-  const u = await prisma.user
-    .findUnique({
-      where: { id: userId },
-      select: { accent: true, currency: true, budgetPlan: true },
-    })
-    .catch(() => null);
+export const userPrefs = async (userId: string) => {
+  const u = await getUserRow(userId).catch(() => null);
   return {
     accent: u?.accent ?? null,
     currency: u?.currency ?? "CAD",
     budgetPlan: u?.budgetPlan ?? null,
   };
-});
+};
 
 /** Convenience: the user's currency, reusing the cached userPrefs row read. */
 export const userCurrency = async (userId: string) => (await userPrefs(userId)).currency;

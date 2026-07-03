@@ -1,5 +1,12 @@
+import { cache } from "react";
 import { prisma } from "./prisma";
+import { getUserRow } from "./user";
 import type { MonthlySummary } from "@/lib/types";
+
+// The grouped aggregations below are cache()-wrapped: several view-models call
+// the same one within a single render (e.g. the overview and the accounts page
+// both need account balances), and cache() collapses those into one query per
+// request. Outside an RSC render (route handlers) cache() is a pass-through.
 
 /**
  * Prisma `where` fragment that drops transactions belonging to an excluded
@@ -35,9 +42,9 @@ export async function computeAccountBalance(accountId: string): Promise<number> 
  * @param userId - Owner of the accounts.
  * @returns Map of `accountId` -> computed balance.
  */
-export async function computeAccountBalances(
+export const computeAccountBalances = cache(async (
   userId: string
-): Promise<Map<string, number>> {
+): Promise<Map<string, number>> => {
   const rows = await prisma.transaction.groupBy({
     by: ["accountId"],
     where: { userId, accountId: { not: null } },
@@ -51,7 +58,7 @@ export async function computeAccountBalances(
     }
   }
   return map;
-}
+});
 
 /**
  * Computes the spending in a single budget category for a given month.
@@ -93,11 +100,11 @@ export async function computeBudgetSpent(
  * @param year - 4-digit year.
  * @returns Map of `categoryId` -> absolute spent amount (only negative txns).
  */
-export async function computeAllBudgetSpent(
+export const computeAllBudgetSpent = cache(async (
   userId: string,
   month: number,
   year: number
-): Promise<Map<string, number>> {
+): Promise<Map<string, number>> => {
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 1);
 
@@ -120,7 +127,7 @@ export async function computeAllBudgetSpent(
     }
   }
   return map;
-}
+});
 
 /**
  * Computes income, spending, and surplus (income - spending) for a month.
@@ -135,19 +142,16 @@ export async function computeAllBudgetSpent(
  * @param year - 4-digit year.
  * @returns Income (from settings), spending (absolute), and surplus for the month.
  */
-export async function computeMonthlySurplus(
+export const computeMonthlySurplus = cache(async (
   userId: string,
   month: number,
   year: number
-): Promise<MonthlySummary> {
+): Promise<MonthlySummary> => {
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 1);
 
   const [user, spendAgg] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { monthlyIncome: true },
-    }),
+    getUserRow(userId),
     prisma.transaction.aggregate({
       where: {
         userId,
@@ -162,7 +166,7 @@ export async function computeMonthlySurplus(
   const income = user?.monthlyIncome ?? 0;
   const spending = Math.abs(spendAgg._sum.amount ?? 0);
   return { income, spending, surplus: income - spending };
-}
+});
 
 /**
  * Estimate a user's typical monthly income from their imported transactions —

@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { getUserRow } from "./user";
 import {
   computeAccountBalances,
   computeAllBudgetSpent,
@@ -52,8 +53,7 @@ export async function getDashboardOverview(
   month: number,
   year: number
 ): Promise<DashboardOverview> {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 1);
+  const sevenMonthsAgo = new Date(year, month - 7, 1);
 
   const [
     user,
@@ -66,8 +66,10 @@ export async function getDashboardOverview(
     recentTx,
     categories,
     budgets,
+    subscriptionImpact,
+    windowTxs,
   ] = await Promise.all([
-    prisma.user.findUnique({ where: { id: userId } }),
+    getUserRow(userId),
     // Excluded accounts are hidden from net worth (kept synced, but omitted).
     prisma.account.findMany({ where: { userId, excluded: false } }),
     computeAccountBalances(userId),
@@ -89,6 +91,17 @@ export async function getDashboardOverview(
     prisma.budget.findMany({
       where: { userId, month, year },
       include: { category: true },
+    }),
+    computeSubscriptionBudgetImpact(userId, month, year),
+    // Every non-excluded transaction in the trailing 7-month window — both
+    // trend series below derive from this one read.
+    prisma.transaction.findMany({
+      where: {
+        userId,
+        date: { gte: sevenMonthsAgo },
+        ...NOT_EXCLUDED_ACCOUNT,
+      },
+      select: { date: true, amount: true },
     }),
   ]);
 
@@ -115,7 +128,6 @@ export async function getDashboardOverview(
 
   const budgetMap = new Map(budgets.map((b) => [b.category.name, b.amount]));
   const totalSpend = Array.from(categorySpend.values()).reduce((a, b) => a + b, 0) || 1;
-  const subscriptionImpact = await computeSubscriptionBudgetImpact(userId, month, year);
 
   const spendingByCategory: SpendCategory[] = categories
     .filter((c) => c.name !== "Income")
@@ -134,8 +146,7 @@ export async function getDashboardOverview(
     .filter((c) => c.amount > 0 || c.budget > 0)
     .sort((a, b) => b.amount - a.amount);
 
-  // Last-7-months trends. We pull every non-excluded transaction in the window
-  // once and derive both series from it.
+  // Last-7-months trends, derived from the windowTxs read above.
   //
   // Net worth history is real, not projected: net worth at a past month-end is
   // today's net worth minus every transaction that landed after that month —
@@ -146,16 +157,6 @@ export async function getDashboardOverview(
   //
   // Income vs expense still tracks the user's configured monthlyIncome for the
   // income line (so it matches the headline figure); expenses are live.
-  const sevenMonthsAgo = new Date(year, month - 7, 1);
-  const windowTxs = await prisma.transaction.findMany({
-    where: {
-      userId,
-      date: { gte: sevenMonthsAgo },
-      ...NOT_EXCLUDED_ACCOUNT,
-    },
-    select: { date: true, amount: true },
-  });
-
   const settingsIncome = user?.monthlyIncome ?? 0;
 
   const months: string[] = [];
@@ -294,10 +295,7 @@ export async function getSpendingPlan(
   const startDate = new Date(year, month - 1, 1);
   const endDate = new Date(year, month, 1);
   const [user, categorySpentMap, categories, spendAgg, goals] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { monthlyIncome: true, currency: true, budgetPlan: true },
-    }),
+    getUserRow(userId),
     computeAllBudgetSpent(userId, month, year),
     prisma.category.findMany({ where: { userId } }),
     // Canonical monthly spend — ALL negative transactions (matches Overview's
@@ -461,10 +459,7 @@ export async function getGoalsPlan(
   year: number,
 ): Promise<GoalsPlanView> {
   const [user, goals, summary, assignedAgg] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { monthlyIncome: true, currency: true, budgetPlan: true },
-    }),
+    getUserRow(userId),
     prisma.goal.findMany({ where: { userId }, orderBy: { createdAt: "desc" } }),
     computeMonthlySurplus(userId, month, year),
     // How much surplus has already been assigned to goals this month — so the
@@ -647,6 +642,15 @@ export async function getSubscriptions(userId: string): Promise<SubscriptionView
       categoryName: s.category?.name ?? undefined,
       flags,
     };
+  });
+}
+
+/** id + name only — for filter dropdowns; skips the balance aggregation. */
+export function getAccountOptions(userId: string): Promise<{ id: string; name: string }[]> {
+  return prisma.account.findMany({
+    where: { userId },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true },
   });
 }
 

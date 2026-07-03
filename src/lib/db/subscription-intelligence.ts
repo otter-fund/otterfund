@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "./prisma";
 
 const UNUSED_THRESHOLD_DAYS = 60;
@@ -108,11 +109,11 @@ export async function detectUnusedSubscriptions(
  * @param _year - 4-digit year (currently unused).
  * @returns Map of `categoryId` -> committed monthly cost.
  */
-export async function computeSubscriptionBudgetImpact(
+export const computeSubscriptionBudgetImpact = cache(async (
   userId: string,
   _month: number,
   _year: number
-): Promise<Map<string, number>> {
+): Promise<Map<string, number>> => {
   const subs = await prisma.subscription.findMany({
     where: {
       userId,
@@ -128,4 +129,4 @@ export async function computeSubscriptionBudgetImpact(
     map.set(s.categoryId, (map.get(s.categoryId) ?? 0) + monthly);
   }
   return map;
-}
+});
