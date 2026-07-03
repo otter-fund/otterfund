@@ -175,38 +175,47 @@ export function BulgaChrome({
     if (pathname !== "/dashboard/transactions") setTxCount(null);
   }, [pathname]);
 
-  // Direction-aware topbar collapse for phones: scrolling down tucks the
-  // subtitle + actions row away (CSS `.bk-topbar[data-collapsed]`, ≤768px only
-  // — desktop ignores the attribute); scrolling up, or landing near the top,
-  // brings them back. Phones scroll the DOCUMENT (see the ≤768px block in
-  // globals.css — that's what lets Safari retract its chrome), so the listener
-  // lives on the window; on desktop the window never scrolls and the attribute
-  // is inert, so the listener simply stays quiet there.
+  // Topbar collapse for phones: scroll down tucks the subtitle + actions row
+  // away (`.bk-topbar[data-collapsed]`, ≤768px — desktop ignores it). Phones
+  // scroll the DOCUMENT (≤768px block in globals.css), so the listener lives
+  // on the window; desktop's window never scrolls, so it stays quiet.
   //
-  // Collapsing changes the bar's height, which changes the document's max
-  // scroll offset WHILE the 0.3s animation runs — the browser then re-clamps
-  // scrollTop, firing scroll events the user never made. Read as direction
-  // changes, those bounce the bar open/closed in a loop on short pages and at
-  // the bottom edge. Two guards break the cycle: only collapse when there's
-  // meaningfully more scroll room than the ~80px the bar gives back, and
-  // freeze the state inside the bottom band where clamp-induced deltas live.
+  // Guards below filter phantom deltas (layout re-clamps, iOS rubber-band,
+  // Safari chrome retraction) so only real scrolling moves the bar. Use
+  // innerHeight, not clientHeight — iOS freezes the latter at the small
+  // viewport, putting the computed bottom ~100px above the real one.
   const [navCollapsed, setNavCollapsed] = useState(false);
   useEffect(() => {
     setNavCollapsed(false);
     const doc = document.scrollingElement;
     if (!doc) return;
     let lastY = Math.max(0, doc.scrollTop);
+    let upRun = 0;
     const onScroll = () => {
-      const max = doc.scrollHeight - doc.clientHeight;
-      // Clamp: iOS rubber-banding reports negative/overshot offsets that would
-      // otherwise read as a direction change and flicker the bar.
-      const y = Math.max(0, Math.min(doc.scrollTop, max));
+      const max = doc.scrollHeight - window.innerHeight;
+      const y = doc.scrollTop;
+      if (y < 0 || y > max) {
+        // Rubber-band overscroll — resync and wait for real positions.
+        lastY = Math.max(0, Math.min(y, max));
+        return;
+      }
       const dy = y - lastY;
       lastY = y;
-      if (y < 40) setNavCollapsed(false);
-      else if (y > max - 80) return; // bottom band — hold state
-      else if (dy > 4 && max > 160) setNavCollapsed(true);
-      else if (dy < -4) setNavCollapsed(false);
+      if (y < 40) {
+        upRun = 0;
+        setNavCollapsed(false);
+      } else if (y > max - 80) {
+        return; // bottom band — hold state
+      } else if (dy > 4) {
+        upRun = 0;
+        if (max > 160) setNavCollapsed(true);
+      } else if (dy < 0) {
+        upRun -= dy;
+        if (upRun > 24) {
+          upRun = 0;
+          setNavCollapsed(false);
+        }
+      }
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
