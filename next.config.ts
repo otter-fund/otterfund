@@ -46,6 +46,13 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  experimental: {
+    // Client-cache dynamic page segments for 30s, so hopping back and forth in
+    // the sidebar reuses the last render instead of a new server round-trip.
+    // Mutations still show fresh data: the modals call router.refresh() on
+    // success, which purges this cache.
+    staleTimes: { dynamic: 30 },
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

@@ -1,5 +1,5 @@
 import { requireUser, currentPeriod, resolvePeriod, userCurrency } from "@/lib/dashboard-context";
-import { getTransactions, getAccounts } from "@/lib/db/queries";
+import { getTransactions, getAccountOptions } from "@/lib/db/queries";
 import { TransactionsView } from "@/components/bulga/pages/transactions-view";
 
 export default async function TransactionsPage({
@@ -9,12 +9,11 @@ export default async function TransactionsPage({
 }) {
   const user = await requireUser();
   const { month, year } = resolvePeriod(await searchParams, currentPeriod());
-  const [data, accounts, currency] = await Promise.all([
+  const [data, accountOptions, currency] = await Promise.all([
     // High limit so the account filter + search operate over the whole month.
     getTransactions(user.id, { month, year, limit: 500 }).catch(() => ({ transactions: [], total: 0, totalPages: 0 })),
-    getAccounts(user.id).catch(() => []),
+    getAccountOptions(user.id).catch(() => []),
     userCurrency(user.id),
   ]);
-  const accountOptions = accounts.map((a) => ({ id: a.id, name: a.name }));
   return <TransactionsView transactions={data.transactions} accounts={accountOptions} currency={currency} />;
 }

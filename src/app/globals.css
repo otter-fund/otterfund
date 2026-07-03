@@ -179,6 +179,27 @@
 @keyframes bkSpin { to { transform: rotate(360deg); } }
 .bk-spin { animation: bkSpin 0.8s linear infinite; transform-origin: center; }
 
+/* Skeleton block — the loading.tsx placeholder language. A warm hairline-tint
+   base with a slow left-to-right sheen. Layered so rounded-* utilities can
+   override the default radius (e.g. rounded-full pills and donuts). */
+@keyframes bkShimmer { to { transform: translateX(100%); } }
+@layer components {
+  .bk-skel {
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--color-bk-line-soft) 60%, var(--color-bk-surface));
+  }
+}
+.bk-skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, oklch(100% 0 0 / 0.55), transparent);
+  animation: bkShimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* Popover reveal — calm scale-fade anchored to the top-right trigger
    (the month picker). Quicker than a page enter; same easing. */
 @keyframes bkPop {
@@ -337,6 +358,7 @@
   .bk-enter { animation: none; }
   .bk-pop { animation: none; }
   .bk-spin { animation-duration: 1.4s; }
+  .bk-skel::after { animation: none; }
 }
 
 /* ── Paper grain ──
