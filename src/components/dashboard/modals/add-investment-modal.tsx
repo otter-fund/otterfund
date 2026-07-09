@@ -100,7 +100,7 @@ export function AddInvestmentModal({
             New investment
           </DialogTitle>
         </DialogHeader>
-        <div className="mt-2">
+        <div className="mt-2 min-w-0">
           <InvestmentForm values={values} errors={errors} onChange={change} open={open} idPrefix="inv" />
         </div>
         {formError && (

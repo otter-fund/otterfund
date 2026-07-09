@@ -332,22 +332,47 @@ async function twelveDataSearch(query: string): Promise<SecurityMatch[]> {
   return out;
 }
 
+// Tokenized/wrapped equities (Robinhood Token, xStock, Ondo, Dinari dShares, …)
+// mirror a real stock's ticker and name on CoinGecko — "Apple • Robinhood Token"
+// even carries the symbol AAPL. They are not the security someone means when they
+// type a stock ticker, and they price as thin crypto tokens (cents, not the share
+// price), so we drop them: a stock search must resolve to the actual listing.
+// "tokeniz" is anchored to stock/equity so a real coin like "Tokenize Xchange"
+// (TKX) isn't caught by the word alone.
+const TOKENIZED_EQUITY_RE =
+  /tokeniz\w*\s+(stock|equit)|x ?stock|robinhood token|d-?shares|dinari|backed (stock|equit)|wrapped .*stock/i;
+
+// Only a well-ranked coin may lead over a stock. Real coins a user would type
+// (BTC #1, ETH #2, SOL #7, and down through the majors) sit near the top;
+// impostor tokens that reuse an equity's ticker and unrelated memecoins live in
+// the hundreds/thousands. Above this rank, a same-name/ticker "match" is noise.
+const CRYPTO_LEAD_MAX_RANK = 200;
+
+/** A search candidate carrying its CoinGecko market-cap rank, used only to decide
+    ordering (whether crypto should lead). Stripped to a plain SecurityMatch before
+    results leave searchSymbols. */
+type RankedMatch = SecurityMatch & { rank: number };
+
 /** CoinGecko coin search → the top ranked coins matching the query. Keyless.
-    Unranked junk tokens are dropped so "apple" doesn't surface a memecoin. */
-async function coinGeckoSearch(query: string): Promise<SecurityMatch[]> {
+    Unranked junk tokens are dropped so "apple" doesn't surface a memecoin, and
+    tokenized-stock tokens are dropped so "AAPL" resolves to Apple Inc., not a
+    Robinhood/xStock token that reuses the ticker. */
+async function coinGeckoSearch(query: string): Promise<RankedMatch[]> {
   const json = (await fetchJson(
     `https://api.coingecko.com/api/v3/search?query=${encodeURIComponent(query)}`,
   )) as { coins?: Record<string, unknown>[] } | null;
   const coins = json?.coins;
   if (!Array.isArray(coins)) return [];
 
-  const out: SecurityMatch[] = [];
+  const out: RankedMatch[] = [];
   for (const c of coins) {
-    if (typeof c.market_cap_rank !== "number") continue; // skip unranked junk
+    const rank = c.market_cap_rank;
+    if (typeof rank !== "number") continue; // skip unranked junk
     const symbol = String(c.symbol ?? "").trim().toUpperCase();
     if (!symbol) continue;
     const name = String(c.name ?? "").trim() || symbol;
-    out.push({ symbol, name, assetClass: "Crypto", exchange: "Crypto" });
+    if (TOKENIZED_EQUITY_RE.test(name)) continue; // not a coin — a tokenized equity
+    out.push({ symbol, name, assetClass: "Crypto", exchange: "Crypto", rank });
     if (out.length >= 4) break;
   }
   return out;
@@ -365,13 +390,17 @@ export async function searchSymbols(query: string): Promise<SecurityMatch[]> {
 
   const [stocks, cryptos] = await Promise.all([twelveDataSearch(q), coinGeckoSearch(q)]);
 
-  // Only surface crypto when the query actually names a coin (exact symbol/name),
-  // so a stock search ("apple", "tesla") isn't polluted by tokenized-stock tokens
-  // (AAPLX, TSLAON…). When it does lead, crypto goes first (BTC above Bitcoin
-  // ETFs). If no stocks matched at all, fall back to whatever crypto we found.
+  // Crypto leads only when the query clearly names a real coin: an exact
+  // symbol/name hit on a well-ranked token, so "bitcoin"/"BTC" leads with BTC
+  // (over a spot-BTC ETF), while "AAPL"/"apple"/"TSLA" lead with the equity — the
+  // tokenized tokens that reuse those tickers are already dropped above, and any
+  // leftover same-ticker memecoin is out-ranked past the cap. Otherwise stocks
+  // lead, falling back to crypto only when no stock matched at all.
   const qU = q.toUpperCase();
   const qL = q.toLowerCase();
-  const cryptoLeads = cryptos.some((c) => c.symbol === qU || c.name.toLowerCase() === qL);
+  const cryptoLeads = cryptos.some(
+    (c) => (c.symbol === qU || c.name.toLowerCase() === qL) && c.rank <= CRYPTO_LEAD_MAX_RANK,
+  );
   const ordered = cryptoLeads
     ? [...cryptos, ...stocks]
     : stocks.length > 0
@@ -383,7 +412,8 @@ export async function searchSymbols(query: string): Promise<SecurityMatch[]> {
   for (const m of ordered) {
     if (seen.has(m.symbol)) continue;
     seen.add(m.symbol);
-    out.push(m);
+    // Strip the internal rank — results leave as plain SecurityMatch.
+    out.push({ symbol: m.symbol, name: m.name, assetClass: m.assetClass, exchange: m.exchange });
     if (out.length >= 8) break;
   }
   return out;

@@ -128,7 +128,7 @@ export function EditInvestmentModal({
             Edit investment
           </DialogTitle>
         </DialogHeader>
-        <div className="mt-2">
+        <div className="mt-2 min-w-0">
           <InvestmentForm values={values} errors={errors} onChange={change} open={open} idPrefix="edit-inv" />
         </div>
         {formError && (
