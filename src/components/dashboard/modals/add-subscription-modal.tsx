@@ -108,7 +108,7 @@ export function AddSubscriptionModal({
     >
       <DialogContent className="sm:max-w-[460px] p-6 sm:p-9">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-of-ink)]">
             New subscription
           </DialogTitle>
         </DialogHeader>
@@ -116,7 +116,7 @@ export function AddSubscriptionModal({
           <SubscriptionForm values={values} errors={errors} onChange={change} open={open} idPrefix="sub" />
         </div>
         {formError && (
-          <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{formError}</p>
+          <p className="text-sm text-[var(--color-of-clay)] font-medium mt-2">{formError}</p>
         )}
         <div className="flex gap-3 mt-7">
           <Button variant="secondary" size="sm" onClick={onClose} className="flex-1">

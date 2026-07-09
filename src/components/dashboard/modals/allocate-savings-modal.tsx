@@ -1,6 +1,6 @@
 "use client";
 
-// Bulga — ALLOCATE SAVINGS modal.
+// otterfund — ALLOCATE SAVINGS modal.
 //
 // The manual counterpart to the old one-tap auto-split. It lists every goal
 // (emoji · name · priority); tapping one expands it to show how much surplus is
@@ -18,9 +18,9 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PRIORITY_LEVELS, toPriorityLevel } from "@/components/bulga/priority-picker";
+import { PRIORITY_LEVELS, toPriorityLevel } from "@/components/otterfund/priority-picker";
 import type { GoalPlanItem } from "@/lib/types";
-import type { BulgaTheme } from "@/components/bulga/theme";
+import type { OtterfundTheme } from "@/components/otterfund/theme";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
 
 const ASSIGN_SURPLUS_TO_GOAL = /* GraphQL */ `
@@ -50,7 +50,7 @@ export function AllocateSavingsModal({
   /** Real cash still free to place this month. */
   assignable: number;
   currency: string;
-  theme: BulgaTheme;
+  theme: OtterfundTheme;
 }) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [amount, setAmount] = useState("");
@@ -96,10 +96,10 @@ export function AllocateSavingsModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[520px] p-6 sm:p-8">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-of-ink)]">
             Allocate savings
           </DialogTitle>
-          <DialogDescription className="text-[13px] text-[var(--color-bk-muted)]">
+          <DialogDescription className="text-[13px] text-[var(--color-of-muted)]">
             Choose a goal and place some of this month’s surplus onto it.
           </DialogDescription>
         </DialogHeader>
@@ -112,17 +112,17 @@ export function AllocateSavingsModal({
           <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: theme.accentDeep }}>
             Available to allocate
           </span>
-          <span className="bk-num text-[20px] font-medium" style={{ color: theme.accentDeep }}>
+          <span className="of-num text-[20px] font-medium" style={{ color: theme.accentDeep }}>
             {fmt0(assignable)}
           </span>
         </div>
 
         {assignable <= 0 ? (
-          <p className="mt-4 text-[13px] text-[var(--color-bk-muted)]">
+          <p className="mt-4 text-[13px] text-[var(--color-of-muted)]">
             You’ve allocated all of this month’s surplus. More becomes available as income comes in.
           </p>
         ) : (
-          <div className="bk-scroll mt-4 flex max-h-[52vh] flex-col gap-2 overflow-y-auto pr-1">
+          <div className="of-scroll mt-4 flex max-h-[52vh] flex-col gap-2 overflow-y-auto pr-1">
             {goals.map((g) => {
               const expanded = expandedId === g.id;
               const room = g.remaining <= 0;
@@ -131,8 +131,8 @@ export function AllocateSavingsModal({
                   key={g.id}
                   className="rounded-2xl border transition-colors"
                   style={{
-                    borderColor: expanded ? theme.accentBorder : "var(--color-bk-line)",
-                    background: expanded ? theme.accentTint : "var(--color-bk-surface)",
+                    borderColor: expanded ? theme.accentBorder : "var(--color-of-line)",
+                    background: expanded ? theme.accentTint : "var(--color-of-surface)",
                   }}
                 >
                   <button
@@ -142,13 +142,13 @@ export function AllocateSavingsModal({
                   >
                     <span
                       className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[20px]"
-                      style={{ background: "var(--color-bk-canvas)", border: "1px solid var(--color-bk-line-soft)" }}
+                      style={{ background: "var(--color-of-canvas)", border: "1px solid var(--color-of-line-soft)" }}
                     >
                       {g.emoji || "🎯"}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
-                        <span className="truncate text-[15px] font-semibold text-[var(--color-bk-ink)]">{g.name}</span>
+                        <span className="truncate text-[15px] font-semibold text-[var(--color-of-ink)]">{g.name}</span>
                         {room && (
                           <span
                             className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold"
@@ -158,12 +158,12 @@ export function AllocateSavingsModal({
                           </span>
                         )}
                       </span>
-                      <span className="mt-0.5 block text-[12px] text-[var(--color-bk-muted)]">
+                      <span className="mt-0.5 block text-[12px] text-[var(--color-of-muted)]">
                         {priorityName(g.priority)} priority
                         {!room && <> · {fmt0(g.remaining)} to go</>}
                       </span>
                     </span>
-                    <span className="bk-num shrink-0 text-[14px]" style={{ color: theme.accentDeep }}>
+                    <span className="of-num shrink-0 text-[14px]" style={{ color: theme.accentDeep }}>
                       {g.pct}%
                     </span>
                   </button>
@@ -171,14 +171,14 @@ export function AllocateSavingsModal({
                   {expanded && (
                     <div className="px-4 pb-4">
                       {room ? (
-                        <p className="rounded-xl bg-[var(--color-bk-canvas)] px-3 py-2.5 text-[13px] text-[var(--color-bk-muted)]">
+                        <p className="rounded-xl bg-[var(--color-of-canvas)] px-3 py-2.5 text-[13px] text-[var(--color-of-muted)]">
                           This goal is fully funded — nothing more to allocate here.
                         </p>
                       ) : (
                         <>
                           <div className="flex items-end gap-2">
                             <div className="flex-1">
-                              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--color-bk-faint)]">
+                              <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--color-of-faint)]">
                                 Amount
                               </label>
                               <input
@@ -191,7 +191,7 @@ export function AllocateSavingsModal({
                                   if (error) setError("");
                                 }}
                                 placeholder="0"
-                                className="bk-field"
+                                className="of-field"
                               />
                             </div>
                             <Button
@@ -204,11 +204,11 @@ export function AllocateSavingsModal({
                               Max
                             </Button>
                           </div>
-                          <p className="mt-2 text-[12px] text-[var(--color-bk-muted)]">
+                          <p className="mt-2 text-[12px] text-[var(--color-of-muted)]">
                             Up to {fmt0(Math.min(assignable, g.remaining))} — capped by your surplus and what this goal still needs.
                           </p>
                           {error && (
-                            <p className="mt-2 text-[13px] font-medium text-[var(--color-bk-clay)]">{error}</p>
+                            <p className="mt-2 text-[13px] font-medium text-[var(--color-of-clay)]">{error}</p>
                           )}
                           <Button
                             size="sm"

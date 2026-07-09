@@ -1,6 +1,6 @@
 import { requireUser, currentPeriod, resolvePeriod, userCurrency } from "@/lib/dashboard-context";
 import { getTransactions, getAccountOptions } from "@/lib/db/queries";
-import { TransactionsView } from "@/components/bulga/pages/transactions-view";
+import { TransactionsView } from "@/components/otterfund/pages/transactions-view";
 
 export default async function TransactionsPage({
   searchParams,

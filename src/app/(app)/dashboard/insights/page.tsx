@@ -1,6 +1,6 @@
 import { requireUser } from "@/lib/dashboard-context";
 import { getInsights } from "@/lib/db/queries";
-import { InsightsView } from "@/components/bulga/pages/insights-view";
+import { InsightsView } from "@/components/otterfund/pages/insights-view";
 
 export default async function InsightsPage() {
   const user = await requireUser();

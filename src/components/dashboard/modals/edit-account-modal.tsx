@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ConfirmButton } from "@/components/bulga/confirm-button";
+import { ConfirmButton } from "@/components/otterfund/confirm-button";
 import { Trash2, Unlink, Eye, EyeOff } from "lucide-react";
 import type { AccountView } from "@/lib/types";
 import { ACCOUNT_TYPES } from "@/lib/constants";
@@ -165,7 +165,7 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[480px] p-6 sm:p-9">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <DialogTitle className="text-2xl font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
             Edit account
           </DialogTitle>
         </DialogHeader>
@@ -185,7 +185,7 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
           </div>
         )}
 
-        {formError && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-3">{formError}</p>}
+        {formError && <p className="text-sm text-[var(--color-of-clay)] font-medium mt-3">{formError}</p>}
 
         {synced ? (
           // Single row: whole-bank disconnect (left, compact) + hide & save (right).

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Field, TextInput } from "@/components/bulga/form";
+import { Field, TextInput } from "@/components/otterfund/form";
 import { Button } from "@/components/ui/button";
-import { GuillocheSeal } from "@/components/bulga/guilloche";
-import { BRAND_THEME } from "@/components/bulga/theme";
+import { GuillocheSeal } from "@/components/otterfund/guilloche";
+import { BRAND_THEME } from "@/components/otterfund/theme";
 
 // Step 1 of the password-reset flow: request a recovery email. Supabase's
 // resetPasswordForEmail never reveals whether the address is registered, and we
@@ -44,18 +44,18 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="bk-enter flex flex-col items-center gap-5 text-center">
+      <div className="of-enter flex flex-col items-center gap-5 text-center">
         <div className="h-16 w-16" aria-hidden="true">
           <GuillocheSeal accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} label="✓" />
         </div>
 
         <div className="flex flex-col gap-2">
-          <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
             Check your email
           </h1>
-          <p className="text-sm leading-relaxed text-[var(--color-bk-muted)]">
+          <p className="text-sm leading-relaxed text-[var(--color-of-muted)]">
             If an account exists for{" "}
-            <span className="font-semibold text-[var(--color-bk-ink)]">{email}</span>, we&apos;ve
+            <span className="font-semibold text-[var(--color-of-ink)]">{email}</span>, we&apos;ve
             sent a link to reset your password. Open it to choose a new one.
           </p>
         </div>
@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
           Back to sign in
         </Link>
 
-        <p className="text-[13px] text-[var(--color-bk-muted)]">
+        <p className="text-[13px] text-[var(--color-of-muted)]">
           Didn&apos;t get it? Check your spam folder, or{" "}
           <button
             type="button"
@@ -83,12 +83,12 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="bk-enter">
+    <div className="of-enter">
       <header className="mb-8">
-        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
           Reset your password
         </h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-bk-muted)]">
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-of-muted)]">
           Enter your email and we&apos;ll send you a link to set a new one.
         </p>
       </header>
@@ -107,7 +107,7 @@ export default function ForgotPasswordPage() {
         </Field>
 
         {error && (
-          <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
+          <p className="text-sm font-medium text-[var(--color-of-clay)]">{error}</p>
         )}
 
         <Button
@@ -119,7 +119,7 @@ export default function ForgotPasswordPage() {
         </Button>
       </form>
 
-      <p className="mt-8 text-center text-sm text-[var(--color-bk-muted)]">
+      <p className="mt-8 text-center text-sm text-[var(--color-of-muted)]">
         Remembered it?{" "}
         <Link
           href="/login"

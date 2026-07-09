@@ -8,7 +8,7 @@ import {
   PasswordInput,
   PasswordStrength,
   passwordMeetsRules,
-} from "@/components/bulga/form";
+} from "@/components/otterfund/form";
 import { Button } from "@/components/ui/button";
 
 type FieldErrors = { password?: string; confirm?: string };
@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
     });
   }, []);
 
-  // Clear a field's inline error as the user edits it (Bulga form pattern).
+  // Clear a field's inline error as the user edits it (otterfund form pattern).
   function clearErrors(...fields: (keyof FieldErrors)[]) {
     setFieldErrors((prev) => {
       if (!fields.some((f) => prev[f])) return prev;
@@ -80,18 +80,18 @@ export default function ResetPasswordPage() {
 
   if (status === "checking") {
     return (
-      <p className="bk-enter py-4 text-center text-sm text-[var(--color-bk-muted)]">Loading…</p>
+      <p className="of-enter py-4 text-center text-sm text-[var(--color-of-muted)]">Loading…</p>
     );
   }
 
   if (status === "expired") {
     return (
-      <div className="bk-enter flex flex-col items-center gap-5 text-center">
+      <div className="of-enter flex flex-col items-center gap-5 text-center">
         <div className="flex flex-col gap-2">
-          <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
             This link has expired
           </h1>
-          <p className="text-sm leading-relaxed text-[var(--color-bk-muted)]">
+          <p className="text-sm leading-relaxed text-[var(--color-of-muted)]">
             Password reset links can only be used once and expire after a short while. Request a
             fresh one to continue.
           </p>
@@ -115,12 +115,12 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="bk-enter">
+    <div className="of-enter">
       <header className="mb-8">
-        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
           Choose a new password
         </h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-bk-muted)]">
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-of-muted)]">
           Pick something strong you haven&apos;t used here before.
         </p>
       </header>
@@ -160,7 +160,7 @@ export default function ResetPasswordPage() {
         </Field>
 
         {error && (
-          <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
+          <p className="text-sm font-medium text-[var(--color-of-clay)]">{error}</p>
         )}
 
         <Button

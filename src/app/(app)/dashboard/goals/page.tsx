@@ -1,7 +1,7 @@
 import { requireUser, currentPeriod } from "@/lib/dashboard-context";
 import { getGoalsPlan } from "@/lib/db/queries";
 import { getBudgetPlan } from "@/lib/constants";
-import { GoalsView } from "@/components/bulga/pages/goals-view";
+import { GoalsView } from "@/components/otterfund/pages/goals-view";
 import type { GoalsPlanView } from "@/lib/types";
 
 // Fallback keeps the page's structure rendering if the query fails.

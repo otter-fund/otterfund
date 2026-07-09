@@ -1,4 +1,4 @@
-# Bulga
+# otterfund
 
 A minimalist personal budgeting app — import bank statements, let AI categorize spending, and track budgets and goals.
 

@@ -1,6 +1,6 @@
 "use client";
 
-// Bulga — auth brand panel.
+// otterfund — auth brand panel.
 //
 // The pitch half of the split-screen auth layout. On the shared evergreen
 // banknote field it floats a "note" that counts its net-worth figure up and
@@ -17,7 +17,7 @@ import {
   PANEL_MUTED,
   PANEL_ACCENT,
   PANEL_HAIRLINE,
-} from "@/components/bulga/brand-panel";
+} from "@/components/otterfund/brand-panel";
 import { fmt } from "@/lib/format";
 
 // ── mini net-worth sparkline (illustrative, mirrors the real Overview) ──
@@ -100,7 +100,7 @@ export function AuthBrandPanel() {
       {/* ── pitch + showpiece ── */}
       <div className="relative flex max-w-[440px] flex-1 flex-col justify-center">
         <div
-          className="bk-enter"
+          className="of-enter"
           style={{
             animationDelay: "80ms",
             fontSize: 12,
@@ -113,7 +113,7 @@ export function AuthBrandPanel() {
           Personal budgeting, in balance
         </div>
         <h2
-          className="bk-enter mt-4 mb-9 text-balance"
+          className="of-enter mt-4 mb-9 text-balance"
           style={{
             animationDelay: "160ms",
             fontFamily: "var(--font-num), Georgia, serif",
@@ -131,7 +131,7 @@ export function AuthBrandPanel() {
         {/* the floating note */}
         <div
           data-in={live ? "" : undefined}
-          className="bk-enter relative overflow-hidden"
+          className="of-enter relative overflow-hidden"
           style={{
             animationDelay: "260ms",
             background: "oklch(99% 0.01 95 / 0.07)",
@@ -156,7 +156,7 @@ export function AuthBrandPanel() {
               Net worth
             </span>
             <span
-              className="bk-num"
+              className="of-num"
               style={{ fontSize: 10.5, letterSpacing: "0.14em", color: PANEL_MUTED, opacity: 0.8 }}
             >
               SERIES 2026
@@ -164,7 +164,7 @@ export function AuthBrandPanel() {
           </div>
 
           <div
-            className="bk-num"
+            className="of-num"
             style={{ fontSize: 40, fontWeight: 500, letterSpacing: "-0.03em", lineHeight: 1, marginTop: 12, color: PANEL_INK }}
           >
             {fmt(netWorth)}
@@ -187,12 +187,12 @@ export function AuthBrandPanel() {
                   <path d={SPARK.area} />
                 </clipPath>
               </defs>
-              <path className="bk-lp-area" d={SPARK.area} fill="url(#auth-nw-grad)" />
-              <g className="bk-lp-area" clipPath="url(#auth-nw-clip)">
+              <path className="of-lp-area" d={SPARK.area} fill="url(#auth-nw-grad)" />
+              <g className="of-lp-area" clipPath="url(#auth-nw-clip)">
                 {RAIN.map((d, i) => (
                   <rect
                     key={i}
-                    className="bk-lp-rain"
+                    className="of-lp-rain"
                     x={d.x}
                     y={0}
                     width={1.8}
@@ -208,7 +208,7 @@ export function AuthBrandPanel() {
                 ))}
               </g>
               <path
-                className="bk-lp-line"
+                className="of-lp-line"
                 d={SPARK.line}
                 pathLength={1}
                 fill="none"
@@ -224,7 +224,7 @@ export function AuthBrandPanel() {
               aria-hidden
             >
               <span
-                className="bk-lp-dot absolute -left-[5.5px] -top-[5.5px] block h-[11px] w-[11px] rounded-full"
+                className="of-lp-dot absolute -left-[5.5px] -top-[5.5px] block h-[11px] w-[11px] rounded-full"
                 style={{ background: PANEL_ACCENT, border: "2px solid oklch(28% 0.05 158)" }}
               />
             </span>
@@ -238,7 +238,7 @@ export function AuthBrandPanel() {
                 style={{ border: `1px solid ${PANEL_HAIRLINE}` }}
               >
                 <div style={{ fontSize: 11.5, color: PANEL_MUTED }}>{s.label}</div>
-                <div className="bk-num mt-0.5" style={{ fontSize: 17, letterSpacing: "-0.02em", color: PANEL_INK }}>
+                <div className="of-num mt-0.5" style={{ fontSize: 17, letterSpacing: "-0.02em", color: PANEL_INK }}>
                   {fmt(s.value)}
                 </div>
               </div>

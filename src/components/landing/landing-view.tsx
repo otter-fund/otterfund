@@ -1,6 +1,6 @@
 "use client";
 
-// Bulga — landing page.
+// otterfund — landing page.
 //
 // The pre-auth pitch, in the brand's banknote language and now sharing the
 // app's split-screen vocabulary: engraved guilloché line-work, Newsreader
@@ -10,7 +10,7 @@
 // sparkline, a deep showpiece band renders the real Needs/Wants/Savings donut,
 // and the actual budget plans are shown as pickable cards. Every motion degrades
 // to a calm static layout under prefers-reduced-motion (CSS in globals.css,
-// sections "bk-enter" / "Landing").
+// sections "of-enter" / "Landing").
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -30,12 +30,12 @@ import {
   Wallet,
 } from "lucide-react";
 
-import { Card, CardLabel } from "@/components/bulga/card";
-import { GuillocheFlow } from "@/components/bulga/guilloche-flow";
-import { DonutChart } from "@/components/bulga/donut-chart";
-import { ProgressRing } from "@/components/bulga/progress";
-import { LogoMark, OtterFace } from "@/components/bulga/logo";
-import { BRAND_THEME, SCHEMES, deriveTheme, hueOf, type BulgaTheme } from "@/components/bulga/theme";
+import { Card, CardLabel } from "@/components/otterfund/card";
+import { GuillocheFlow } from "@/components/otterfund/guilloche-flow";
+import { DonutChart } from "@/components/otterfund/donut-chart";
+import { ProgressRing } from "@/components/otterfund/progress";
+import { LogoMark, OtterFace } from "@/components/otterfund/logo";
+import { BRAND_THEME, SCHEMES, deriveTheme, hueOf, type OtterfundTheme } from "@/components/otterfund/theme";
 import {
   PANEL_ACCENT,
   PANEL_BG,
@@ -43,7 +43,7 @@ import {
   PANEL_LINE,
   PANEL_LINE_DEEP,
   PANEL_MUTED,
-} from "@/components/bulga/brand-panel";
+} from "@/components/otterfund/brand-panel";
 import { BUDGET_PLANS, getBudgetPlan } from "@/lib/constants";
 import { buttonVariants } from "@/components/ui/button";
 import { fmt, fmtWhole } from "@/lib/format";
@@ -51,7 +51,7 @@ import { cn } from "@/lib/utils";
 
 const SERIF: React.CSSProperties = { fontFamily: "var(--font-num), Georgia, serif" };
 
-const CTA_PRIMARY = cn(buttonVariants({ variant: "default", size: "lg" }), "bk-lp-cta font-semibold");
+const CTA_PRIMARY = cn(buttonVariants({ variant: "default", size: "lg" }), "of-lp-cta font-semibold");
 const CTA_SECONDARY = cn(buttonVariants({ variant: "outline", size: "lg" }), "font-semibold");
 
 // In-page sections the nav and footer link to (see scrollToId).
@@ -109,7 +109,7 @@ function Reveal({
     <div
       ref={ref}
       data-in={inView ? "" : undefined}
-      className={cn("bk-reveal", className)}
+      className={cn("of-reveal", className)}
       style={{ "--d": `${delay}ms` } as React.CSSProperties}
     >
       {children}
@@ -207,12 +207,12 @@ function useTween(target: number, run: boolean, duration = 1100) {
 }
 
 // The trailing noun of the hero headline cycles so "Your money, in ___." reads
-// as a loop of the outcomes Bulga delivers. Static first word under reduced
+// as a loop of the outcomes otterfund delivers. Static first word under reduced
 // motion (RotatingWord holds on index 0 when the interval never starts).
 const HERO_WORDS = ["balance.", "focus.", "order.", "reach."];
 
 /** Swaps the trailing headline noun on a loop, each new word rising in via
-    `bk-hero-word` (remounted by `key`). */
+    `of-hero-word` (remounted by `key`). */
 function RotatingWord({ words, interval = 2600 }: { words: string[]; interval?: number }) {
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -221,7 +221,7 @@ function RotatingWord({ words, interval = 2600 }: { words: string[]; interval?: 
     return () => clearInterval(id);
   }, [words.length, interval]);
   return (
-    <span key={words[i]} className="bk-hero-word inline-block">
+    <span key={words[i]} className="of-hero-word inline-block">
       {words[i]}
     </span>
   );
@@ -272,7 +272,7 @@ const HERO_GOALS = [
 ];
 
 /** A small self-drawing net-worth/portfolio sparkline for a deck card. The
-    line + area draw once when the deck scrolls into view (bk-lp-* under the
+    line + area draw once when the deck scrolls into view (of-lp-* under the
     ancestor's `data-in`). `gradId` must be unique per instance. */
 function MiniSpark({
   spark,
@@ -293,9 +293,9 @@ function MiniSpark({
           <stop offset="100%" stopColor={color} stopOpacity="0" />
         </linearGradient>
       </defs>
-      <path className="bk-lp-area" d={spark.area} fill={`url(#${gradId})`} />
+      <path className="of-lp-area" d={spark.area} fill={`url(#${gradId})`} />
       <path
-        className="bk-lp-line"
+        className="of-lp-line"
         d={spark.line}
         pathLength={1}
         fill="none"
@@ -345,7 +345,7 @@ const PANEL_BUCKET: Record<"needs" | "wants" | "savings", string> = {
 /** Small header for a deck card: a tinted tab-icon tile + its uppercase label.
     `align="right"` flips it (label then tile, hugging the right edge) for the
     Goals card, whose visible portion pokes out on the right. */
-function DeckHeader({ Icon, label, t, align = "left" }: { Icon: LucideIcon; label: string; t: BulgaTheme; align?: "left" | "right" }) {
+function DeckHeader({ Icon, label, t, align = "left" }: { Icon: LucideIcon; label: string; t: OtterfundTheme; align?: "left" | "right" }) {
   return (
     <div className={cn("flex items-center gap-2.5 mb-3", align === "right" && "flex-row-reverse")}>
       <span
@@ -378,7 +378,7 @@ function DashboardPreview() {
   const nwDelta = useTween(inView ? 1240.18 : 0, inView, 1300);
 
   const gain = green.accentDeep;
-  const loss = "var(--color-bk-clay)";
+  const loss = "var(--color-of-clay)";
 
   // Shared surface for the two background cards: glassy, softened, and pushed
   // back so they read as context behind the star.
@@ -394,20 +394,20 @@ function DashboardPreview() {
     <div ref={ref} data-in={inView ? "" : undefined} className="relative mx-auto w-full max-w-[480px]">
       {/* ── Background — Investments, fanned upper-left ── */}
       <div
-        className="bk-hero-float pointer-events-none absolute left-0 top-0 w-full z-10"
+        className="of-hero-float pointer-events-none absolute left-0 top-0 w-full z-10"
         style={{ animationDelay: "-3.2s" }}
         aria-hidden
       >
         <div style={{ transform: "translate(-42%, -22%) rotate(-8deg) scale(0.86)", transformOrigin: "center" }}>
           <div className={backCard} style={backStyle}>
             <DeckHeader Icon={TrendingUp} label="Investments" t={blue} />
-            <div className="text-[12px] font-medium text-[var(--color-bk-muted)]">Portfolio</div>
+            <div className="text-[12px] font-medium text-[var(--color-of-muted)]">Portfolio</div>
             <div className="flex items-end justify-between">
-              <div className="bk-num text-[26px] tracking-[-0.03em] leading-none mt-1" style={{ fontWeight: 500 }}>
+              <div className="of-num text-[26px] tracking-[-0.03em] leading-none mt-1" style={{ fontWeight: 500 }}>
                 {fmt(13620.5)}
               </div>
               <span
-                className="bk-num text-[12px] font-semibold px-2 py-0.5 rounded-full"
+                className="of-num text-[12px] font-semibold px-2 py-0.5 rounded-full"
                 style={{ background: green.accentTint, color: green.accentDeep }}
               >
                 +{fmt(312.4)}
@@ -417,12 +417,12 @@ function DashboardPreview() {
               {HOLDINGS.slice(0, 2).map((h) => (
                 <div key={h.sym} className="flex items-center justify-between">
                   <div className="min-w-0">
-                    <div className="text-[13px] font-semibold text-[var(--color-bk-ink)] leading-tight">{h.sym}</div>
-                    <div className="text-[11px] text-[var(--color-bk-faint)] leading-tight truncate">{h.name}</div>
+                    <div className="text-[13px] font-semibold text-[var(--color-of-ink)] leading-tight">{h.sym}</div>
+                    <div className="text-[11px] text-[var(--color-of-faint)] leading-tight truncate">{h.name}</div>
                   </div>
                   <div className="text-right">
-                    <div className="bk-num text-[13px] text-[var(--color-bk-ink)] leading-tight">{fmt(h.value)}</div>
-                    <div className="bk-num text-[11px] font-semibold leading-tight" style={{ color: h.chg >= 0 ? gain : loss }}>
+                    <div className="of-num text-[13px] text-[var(--color-of-ink)] leading-tight">{fmt(h.value)}</div>
+                    <div className="of-num text-[11px] font-semibold leading-tight" style={{ color: h.chg >= 0 ? gain : loss }}>
                       {h.chg >= 0 ? "+" : ""}
                       {h.chg.toFixed(1)}%
                     </div>
@@ -436,7 +436,7 @@ function DashboardPreview() {
 
       {/* ── Background — Goals, fanned upper-right ── */}
       <div
-        className="bk-hero-float pointer-events-none absolute left-0 top-0 w-full z-10"
+        className="of-hero-float pointer-events-none absolute left-0 top-0 w-full z-10"
         style={{ animationDelay: "-1.6s" }}
         aria-hidden
       >
@@ -445,18 +445,18 @@ function DashboardPreview() {
               part that pokes out past the front card and stays visible. */}
           <div className={backCard} style={backStyle}>
             <DeckHeader Icon={Target} label="Goals" t={purple} align="right" />
-            <div className="text-[12px] font-medium text-[var(--color-bk-muted)] text-right">Saving with intent</div>
+            <div className="text-[12px] font-medium text-[var(--color-of-muted)] text-right">Saving with intent</div>
             <div className="mt-4 space-y-4">
               {HERO_GOALS.map((g) => (
                 <div key={g.name} className="flex items-center justify-end gap-3">
                   <div className="min-w-0 text-right">
-                    <div className="text-[13px] font-semibold text-[var(--color-bk-ink)] leading-tight truncate">{g.name}</div>
-                    <div className="bk-num text-[11.5px] text-[var(--color-bk-muted)] leading-tight">
+                    <div className="text-[13px] font-semibold text-[var(--color-of-ink)] leading-tight truncate">{g.name}</div>
+                    <div className="of-num text-[11.5px] text-[var(--color-of-muted)] leading-tight">
                       {fmtWhole(g.saved)} of {fmtWhole(g.target)}
                     </div>
                   </div>
                   <ProgressRing value={g.pct} size={46} stroke={5} color={purple.accent}>
-                    <span className="bk-num text-[11px] font-semibold" style={{ color: purple.accentDeep }}>
+                    <span className="of-num text-[11px] font-semibold" style={{ color: purple.accentDeep }}>
                       {g.pct}%
                     </span>
                   </ProgressRing>
@@ -469,11 +469,11 @@ function DashboardPreview() {
 
       {/* ── Front — Overview, the prominent star (a touch smaller than the
           background cards' reference width so the fan reads clearly) ── */}
-      <div className="bk-hero-float relative z-30 mx-auto w-[88%]">
-        <div className="rounded-[28px] border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] p-7 sm:p-8 text-left shadow-[0_40px_90px_oklch(20%_0.05_80/0.22)]">
+      <div className="of-hero-float relative z-30 mx-auto w-[88%]">
+        <div className="rounded-[28px] border border-[var(--color-of-line)] bg-[var(--color-of-surface)] p-7 sm:p-8 text-left shadow-[0_40px_90px_oklch(20%_0.05_80/0.22)]">
           <DeckHeader Icon={Home} label="Overview" t={green} />
-          <div className="text-[13px] font-medium text-[var(--color-bk-muted)]">Net worth</div>
-          <div className="bk-num text-[clamp(32px,4vw,44px)] tracking-[-0.03em] leading-none mt-1.5" style={{ fontWeight: 500 }}>
+          <div className="text-[13px] font-medium text-[var(--color-of-muted)]">Net worth</div>
+          <div className="of-num text-[clamp(32px,4vw,44px)] tracking-[-0.03em] leading-none mt-1.5" style={{ fontWeight: 500 }}>
             {fmt(netWorth)}
           </div>
           <div
@@ -483,7 +483,7 @@ function DashboardPreview() {
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M7 17 17 7M9 7h8v8" />
             </svg>
-            <span className="bk-num">+{fmt(nwDelta)}</span>
+            <span className="of-num">+{fmt(nwDelta)}</span>
             <span className="opacity-80">this month</span>
           </div>
           <div className="mt-4">
@@ -585,7 +585,7 @@ function PlanShowpiece() {
             <em style={{ fontStyle: "italic", color: PANEL_ACCENT }}>way that fits.</em>
           </h2>
           <p className="max-w-md text-[15px] leading-relaxed" style={{ color: PANEL_MUTED }}>
-            Pick a proven rule. Bulga tracks how each month lands against it.
+            Pick a proven rule. otterfund tracks how each month lands against it.
           </p>
 
           {/* plan tabs — switching re-splits the buckets and animates the donut */}
@@ -599,7 +599,7 @@ function PlanShowpiece() {
                   aria-selected={selected}
                   onClick={() => setActive(i)}
                   className={cn(
-                    "bk-num rounded-full border px-3.5 py-1.5 text-[13px] font-semibold tracking-[-0.01em] transition-colors",
+                    "of-num rounded-full border px-3.5 py-1.5 text-[13px] font-semibold tracking-[-0.01em] transition-colors",
                     selected
                       ? "border-transparent"
                       : "border-[oklch(95%_0.03_150_/_0.16)] text-[oklch(86%_0.03_150)] hover:border-[oklch(95%_0.03_150_/_0.4)] hover:text-[oklch(97%_0.014_95)]"
@@ -615,7 +615,7 @@ function PlanShowpiece() {
               );
             })}
           </div>
-          <p key={plan.id} className="bk-enter mt-3 text-[13px] leading-relaxed" style={{ color: PANEL_MUTED }}>
+          <p key={plan.id} className="of-enter mt-3 text-[13px] leading-relaxed" style={{ color: PANEL_MUTED }}>
             <span className="font-semibold" style={{ color: PANEL_INK }}>
               {PLAN_TITLES[plan.id] ?? plan.name}
             </span>
@@ -634,10 +634,10 @@ function PlanShowpiece() {
                 <span className="text-[14px] font-medium" style={{ color: PANEL_INK }}>
                   {b.label}
                 </span>
-                <span className="bk-num text-[13px]" style={{ color: PANEL_MUTED }}>
+                <span className="of-num text-[13px]" style={{ color: PANEL_MUTED }}>
                   {b.pct}%
                 </span>
-                <span className="bk-num ml-auto text-[15px] font-medium" style={{ color: PANEL_INK }}>
+                <span className="of-num ml-auto text-[15px] font-medium" style={{ color: PANEL_INK }}>
                   {fmtWhole(b.amount)}
                 </span>
               </div>
@@ -653,12 +653,12 @@ function PlanShowpiece() {
             >
               Monthly income
             </span>
-            <span className="bk-num" style={{ fontSize: 26, fontWeight: 500, letterSpacing: "-0.02em", color: PANEL_INK }}>
+            <span className="of-num" style={{ fontSize: 26, fontWeight: 500, letterSpacing: "-0.02em", color: PANEL_INK }}>
               {fmtWhole(SHOWCASE_INCOME)}
             </span>
           </DonutChart>
           <span
-            className="bk-num rounded-full px-3 py-1 text-[12px] font-semibold"
+            className="of-num rounded-full px-3 py-1 text-[12px] font-semibold"
             style={{ background: "oklch(90% 0.09 158 / 0.14)", color: PANEL_ACCENT }}
           >
             {plan.needs}/{plan.wants}/{plan.savings}
@@ -669,7 +669,7 @@ function PlanShowpiece() {
   );
 }
 
-/** "Why Bulga" — four feature plates in the banknote palette. One card is always
+/** "Why otterfund" — four feature plates in the banknote palette. One card is always
     "lit" (its icon plate filled + wave wash washed in) and the headline wears
     that card's feeling word in its note colour. The first card ($5 blue,
     "whole.") is lit by default; hovering another lifts it instead, and the row
@@ -699,7 +699,7 @@ function FeaturesSection() {
   return (
     <section id="features" ref={ref} className="mt-24 sm:mt-32 max-w-[1120px] w-full scroll-mt-24">
       <Reveal className="max-w-2xl">
-        <CardLabel>Why Bulga</CardLabel>
+        <CardLabel>Why otterfund</CardLabel>
         <h2
           className="text-[clamp(26px,3.4vw,38px)] tracking-[-0.02em] leading-tight text-balance mt-3"
           style={{ ...SERIF, fontWeight: 500 }}
@@ -707,14 +707,14 @@ function FeaturesSection() {
           Built to make money feel{" "}
           <em
             key={word}
-            className="bk-word-swap"
+            className="of-word-swap"
             style={{ fontStyle: "italic", color: wordColor }}
           >
             {word}
           </em>
         </h2>
-        <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-bk-muted)]">
-          Everything Bulga does adds up to one confident picture of your money.
+        <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-of-muted)]">
+          Everything otterfund does adds up to one confident picture of your money.
         </p>
       </Reveal>
 
@@ -747,9 +747,9 @@ function FeaturesSection() {
               >
                 {/* Wave wash — an engraved guilloché field with straight
                     (horizontal) waves that washes in along a 45° diagonal while
-                    the card is lit (see .bk-wave-wash in globals.css). The
+                    the card is lit (see .of-wave-wash in globals.css). The
                     field's dashes drift, so it reads as live water. */}
-                <div className="bk-wave-wash pointer-events-none absolute inset-0">
+                <div className="of-wave-wash pointer-events-none absolute inset-0">
                   <GuillocheFlow
                     accent={note.value}
                     accentDeep={noteTheme.accentDeep}
@@ -777,8 +777,8 @@ function FeaturesSection() {
                 </div>
 
                 <div className="relative min-w-0 sm:mt-auto sm:pt-10">
-                  <div className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--color-bk-ink)] sm:text-[15px]">{f.title}</div>
-                  <div className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-bk-muted)] sm:mt-1.5">{f.desc}</div>
+                  <div className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)] sm:text-[15px]">{f.title}</div>
+                  <div className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-of-muted)] sm:mt-1.5">{f.desc}</div>
                 </div>
               </Card>
             </Reveal>
@@ -798,7 +798,7 @@ function FeaturesSection() {
 // Features and Plans.
 
 /** Tonal Needs/Wants/Savings shades derived from one note hue (deep/accent/light). */
-function splitColors(theme: BulgaTheme): Record<"needs" | "wants" | "savings", string> {
+function splitColors(theme: OtterfundTheme): Record<"needs" | "wants" | "savings", string> {
   return {
     needs: theme.accentDeep,
     wants: theme.accent,
@@ -821,19 +821,19 @@ const SAVINGS_GOALS = [
 
 /** "Import in seconds" — link a bank with Plaid; accounts sync automatically.
     Mirrors <ConnectBankModal>. */
-function ImportGraphic({ theme }: { theme: BulgaTheme }) {
+function ImportGraphic({ theme }: { theme: OtterfundTheme }) {
   return (
     <div className="grid w-full items-center gap-6 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:gap-8">
       {/* the connect card */}
-      <div className="rounded-2xl border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] p-5 text-center shadow-[0_10px_28px_oklch(20%_0.02_80/0.08)]">
+      <div className="rounded-2xl border border-[var(--color-of-line)] bg-[var(--color-of-surface)] p-5 text-center shadow-[0_10px_28px_oklch(20%_0.02_80/0.08)]">
         <div
           className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl"
           style={{ background: theme.accentTint, color: theme.accentDeep }}
         >
           <Landmark className="h-6 w-6" strokeWidth={1.8} />
         </div>
-        <div className="mt-3 text-[14px] font-semibold text-[var(--color-bk-ink)]">Connect a bank</div>
-        <p className="mx-auto mt-1 max-w-[220px] text-[12px] leading-relaxed text-[var(--color-bk-muted)]">
+        <div className="mt-3 text-[14px] font-semibold text-[var(--color-of-ink)]">Connect a bank</div>
+        <p className="mx-auto mt-1 max-w-[220px] text-[12px] leading-relaxed text-[var(--color-of-muted)]">
           Balances and transactions sync automatically.
         </p>
         <div
@@ -842,7 +842,7 @@ function ImportGraphic({ theme }: { theme: BulgaTheme }) {
         >
           Continue with Plaid
         </div>
-        <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-medium text-[var(--color-bk-faint)]">
+        <div className="mt-3 flex items-center justify-center gap-1.5 text-[10.5px] font-medium text-[var(--color-of-faint)]">
           <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
           256-bit encryption · powered by Plaid
         </div>
@@ -850,14 +850,14 @@ function ImportGraphic({ theme }: { theme: BulgaTheme }) {
 
       {/* what comes back */}
       <div className="grid gap-2.5">
-        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-bk-faint)]">
+        <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-of-faint)]">
           <Check className="h-3.5 w-3.5" style={{ color: theme.accent }} strokeWidth={2.4} />
           Synced just now
         </div>
         {SYNCED_ACCOUNTS.map((a) => (
           <div
             key={a.name}
-            className="flex items-center gap-3 rounded-xl border border-[var(--color-bk-line-soft)] bg-[var(--color-bk-surface)] px-3.5 py-2.5"
+            className="flex items-center gap-3 rounded-xl border border-[var(--color-of-line-soft)] bg-[var(--color-of-surface)] px-3.5 py-2.5"
           >
             <span
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[12px] font-bold"
@@ -866,12 +866,12 @@ function ImportGraphic({ theme }: { theme: BulgaTheme }) {
               {a.name[0]}
             </span>
             <div className="min-w-0">
-              <div className="truncate text-[13px] font-semibold text-[var(--color-bk-ink)]">{a.name}</div>
-              <div className="text-[11px] text-[var(--color-bk-muted)]">{a.kind}</div>
+              <div className="truncate text-[13px] font-semibold text-[var(--color-of-ink)]">{a.name}</div>
+              <div className="text-[11px] text-[var(--color-of-muted)]">{a.kind}</div>
             </div>
             <span
-              className="bk-num ml-auto text-[13.5px] font-medium"
-              style={{ color: a.balance < 0 ? "var(--color-bk-ink)" : theme.accentDeep }}
+              className="of-num ml-auto text-[13.5px] font-medium"
+              style={{ color: a.balance < 0 ? "var(--color-of-ink)" : theme.accentDeep }}
             >
               {fmt(a.balance)}
             </span>
@@ -884,7 +884,7 @@ function ImportGraphic({ theme }: { theme: BulgaTheme }) {
 
 /** "Split every dollar" — the plan splits income Needs/Wants/Savings against a
     sample month. Mirrors the Spending page. */
-function SplitGraphic({ theme }: { theme: BulgaTheme }) {
+function SplitGraphic({ theme }: { theme: OtterfundTheme }) {
   const sc = splitColors(theme);
   const buckets = (["needs", "wants", "savings"] as const).map((key) => ({
     key,
@@ -895,12 +895,12 @@ function SplitGraphic({ theme }: { theme: BulgaTheme }) {
   return (
     <div className="w-full">
       <div className="mb-2 flex items-baseline justify-between">
-        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-bk-faint)]">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-of-faint)]">
           Every dollar, split
         </span>
-        <span className="bk-num text-[14px] font-medium">
+        <span className="of-num text-[14px] font-medium">
           {fmtWhole(SHOWCASE_INCOME)}
-          <span className="text-[12px] text-[var(--color-bk-muted)]"> / mo</span>
+          <span className="text-[12px] text-[var(--color-of-muted)]"> / mo</span>
         </span>
       </div>
 
@@ -913,8 +913,8 @@ function SplitGraphic({ theme }: { theme: BulgaTheme }) {
         {buckets.map((b) => (
           <div key={b.key} className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-sm" style={{ background: sc[b.key] }} />
-            <span className="text-[11.5px] text-[var(--color-bk-muted)]">{b.label}</span>
-            <span className="bk-num text-[11.5px] font-medium text-[var(--color-bk-ink)]">{fmtWhole(b.amount)}</span>
+            <span className="text-[11.5px] text-[var(--color-of-muted)]">{b.label}</span>
+            <span className="of-num text-[11.5px] font-medium text-[var(--color-of-ink)]">{fmtWhole(b.amount)}</span>
           </div>
         ))}
       </div>
@@ -924,11 +924,11 @@ function SplitGraphic({ theme }: { theme: BulgaTheme }) {
 }
 
 /** "Watch your goals grow" — the Savings bucket funds goals by priority, and a
-    sample nudge shows the tone of Bulga's insights. Mirrors the Goals page. */
-function GoalsGraphic({ theme }: { theme: BulgaTheme }) {
+    sample nudge shows the tone of otterfund's insights. Mirrors the Goals page. */
+function GoalsGraphic({ theme }: { theme: OtterfundTheme }) {
   return (
     <div className="w-full">
-      <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-bk-faint)]">
+      <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-of-faint)]">
         <Target className="h-3.5 w-3.5" style={{ color: theme.accent }} strokeWidth={2.2} />
         Savings, put to work
       </div>
@@ -936,14 +936,14 @@ function GoalsGraphic({ theme }: { theme: BulgaTheme }) {
         {SAVINGS_GOALS.map((g) => (
           <div
             key={g.name}
-            className="flex items-center gap-3 rounded-xl border border-[var(--color-bk-line-soft)] bg-[var(--color-bk-surface)] px-3.5 py-2.5"
+            className="flex items-center gap-3 rounded-xl border border-[var(--color-of-line-soft)] bg-[var(--color-of-surface)] px-3.5 py-2.5"
           >
             <ProgressRing value={g.pct} size={42} stroke={5} color={theme.accent}>
               <span className="text-[16px] leading-none">{g.emoji}</span>
             </ProgressRing>
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="truncate text-[13px] font-semibold text-[var(--color-bk-ink)]">{g.name}</span>
+                <span className="truncate text-[13px] font-semibold text-[var(--color-of-ink)]">{g.name}</span>
                 <span
                   className="rounded-full px-1.5 py-0.5 text-[9.5px] font-semibold"
                   style={{ background: theme.accentTint, color: theme.accentDeep }}
@@ -951,11 +951,11 @@ function GoalsGraphic({ theme }: { theme: BulgaTheme }) {
                   On track
                 </span>
               </div>
-              <div className="bk-num mt-0.5 text-[11.5px] text-[var(--color-bk-muted)]">
+              <div className="of-num mt-0.5 text-[11.5px] text-[var(--color-of-muted)]">
                 <span style={{ color: theme.accentDeep }}>+{fmtWhole(g.perMo)}</span>/mo
               </div>
             </div>
-            <span className="bk-num ml-auto text-[15px] font-medium" style={{ color: theme.accentDeep }}>
+            <span className="of-num ml-auto text-[15px] font-medium" style={{ color: theme.accentDeep }}>
               {g.pct}%
             </span>
           </div>
@@ -1002,7 +1002,7 @@ function HowItWorksSection() {
     <section
       id="how-it-works"
       ref={ref}
-      className="self-stretch -mx-7 mt-24 sm:mt-36 scroll-mt-14 border-y border-[var(--color-bk-line-soft)] bg-[var(--color-bk-surface)] px-7 pt-14 sm:pt-20 pb-28 sm:pb-40"
+      className="self-stretch -mx-7 mt-24 sm:mt-36 scroll-mt-14 border-y border-[var(--color-of-line-soft)] bg-[var(--color-of-surface)] px-7 pt-14 sm:pt-20 pb-28 sm:pb-40"
     >
       <div className="mx-auto w-full max-w-[1120px]">
         <Reveal className="max-w-xl">
@@ -1046,8 +1046,8 @@ function HowItWorksSection() {
                     className={cn(
                       "group relative flex h-full w-full flex-col items-center gap-2.5 rounded-2xl border p-3 pb-5 text-center transition-colors lg:flex-row lg:items-start lg:gap-4 lg:p-5 lg:pb-6 lg:text-left",
                       on
-                        ? "border-[var(--color-bk-line)] bg-[var(--color-bk-canvas)]"
-                        : "border-transparent hover:bg-[var(--color-bk-canvas)]/60"
+                        ? "border-[var(--color-of-line)] bg-[var(--color-of-canvas)]"
+                        : "border-transparent hover:bg-[var(--color-of-canvas)]/60"
                     )}
                   >
                     <div
@@ -1060,24 +1060,24 @@ function HowItWorksSection() {
                       <s.icon className="h-5 w-5" strokeWidth={1.9} />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-bk-faint)] lg:text-[10.5px]">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-of-faint)] lg:text-[10.5px]">
                         Step {i + 1}
                       </div>
-                      <div className="mt-0.5 text-[13px] font-semibold leading-snug text-[var(--color-bk-ink)] lg:mt-1 lg:text-[14.5px]">
+                      <div className="mt-0.5 text-[13px] font-semibold leading-snug text-[var(--color-of-ink)] lg:mt-1 lg:text-[14.5px]">
                         {s.title}
                       </div>
-                      <div className="mt-0.5 hidden text-[12.5px] leading-relaxed text-[var(--color-bk-muted)] lg:block">
+                      <div className="mt-0.5 hidden text-[12.5px] leading-relaxed text-[var(--color-of-muted)] lg:block">
                         {s.desc}
                       </div>
                     </div>
                     {on && inView && !paused && (
                       <span
                         aria-hidden
-                        className="bk-step-track absolute inset-x-4 bottom-2 h-[2.5px] overflow-hidden rounded-full bg-[var(--color-bk-line-soft)] lg:inset-x-5 lg:bottom-2.5"
+                        className="of-step-track absolute inset-x-4 bottom-2 h-[2.5px] overflow-hidden rounded-full bg-[var(--color-of-line-soft)] lg:inset-x-5 lg:bottom-2.5"
                       >
                         <span
                           key={active}
-                          className="bk-step-fill block h-full rounded-full"
+                          className="of-step-fill block h-full rounded-full"
                           style={{ background: note.value }}
                         />
                       </span>
@@ -1092,7 +1092,7 @@ function HowItWorksSection() {
               horizontal track that slides to the active one, carousel-style.
               The track height holds to the tallest graphic so nothing jumps. */}
           <Reveal delay={150}>
-            <div className="relative overflow-hidden rounded-[20px] border border-[var(--color-bk-line)] bg-[var(--color-bk-canvas)]">
+            <div className="relative overflow-hidden rounded-[20px] border border-[var(--color-of-line)] bg-[var(--color-of-canvas)]">
               <div
                 className="flex transition-transform duration-[550ms] ease-[cubic-bezier(.32,.72,0,1)] motion-reduce:transition-none"
                 style={{ transform: `translateX(-${active * 100}%)` }}
@@ -1113,7 +1113,7 @@ function HowItWorksSection() {
 
         {/* Trust, in one quiet line — the privacy story without a whole section. */}
         <Reveal className="mt-8">
-          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-[12px] font-medium text-[var(--color-bk-faint)]">
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-[12px] font-medium text-[var(--color-of-faint)]">
             <span className="inline-flex items-center gap-1.5">
               <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
               Bank-grade encryption
@@ -1168,7 +1168,7 @@ function ClosingBand() {
                 "h-14 px-8 text-[16px] bg-[oklch(97%_0.014_95)] text-[oklch(26%_0.055_155)]"
               )}
             >
-              Start for free <ArrowRight className="bk-lp-arrow w-4 h-4" />
+              Start for free <ArrowRight className="of-lp-arrow w-4 h-4" />
             </Link>
           </div>
           <p className="mt-4 text-[12.5px] font-medium" style={{ color: "oklch(86% 0.03 150 / 0.65)" }}>
@@ -1181,7 +1181,7 @@ function ClosingBand() {
         <div className="max-w-[1120px] mx-auto px-7 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-[12px] text-[oklch(86%_0.03_150_/_0.75)]">
             <LogoMark size={16} />
-            Bulga
+            otterfund
           </div>
           <nav className="flex items-center gap-5 text-[12px]" aria-label="Footer">
             {NAV_LINKS.map((l) => (
@@ -1224,22 +1224,22 @@ export function LandingView() {
   const scrolled = useScrolled();
 
   return (
-    <div className="bk-paper min-h-screen flex flex-col bg-[var(--color-bk-canvas)] text-[var(--color-bk-ink)] overflow-x-hidden">
+    <div className="of-paper min-h-screen flex flex-col bg-[var(--color-of-canvas)] text-[var(--color-of-ink)] overflow-x-hidden">
       {/* The page "sheet" — everything except the finale. The closing layer is
           fixed behind it (see below); the runway spacer after this sheet gives
           the scroll distance that lifts the sheet off the finale, curtain-style. */}
-      <div className="relative z-10 flex min-h-screen flex-col bg-[var(--color-bk-canvas)] shadow-[0_36px_72px_-24px_oklch(20%_0.03_80/0.35)]">
+      <div className="relative z-10 flex min-h-screen flex-col bg-[var(--color-of-canvas)] shadow-[0_36px_72px_-24px_oklch(20%_0.03_80/0.35)]">
       {/* Nav — sticky; gains a hairline + blur once the page scrolls. */}
       <nav
         className={cn(
           "sticky top-0 z-50 transition-colors duration-300",
           scrolled
-            ? "border-b border-[var(--color-bk-line-soft)] bg-[var(--color-bk-canvas)]/80 backdrop-blur-md"
+            ? "border-b border-[var(--color-of-line-soft)] bg-[var(--color-of-canvas)]/80 backdrop-blur-md"
             : "border-b border-transparent"
         )}
       >
         <div className="relative flex items-center justify-between px-7 py-4 max-w-[1120px] mx-auto w-full">
-          <Link href="/" aria-label="Bulga home" className="inline-flex items-center">
+          <Link href="/" aria-label="otterfund home" className="inline-flex items-center">
             <LogoMark size={52} />
           </Link>
           {/* section links — centered independently of the logo/auth widths */}
@@ -1252,7 +1252,7 @@ export function LandingView() {
                   onClick={scrollToId}
                   className={cn(
                     buttonVariants({ variant: "ghost", size: "xs" }),
-                    "px-3.5 text-[13px] font-medium text-[var(--color-bk-muted)] hover:text-[var(--color-bk-ink)]"
+                    "px-3.5 text-[13px] font-medium text-[var(--color-of-muted)] hover:text-[var(--color-of-ink)]"
                   )}
                 >
                   {l.label}
@@ -1287,11 +1287,11 @@ export function LandingView() {
         {/* ── Hero ── */}
         <section className="relative w-full max-w-[1120px] pt-14 sm:pt-24 pb-6 sm:pb-10">
           {/* Gentle drifting banknote line-work behind the hero. It fades in on
-              mount (bk-lp-guilloche) so the texture arrives *with* the headline's
+              mount (of-lp-guilloche) so the texture arrives *with* the headline's
               float-up instead of a dash segment marching into view seconds later
               (which read as a "tail" randomly spawning). Slow drift so it never
               visibly regenerates that segment. Freezes under reduced motion. */}
-          <div className="bk-lp-guilloche absolute -inset-x-10 -top-10 bottom-0" aria-hidden>
+          <div className="of-lp-guilloche absolute -inset-x-10 -top-10 bottom-0" aria-hidden>
             <GuillocheFlow
               accent={BRAND_THEME.accent}
               accentDeep={BRAND_THEME.accentDeep}
@@ -1305,7 +1305,7 @@ export function LandingView() {
             {/* pitch */}
             <div className="text-center lg:text-left">
               <h1
-                className="bk-enter text-[clamp(40px,5.6vw,66px)] tracking-[-0.03em] leading-[1.03] text-balance mb-5"
+                className="of-enter text-[clamp(40px,5.6vw,66px)] tracking-[-0.03em] leading-[1.03] text-balance mb-5"
                 style={{ ...SERIF, fontWeight: 500, animationDelay: "140ms" }}
               >
                 Your money,{" "}
@@ -1314,25 +1314,25 @@ export function LandingView() {
                 </em>
               </h1>
               <p
-                className="bk-enter text-[17px] text-[var(--color-bk-muted)] leading-relaxed max-w-md mx-auto lg:mx-0 mb-8"
+                className="of-enter text-[17px] text-[var(--color-of-muted)] leading-relaxed max-w-md mx-auto lg:mx-0 mb-8"
                 style={{ animationDelay: "220ms" }}
               >
-                Split every dollar across Needs, Wants, and Savings. Bulga does the
+                Split every dollar across Needs, Wants, and Savings. otterfund does the
                 math so you don&apos;t have to.
               </p>
               <div
-                className="bk-enter flex flex-wrap items-center justify-center lg:justify-start gap-3"
+                className="of-enter flex flex-wrap items-center justify-center lg:justify-start gap-3"
                 style={{ animationDelay: "300ms" }}
               >
                 <Link href="/register" className={CTA_PRIMARY}>
-                  Start saving <ArrowRight className="bk-lp-arrow w-4 h-4" />
+                  Start saving <ArrowRight className="of-lp-arrow w-4 h-4" />
                 </Link>
                 <a href="#how-it-works" onClick={scrollToId} className={CTA_SECONDARY}>
                   See how it works
                 </a>
               </div>
               <p
-                className="bk-enter mt-4 text-[12.5px] font-medium text-[var(--color-bk-faint)]"
+                className="of-enter mt-4 text-[12.5px] font-medium text-[var(--color-of-faint)]"
                 style={{ animationDelay: "360ms" }}
               >
                 Free to get started · No credit card required
@@ -1340,7 +1340,7 @@ export function LandingView() {
             </div>
 
             {/* live preview */}
-            <div className="bk-enter" style={{ animationDelay: "420ms" }}>
+            <div className="of-enter" style={{ animationDelay: "420ms" }}>
               <DashboardPreview />
             </div>
           </div>
@@ -1369,7 +1369,7 @@ export function LandingView() {
       <div aria-hidden className="h-[85svh] min-h-[560px]" />
 
       {/* ── Closing finale — pinned behind the sheet, revealed by scroll. The
-          deep evergreen brand panel: the page lifts to end on Bulga's colour. ── */}
+          deep evergreen brand panel: the page lifts to end on otterfund's colour. ── */}
       <div
         className="fixed inset-x-0 bottom-0 z-0 flex h-[85svh] min-h-[560px] flex-col overflow-hidden"
         style={{ background: PANEL_BG }}

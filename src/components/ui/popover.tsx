@@ -1,6 +1,6 @@
 "use client"
 
-// Bulga Popover — thin wrapper over @base-ui/react Popover, same house pattern
+// otterfund Popover — thin wrapper over @base-ui/react Popover, same house pattern
 // as ui/select.tsx and ui/menu.tsx (Portal → Positioner → Popup). Used for
 // rich, non-menu popovers (the notifications panel, the month picker) where the
 // content is arbitrary rather than a list of items. The Positioner keeps the
@@ -41,7 +41,7 @@ function PopoverContent({
         <PopoverPrimitive.Popup
           data-slot="popover-content"
           className={cn(
-            "bk-pop max-h-[var(--available-height)] max-w-[calc(100vw-24px)] origin-[var(--transform-origin)] overflow-hidden rounded-[18px] border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] shadow-[0_12px_32px_oklch(20%_0.02_80/0.16)] outline-none",
+            "of-pop max-h-[var(--available-height)] max-w-[calc(100vw-24px)] origin-[var(--transform-origin)] overflow-hidden rounded-[18px] border border-[var(--color-of-line)] bg-[var(--color-of-surface)] shadow-[0_12px_32px_oklch(20%_0.02_80/0.16)] outline-none",
             className
           )}
           {...props}

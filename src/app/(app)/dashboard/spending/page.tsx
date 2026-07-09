@@ -1,7 +1,7 @@
 import { requireUser, currentPeriod, resolvePeriod } from "@/lib/dashboard-context";
 import { getSpendingPlan } from "@/lib/db/queries";
 import { getBudgetPlan } from "@/lib/constants";
-import { SpendingView } from "@/components/bulga/pages/spending-view";
+import { SpendingView } from "@/components/otterfund/pages/spending-view";
 import type { SpendingPlanView } from "@/lib/types";
 
 // Fallback when the query fails — the default plan with zeroed figures, so the

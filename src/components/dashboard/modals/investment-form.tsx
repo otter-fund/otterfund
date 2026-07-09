@@ -16,8 +16,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Search, X } from "lucide-react";
-import { Field, TextInput, SelectInput } from "@/components/bulga/form";
-import { MerchantAvatar } from "@/components/bulga/merchant-avatar";
+import { Field, TextInput, SelectInput } from "@/components/otterfund/form";
+import { MerchantAvatar } from "@/components/otterfund/merchant-avatar";
 import { ASSET_CLASSES } from "@/lib/constants";
 import { fmt } from "@/lib/format";
 import { gqlClient } from "@/lib/graphql/client";
@@ -334,7 +334,7 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
             <div className="relative">
               <Search
                 size={16}
-                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-bk-muted)]"
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--color-of-muted)]"
               />
               <TextInput
                 id={`${idPrefix}-search`}
@@ -352,11 +352,11 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
 
           {showDropdown && (
             <div
-              className="bk-scroll absolute z-30 mt-1.5 max-h-72 w-full overflow-y-auto rounded-xl bg-[var(--color-bk-surface)] py-1.5 shadow-lg"
-              style={{ border: "1px solid var(--color-bk-line-soft)" }}
+              className="of-scroll absolute z-30 mt-1.5 max-h-72 w-full overflow-y-auto rounded-xl bg-[var(--color-of-surface)] py-1.5 shadow-lg"
+              style={{ border: "1px solid var(--color-of-line-soft)" }}
             >
               {searching && (
-                <div className="flex items-center gap-2 px-3.5 py-2.5 text-sm text-[var(--color-bk-muted)]">
+                <div className="flex items-center gap-2 px-3.5 py-2.5 text-sm text-[var(--color-of-muted)]">
                   <Loader2 size={15} className="animate-spin" />
                   Searching…
                 </div>
@@ -371,36 +371,36 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
                       e.preventDefault();
                       selectMatch(m);
                     }}
-                    className="flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors hover:bg-[var(--color-bk-canvas)]"
+                    className="flex w-full items-center gap-3 px-3.5 py-2 text-left transition-colors hover:bg-[var(--color-of-canvas)]"
                   >
                     <MerchantAvatar
                       name={m.name}
                       domain={m.domain}
-                      bg="var(--color-bk-canvas)"
-                      ink="var(--color-bk-ink)"
+                      bg="var(--color-of-canvas)"
+                      ink="var(--color-of-ink)"
                       size={30}
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold text-[var(--color-bk-ink)]">
+                      <div className="truncate text-sm font-semibold text-[var(--color-of-ink)]">
                         {m.name}
                       </div>
-                      <div className="truncate text-xs text-[var(--color-bk-muted)]">
+                      <div className="truncate text-xs text-[var(--color-of-muted)]">
                         {m.symbol}
                         {m.exchange ? ` · ${m.exchange}` : ""}
                       </div>
                     </div>
-                    <span className="shrink-0 rounded-full bg-[var(--color-bk-canvas)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-bk-muted)]">
+                    <span className="shrink-0 rounded-full bg-[var(--color-of-canvas)] px-2 py-0.5 text-[11px] font-medium text-[var(--color-of-muted)]">
                       {m.assetClass}
                     </span>
                   </button>
                 ))}
               {!searching && searchError && (
-                <div className="px-3.5 py-2.5 text-sm text-[var(--color-bk-clay)]">
+                <div className="px-3.5 py-2.5 text-sm text-[var(--color-of-clay)]">
                   Search is unavailable right now. Try again, or enter details manually.
                 </div>
               )}
               {!searching && !searchError && results != null && results.length === 0 && (
-                <div className="px-3.5 py-2.5 text-sm text-[var(--color-bk-muted)]">
+                <div className="px-3.5 py-2.5 text-sm text-[var(--color-of-muted)]">
                   No matches for “{search.trim()}”.
                 </div>
               )}
@@ -410,7 +410,7 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
           <button
             type="button"
             onClick={() => setManual(true)}
-            className="mt-3 text-sm font-medium text-[var(--color-bk-muted)] underline underline-offset-2 hover:text-[var(--color-bk-ink)]"
+            className="mt-3 text-sm font-medium text-[var(--color-of-muted)] underline underline-offset-2 hover:text-[var(--color-of-ink)]"
           >
             Can’t find it? Enter details manually
           </button>
@@ -422,33 +422,33 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
         <>
           <div
             className="flex items-center gap-3 rounded-xl p-3"
-            style={{ border: "1px solid var(--color-bk-line-soft)", background: "var(--color-bk-canvas)" }}
+            style={{ border: "1px solid var(--color-of-line-soft)", background: "var(--color-of-canvas)" }}
           >
             <MerchantAvatar
               name={quote.name}
               domain={quote.domain}
-              bg="var(--color-bk-canvas)"
-              ink="var(--color-bk-ink)"
+              bg="var(--color-of-canvas)"
+              ink="var(--color-of-ink)"
               size={40}
             />
             <div className="min-w-0 flex-1">
-              <div className="truncate font-semibold text-[var(--color-bk-ink)]">{quote.name}</div>
-              <div className="text-xs text-[var(--color-bk-muted)]">
+              <div className="truncate font-semibold text-[var(--color-of-ink)]">{quote.name}</div>
+              <div className="text-xs text-[var(--color-of-muted)]">
                 {quote.symbol} · {quote.assetClass}
               </div>
             </div>
             <div className="flex items-center gap-2">
               {pricing ? (
-                <Loader2 size={16} className="animate-spin text-[var(--color-bk-muted)]" />
+                <Loader2 size={16} className="animate-spin text-[var(--color-of-muted)]" />
               ) : hasPrice ? (
                 <div className="text-right">
-                  <div className="bk-num font-semibold text-[var(--color-bk-ink)]">
+                  <div className="of-num font-semibold text-[var(--color-of-ink)]">
                     {fmt(quote.price!, quote.currency)}
                   </div>
                   {quote.changePct != null && (
                     <div
-                      className="bk-num text-xs"
-                      style={{ color: quote.changePct >= 0 ? "var(--primary)" : "var(--color-bk-clay)" }}
+                      className="of-num text-xs"
+                      style={{ color: quote.changePct >= 0 ? "var(--primary)" : "var(--color-of-clay)" }}
                     >
                       {quote.changePct >= 0 ? "+" : ""}
                       {quote.changePct.toFixed(2)}% today
@@ -460,7 +460,7 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
                 type="button"
                 onClick={searchAgain}
                 aria-label="Search again"
-                className="grid h-7 w-7 place-items-center rounded-lg text-[var(--color-bk-muted)] transition-colors hover:bg-[var(--color-bk-line-soft)] hover:text-[var(--color-bk-ink)]"
+                className="grid h-7 w-7 place-items-center rounded-lg text-[var(--color-of-muted)] transition-colors hover:bg-[var(--color-of-line-soft)] hover:text-[var(--color-of-ink)]"
               >
                 <X size={16} />
               </button>
@@ -490,8 +490,8 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
               placeholder="0"
             />
             {previewValue != null && (
-              <p className="mt-1.5 text-xs text-[var(--color-bk-muted)]">
-                ≈ <span className="bk-num">{fmt(previewValue, quote.currency)}</span> at today’s price
+              <p className="mt-1.5 text-xs text-[var(--color-of-muted)]">
+                ≈ <span className="of-num">{fmt(previewValue, quote.currency)}</span> at today’s price
               </p>
             )}
           </Field>
@@ -557,7 +557,7 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
           <button
             type="button"
             onClick={searchAgain}
-            className="text-sm font-medium text-[var(--color-bk-muted)] underline underline-offset-2 hover:text-[var(--color-bk-ink)]"
+            className="text-sm font-medium text-[var(--color-of-muted)] underline underline-offset-2 hover:text-[var(--color-of-ink)]"
           >
             Search for a ticker instead
           </button>

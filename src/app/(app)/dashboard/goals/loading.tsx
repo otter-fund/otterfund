@@ -1,5 +1,5 @@
-import { Card } from "@/components/bulga/card";
-import { SkeletonPage, Skel, SkelHero } from "@/components/bulga/skeleton";
+import { Card } from "@/components/otterfund/card";
+import { SkeletonPage, Skel, SkelHero } from "@/components/otterfund/skeleton";
 
 // Goals: saved-across-goals hero + Assign/New actions, then the 2-up goal
 // cards (emoji tile + name + progress bar + funding figures).
@@ -7,7 +7,7 @@ export default function Loading() {
   return (
     <SkeletonPage>
       <SkelHero sub actions={2} />
-      <section className="bk-grid-2up grid grid-cols-2 gap-4">
+      <section className="of-grid-2up grid grid-cols-2 gap-4">
         {[0, 1, 2, 3].map((i) => (
           <Card key={i} className="p-6">
             <div className="flex items-center gap-3">

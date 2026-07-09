@@ -4,7 +4,7 @@ import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { Field, TextInput, PasswordInput } from "@/components/bulga/form";
+import { Field, TextInput, PasswordInput } from "@/components/otterfund/form";
 import { Button } from "@/components/ui/button";
 import { GoogleAuthButton } from "@/components/auth/google-button";
 
@@ -52,12 +52,12 @@ function LoginForm() {
   }
 
   return (
-    <div className="bk-enter">
+    <div className="of-enter">
       <header className="mb-8">
-        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
           Welcome back
         </h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-bk-muted)]">
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-of-muted)]">
           Sign in to pick up where you left off.
         </p>
       </header>
@@ -88,7 +88,7 @@ function LoginForm() {
           <div className="mt-2 flex justify-end">
             <Link
               href="/forgot-password"
-              className="text-[13px] font-medium text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)]"
+              className="text-[13px] font-medium text-[var(--color-of-muted)] transition-colors hover:text-[var(--color-of-ink)]"
             >
               Forgot password?
             </Link>
@@ -96,7 +96,7 @@ function LoginForm() {
         </Field>
 
         {error && (
-          <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
+          <p className="text-sm font-medium text-[var(--color-of-clay)]">{error}</p>
         )}
 
         <Button
@@ -110,7 +110,7 @@ function LoginForm() {
 
       <GoogleAuthButton label="Continue with Google" />
 
-      <p className="mt-8 text-center text-sm text-[var(--color-bk-muted)]">
+      <p className="mt-8 text-center text-sm text-[var(--color-of-muted)]">
         Don&apos;t have an account?{" "}
         <Link
           href="/register"

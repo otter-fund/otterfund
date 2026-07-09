@@ -3,7 +3,7 @@ import { Newsreader, Hanken_Grotesk } from "next/font/google";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
-// Bulga design system — the only two typefaces:
+// otterfund design system — the only two typefaces:
 //   Newsreader (display + figures), Hanken Grotesk (interface + data)
 const newsreader = Newsreader({
   variable: "--font-num",
@@ -19,7 +19,7 @@ const hanken = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Bulga · Your money, in balance",
+  title: "otterfund · Your money, in balance",
   description: "Calm, confident budgeting that does the math so you don't have to.",
 };
 

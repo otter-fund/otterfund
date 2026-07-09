@@ -103,10 +103,20 @@ export async function generateInsightsForUser(userId: string) {
     subscriptions: subscriptions.map((s) => ({ name: s.name, amount: s.amount, cycle: s.cycle })),
   };
 
+  // Today's date, baked into the prompt: the model has no clock of its own, so
+  // without this it resolves "this month" / "this year" against its training
+  // baseline (the wrong year). The monthlyTrend keys are `YYYY-M`, so anchoring
+  // to today lets it read them as recent vs. older correctly.
+  const today = new Date();
+  const todayLong = today.toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const todayIso = today.toISOString().slice(0, 10);
+
   const response = await anthropic.messages.create({
     model: INSIGHTS_MODEL,
     max_tokens: 2048,
-    system: `You are Bulga, a calm, plain-spoken personal finance advisor. From the user's data, write 4-6 insights that are genuinely useful. Each should tell the user something they can act on this week, not just restate a number back to them.
+    system: `You are otterfund, a calm, plain-spoken personal finance advisor. From the user's data, write 4-6 insights that are genuinely useful. Each should tell the user something they can act on this week, not just restate a number back to them.
+
+Today is ${todayLong} (${todayIso}). Treat this as the current date; ignore any other assumption about the year or month. The monthlyTrend keys are "YYYY-M"; read them relative to today (the most recent key is the current or latest month), and phrase any "this month" / "this year" / month-over-month framing against today's date.
 
 Insight types:
 - "Alert": something to fix now, like overspending in a category, an unused or duplicate subscription, or a goal falling behind.

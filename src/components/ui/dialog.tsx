@@ -56,7 +56,7 @@ function DialogContent({
     <DialogPortal>
       <DialogOverlay />
       {/* Mobile-first: below md the popup is a bottom sheet — position + slide
-          motion live on `.bk-dialog` in globals.css (the same transition
+          motion live on `.of-dialog` in globals.css (the same transition
           pattern as the nav sheet, so open/close slide instead of popping).
           Centering + the zoom-fade animation are md:-scoped so they can't
           fight the sheet transition on phones. Size/padding overrides from
@@ -64,7 +64,7 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "bk-dialog fixed z-50 grid w-full max-w-[calc(100%-2.5rem)] max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain gap-5 rounded-[24px] border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)] p-6 sm:p-8 text-sm text-[var(--color-bk-ink)] shadow-[0_24px_64px_oklch(20%_0.02_80/0.16),0_2px_8px_oklch(20%_0.02_80/0.06)] outline-none sm:max-w-[460px] md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:duration-100 md:data-open:animate-in md:data-open:fade-in-0 md:data-open:zoom-in-95 md:data-closed:animate-out md:data-closed:fade-out-0 md:data-closed:zoom-out-95",
+          "of-dialog fixed z-50 grid w-full max-w-[calc(100%-2.5rem)] max-h-[calc(100dvh-2.5rem)] overflow-y-auto overscroll-contain gap-5 rounded-[24px] border border-[var(--color-of-line)] bg-[var(--color-of-surface)] p-6 sm:p-8 text-sm text-[var(--color-of-ink)] shadow-[0_24px_64px_oklch(20%_0.02_80/0.16),0_2px_8px_oklch(20%_0.02_80/0.06)] outline-none sm:max-w-[460px] md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:duration-100 md:data-open:animate-in md:data-open:fade-in-0 md:data-open:zoom-in-95 md:data-closed:animate-out md:data-closed:fade-out-0 md:data-closed:zoom-out-95",
           className
         )}
         {...props}

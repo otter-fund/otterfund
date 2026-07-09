@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { DateInput } from "@/components/bulga/form";
+import { DateInput } from "@/components/otterfund/form";
 import { ChevronDown } from "lucide-react";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
 
@@ -125,25 +125,25 @@ export function AddTransactionModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[480px] p-6 sm:p-9">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-of-ink)]">
             Add Transaction
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
           <div>
-            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
               Description
             </label>
             <input
               placeholder="e.g. Tim Hortons"
               value={form.name}
               onChange={set("name")}
-              className="bk-field"
+              className="of-field"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
               Amount
             </label>
             <input
@@ -151,52 +151,52 @@ export function AddTransactionModal({
               placeholder="0.00"
               value={form.amount}
               onChange={set("amount")}
-              className="bk-field"
+              className="of-field"
             />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
               Date
             </label>
             <DateInput value={form.date} onChange={set("date")} />
           </div>
           <div>
-            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
               Category
             </label>
             <div className="relative">
               <select
                 value={form.category}
                 onChange={set("category")}
-                className="bk-field-select"
+                className="of-field-select"
               >
                 {displayCategories.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-bk-muted)]" />
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-of-muted)]" />
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
               Type
             </label>
             <div className="relative">
               <select
                 value={form.type}
                 onChange={set("type")}
-                className="bk-field-select"
+                className="of-field-select"
               >
                 <option value="debit">Expense</option>
                 <option value="credit">Income</option>
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-bk-muted)]" />
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-of-muted)]" />
             </div>
           </div>
         </div>
 
         {error && (
-          <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{error}</p>
+          <p className="text-sm text-[var(--color-of-clay)] font-medium mt-2">{error}</p>
         )}
 
         <div className="flex gap-3 mt-7">

@@ -3,9 +3,9 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { TextInput, SelectInput } from "@/components/bulga/form";
-import { BRAND_THEME } from "@/components/bulga/theme";
-import { LogoMark } from "@/components/bulga/logo";
+import { TextInput, SelectInput } from "@/components/otterfund/form";
+import { BRAND_THEME } from "@/components/otterfund/theme";
+import { LogoMark } from "@/components/otterfund/logo";
 import {
   DollarSign,
   Landmark,
@@ -23,7 +23,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ACCOUNT_TYPES, CURRENCIES, getBudgetPlan, DEFAULT_BUDGET_PLAN_ID } from "@/lib/constants";
-import { BudgetPlanPicker } from "@/components/bulga/budget-plan-picker";
+import { BudgetPlanPicker } from "@/components/otterfund/budget-plan-picker";
 import { OnboardingBrandPanel, type PanelStep } from "@/components/onboarding/onboarding-brand-panel";
 import { ConnectBankModal } from "@/components/dashboard/modals/connect-bank-modal";
 import { gqlClient, gqlUpload, errMessage } from "@/lib/graphql/client";
@@ -100,11 +100,11 @@ const MODE_OPTIONS: { mode: Mode; icon: LucideIcon; title: string; desc: string;
 
 // Labels + headings for the wizard. Every input control comes from the brand
 // kit (`TextInput` / `SelectInput`), so field styling lives in ONE place
-// (globals.css `bk-field`) and never drifts from the rest of the app's forms.
+// (globals.css `of-field`) and never drifts from the rest of the app's forms.
 const LABEL_CLASS =
-  "block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5";
+  "block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5";
 const HEADING_CLASS =
-  "text-2xl sm:text-[28px] font-semibold tracking-[-0.02em] leading-[1.05] text-[var(--color-bk-ink)] mb-2";
+  "text-2xl sm:text-[28px] font-semibold tracking-[-0.02em] leading-[1.05] text-[var(--color-of-ink)] mb-2";
 
 export function OnboardingWizard({ userName }: { userName: string }) {
   const [mode, setMode] = useState<Mode>("choose");
@@ -315,19 +315,19 @@ export function OnboardingWizard({ userName }: { userName: string }) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[var(--color-bk-canvas)] lg:grid lg:grid-cols-[1.02fr_1fr] xl:grid-cols-[1.08fr_1fr]">
+    <div className="min-h-screen w-full bg-[var(--color-of-canvas)] lg:grid lg:grid-cols-[1.02fr_1fr] xl:grid-cols-[1.08fr_1fr]">
       <OnboardingBrandPanel userName={userName} steps={inFlow ? steps : null} step={step} />
 
       <main className="relative flex min-h-screen flex-col px-6 py-8 sm:px-10">
         {/* compact brand header — the panel owns branding on lg+ */}
         <div className="flex items-center justify-between lg:hidden">
-          <Link href="/" aria-label="Bulga home" className="inline-flex items-center">
+          <Link href="/" aria-label="otterfund home" className="inline-flex items-center">
             <LogoMark size={38} />
           </Link>
           {inFlow && (
             <button
               onClick={changeMode}
-              className="text-[13px] font-medium text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)]"
+              className="text-[13px] font-medium text-[var(--color-of-muted)] transition-colors hover:text-[var(--color-of-ink)]"
             >
               Change path
             </button>
@@ -339,7 +339,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
             {inFlow && (
               <button
                 onClick={changeMode}
-                className="mb-7 hidden items-center gap-1.5 text-[13px] font-medium text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)] lg:inline-flex"
+                className="mb-7 hidden items-center gap-1.5 text-[13px] font-medium text-[var(--color-of-muted)] transition-colors hover:text-[var(--color-of-ink)] lg:inline-flex"
               >
                 <span aria-hidden>←</span> Change path
               </button>
@@ -349,12 +349,12 @@ export function OnboardingWizard({ userName }: { userName: string }) {
             {inFlow && (
               <div className="mb-7 lg:hidden">
                 <div className="mb-2 flex items-center justify-between text-[12px]">
-                  <span className="font-semibold text-[var(--color-bk-ink)]">{steps[step].label}</span>
-                  <span className="bk-num text-[var(--color-bk-muted)]">
+                  <span className="font-semibold text-[var(--color-of-ink)]">{steps[step].label}</span>
+                  <span className="of-num text-[var(--color-of-muted)]">
                     Step {step + 1} of {totalSteps}
                   </span>
                 </div>
-                <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--color-bk-line)]">
+                <div className="h-1 w-full overflow-hidden rounded-full bg-[var(--color-of-line)]">
                   <div
                     className="h-full rounded-full bg-[var(--color-primary)] transition-[width] duration-300"
                     style={{ width: `${((step + 1) / totalSteps) * 100}%` }}
@@ -364,9 +364,9 @@ export function OnboardingWizard({ userName }: { userName: string }) {
             )}
 
             {mode === "choose" ? (
-              <div className="bk-enter">
+              <div className="of-enter">
                 <h2 className={HEADING_CLASS}>How would you like to start?</h2>
-                <p className="mb-7 text-sm text-[var(--color-bk-muted)]">
+                <p className="mb-7 text-sm text-[var(--color-of-muted)]">
                   Pick a path. You can switch anytime.
                 </p>
                 <div className="flex flex-col gap-3">
@@ -374,14 +374,14 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                     <button
                       key={o.mode}
                       onClick={() => setMode(o.mode)}
-                      className="group flex w-full items-center gap-4 rounded-2xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] p-4 text-left transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-bk-surface)] sm:p-5"
+                      className="group flex w-full items-center gap-4 rounded-2xl border border-[var(--color-of-line)] bg-[oklch(98%_0.004_90)] p-4 text-left transition-colors hover:border-[var(--color-primary)] hover:bg-[var(--color-of-surface)] sm:p-5"
                     >
                       <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]">
                         <o.icon className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={1.9} />
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="flex items-center gap-2">
-                          <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--color-bk-ink)]">
+                          <span className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)]">
                             {o.title}
                           </span>
                           {o.badge && (
@@ -390,17 +390,17 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                             </span>
                           )}
                         </span>
-                        <span className="mt-0.5 block text-[12.5px] leading-relaxed text-[var(--color-bk-muted)]">
+                        <span className="mt-0.5 block text-[12.5px] leading-relaxed text-[var(--color-of-muted)]">
                           {o.desc}
                         </span>
                       </span>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-[var(--color-bk-faint)] transition-colors group-hover:text-[var(--color-primary)]" />
+                      <ArrowRight className="h-4 w-4 shrink-0 text-[var(--color-of-faint)] transition-colors group-hover:text-[var(--color-primary)]" />
                     </button>
                   ))}
                 </div>
               </div>
             ) : (
-              <div key={`${mode}-${step}`} className="bk-enter">
+              <div key={`${mode}-${step}`} className="of-enter">
         {/* ====== MANUAL MODE ====== */}
         {mode === "manual" && (
           <>
@@ -409,7 +409,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="income">
                 <div>
                   <h2 className={HEADING_CLASS}>Monthly Income</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">What&apos;s your monthly take-home income?</p>
+                  <p className="text-sm text-[var(--color-of-muted)]">What&apos;s your monthly take-home income?</p>
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Monthly Income</label>
@@ -429,11 +429,11 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="budget">
                 <div>
                   <h2 className={HEADING_CLASS}>Your budget plan</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">Pick how to split your income across needs, wants, and savings. You can change this anytime in Settings.</p>
+                  <p className="text-sm text-[var(--color-of-muted)]">Pick how to split your income across needs, wants, and savings. You can change this anytime in Settings.</p>
                 </div>
                 <BudgetPlanPicker value={plan} onChange={setPlan} accent={BRAND_THEME.accent} />
                 {incomeNum > 0 && (
-                  <p className="text-xs text-[var(--color-bk-muted)]">
+                  <p className="text-xs text-[var(--color-of-muted)]">
                     On {fmtCurrency(incomeNum)}/mo, that&apos;s {fmtCurrency(derivedSavings)} saved and {fmtCurrency(Number(budgetTarget))} to spend each month.
                   </p>
                 )}
@@ -445,11 +445,11 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="accounts">
                 <div>
                   <h2 className={HEADING_CLASS}>Your Accounts</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">Add your bank accounts and credit cards.</p>
+                  <p className="text-sm text-[var(--color-of-muted)]">Add your bank accounts and credit cards.</p>
                 </div>
-                <div className="space-y-3 max-h-[300px] overflow-y-auto bk-scroll pr-1">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto of-scroll pr-1">
                   {accounts.map((acc, i) => (
-                    <div key={i} className="flex gap-2 items-start p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
+                    <div key={i} className="flex gap-2 items-start p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
                       <div className="flex-1 space-y-2">
                         <TextInput value={acc.name} onChange={(e) => updateAccount(i, "name", e.target.value)} placeholder="Account name" />
                         <div className="flex gap-2">
@@ -464,7 +464,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                         </div>
                       </div>
                       {accounts.length > 1 && (
-                        <button onClick={() => removeAccount(i)} className="mt-2.5 text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)] transition-colors">
+                        <button onClick={() => removeAccount(i)} className="mt-2.5 text-[var(--color-of-muted)] hover:text-[var(--color-of-clay)] transition-colors">
                           <X className="w-4 h-4" />
                         </button>
                       )}
@@ -482,11 +482,11 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="recurring">
                 <div>
                   <h2 className={HEADING_CLASS}>Recurring Expenses</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">Add known recurring expenses like rent, subscriptions, and insurance.</p>
+                  <p className="text-sm text-[var(--color-of-muted)]">Add known recurring expenses like rent, subscriptions, and insurance.</p>
                 </div>
-                <div className="space-y-3 max-h-[300px] overflow-y-auto bk-scroll pr-1">
+                <div className="space-y-3 max-h-[300px] overflow-y-auto of-scroll pr-1">
                   {recurring.map((rec, i) => (
-                    <div key={i} className="flex gap-2 items-start p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
+                    <div key={i} className="flex gap-2 items-start p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
                       <div className="flex-1 space-y-2">
                         <TextInput value={rec.name} onChange={(e) => updateRecurring(i, "name", e.target.value)} placeholder="e.g. Rent, Netflix" />
                         <div className="flex gap-2">
@@ -503,7 +503,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                         </div>
                       </div>
                       {recurring.length > 1 && (
-                        <button onClick={() => removeRecurring(i)} className="mt-2.5 text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)] transition-colors">
+                        <button onClick={() => removeRecurring(i)} className="mt-2.5 text-[var(--color-of-muted)] hover:text-[var(--color-of-clay)] transition-colors">
                           <X className="w-4 h-4" />
                         </button>
                       )}
@@ -541,7 +541,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="connect-setup">
                 <div>
                   <h2 className={HEADING_CLASS}>A few basics</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">Choose a budget plan and your currency. We&apos;ll read your income straight from your bank.</p>
+                  <p className="text-sm text-[var(--color-of-muted)]">Choose a budget plan and your currency. We&apos;ll read your income straight from your bank.</p>
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Budget plan</label>
@@ -561,19 +561,19 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="connect-link">
                 <div>
                   <h2 className={HEADING_CLASS}>Connect your bank</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">Securely link your bank through Plaid. We&apos;ll import your accounts and recent transactions, then keep them in sync.</p>
+                  <p className="text-sm text-[var(--color-of-muted)]">Securely link your bank through Plaid. We&apos;ll import your accounts and recent transactions, then keep them in sync.</p>
                 </div>
 
                 {bankConnected ? (
                   <>
-                    <div className="flex items-center gap-3 p-4 rounded-2xl border border-[var(--color-bk-line)] bg-[var(--accent)]">
+                    <div className="flex items-center gap-3 p-4 rounded-2xl border border-[var(--color-of-line)] bg-[var(--accent)]">
                       <Check className="w-5 h-5 text-[var(--color-primary)]" />
-                      <div className="text-sm font-semibold text-[var(--color-bk-ink)]">Bank connected. Your accounts are importing.</div>
+                      <div className="text-sm font-semibold text-[var(--color-of-ink)]">Bank connected. Your accounts are importing.</div>
                     </div>
                     <div>
                       <label className={LABEL_CLASS}>Detected monthly income</label>
                       <TextInput type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} placeholder="0" min="0" step="100" />
-                      <p className="text-xs text-[var(--color-bk-muted)] mt-1.5">
+                      <p className="text-xs text-[var(--color-of-muted)] mt-1.5">
                         {Number(monthlyIncome) > 0
                           ? "Estimated from the deposits we just imported. Edit it if it looks off."
                           : incomeDetected
@@ -582,26 +582,26 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                       </p>
                     </div>
                     {incomeNum > 0 && (
-                      <p className="text-xs text-[var(--color-bk-muted)]">
+                      <p className="text-xs text-[var(--color-of-muted)]">
                         On {fmtCurrency(incomeNum)}/mo with the {selectedPlan.name}, that&apos;s {fmtCurrency(derivedSavings)} saved and {fmtCurrency(Number(budgetTarget))} to spend each month.
                       </p>
                     )}
                   </>
                 ) : (
-                  <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] p-5">
+                  <div className="flex items-start gap-3 rounded-2xl border border-[var(--color-of-line)] bg-[oklch(98%_0.004_90)] p-5">
                     <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[var(--accent)]">
                       <Landmark className="h-5 w-5 text-[var(--color-primary)]" strokeWidth={1.9} />
                     </span>
                     <div>
-                      <div className="text-[14px] font-semibold text-[var(--color-bk-ink)]">Link your bank securely</div>
-                      <div className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--color-bk-muted)]">
-                        Bulga imports your accounts and recent transactions through Plaid and keeps them in sync. Your credentials are encrypted and never seen by Bulga.
+                      <div className="text-[14px] font-semibold text-[var(--color-of-ink)]">Link your bank securely</div>
+                      <div className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--color-of-muted)]">
+                        otterfund imports your accounts and recent transactions through Plaid and keeps them in sync. Your credentials are encrypted and never seen by otterfund.
                       </div>
                     </div>
                   </div>
                 )}
 
-                <p className="text-xs text-[var(--color-bk-muted)]">
+                <p className="text-xs text-[var(--color-of-muted)]">
                   {bankConnected
                     ? "You're all set. Click Get Started to finish."
                     : "Not ready? Skip for now. You can connect anytime from Settings → Connections."}
@@ -619,7 +619,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="upload">
                 <div>
                   <h2 className={HEADING_CLASS}>Upload Statements</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">
+                  <p className="text-sm text-[var(--color-of-muted)]">
                     Drop your bank statements (CSV or PDF). Upload as many as you like, and AI will extract accounts, recurring expenses, and categorize transactions.
                   </p>
                 </div>
@@ -634,12 +634,12 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                 <div
                   onDrop={handleDrop}
                   onDragOver={(e) => e.preventDefault()}
-                  className="border border-dashed border-[var(--color-bk-line)] rounded-2xl p-8 text-center cursor-pointer hover:border-[var(--color-primary)] transition-colors"
+                  className="border border-dashed border-[var(--color-of-line)] rounded-2xl p-8 text-center cursor-pointer hover:border-[var(--color-primary)] transition-colors"
                   onClick={() => document.getElementById("auto-file-input")?.click()}
                 >
-                  <Upload className="w-8 h-8 mx-auto text-[var(--color-bk-muted)] mb-3" />
-                  <p className="text-sm font-semibold text-[var(--color-bk-ink)]">Drop CSV or PDF files here</p>
-                  <p className="text-xs text-[var(--color-bk-muted)] mt-1">or click to browse (multiple files supported)</p>
+                  <Upload className="w-8 h-8 mx-auto text-[var(--color-of-muted)] mb-3" />
+                  <p className="text-sm font-semibold text-[var(--color-of-ink)]">Drop CSV or PDF files here</p>
+                  <p className="text-xs text-[var(--color-of-muted)] mt-1">or click to browse (multiple files supported)</p>
                   <input
                     id="auto-file-input"
                     type="file"
@@ -653,11 +653,11 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                 {files.length > 0 && (
                   <div className="space-y-2">
                     {files.map((f, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2.5 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
+                      <div key={i} className="flex items-center gap-2 p-2.5 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
                         <FileText className="w-4 h-4 text-[var(--color-primary)] shrink-0" />
-                        <span className="text-sm flex-1 truncate text-[var(--color-bk-ink)]">{f.name}</span>
-                        <span className="text-xs text-[var(--color-bk-muted)]">{(f.size / 1024).toFixed(1)} KB</span>
-                        <button onClick={() => removeFile(i)} className="text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)]">
+                        <span className="text-sm flex-1 truncate text-[var(--color-of-ink)]">{f.name}</span>
+                        <span className="text-xs text-[var(--color-of-muted)]">{(f.size / 1024).toFixed(1)} KB</span>
+                        <button onClick={() => removeFile(i)} className="text-[var(--color-of-muted)] hover:text-[var(--color-of-clay)]">
                           <X className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -665,7 +665,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   </div>
                 )}
 
-                {error && <p className="text-sm text-[var(--color-bk-clay)] font-medium">{error}</p>}
+                {error && <p className="text-sm text-[var(--color-of-clay)] font-medium">{error}</p>}
               </div>
             )}
 
@@ -674,7 +674,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="flex flex-col items-center justify-center py-12" key="analyzing">
                 <Loader2 className="w-10 h-10 text-[var(--color-primary)] animate-spin mb-4" />
                 <h2 className={`${HEADING_CLASS} text-center`}>Analyzing your statements...</h2>
-                <p className="text-sm text-[var(--color-bk-muted)] text-center max-w-sm">
+                <p className="text-sm text-[var(--color-of-muted)] text-center max-w-sm">
                   AI is reading {files.length} file{files.length > 1 ? "s" : ""} to extract your accounts, recurring expenses, income, and transactions. This may take a minute.
                 </p>
               </div>
@@ -685,7 +685,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="auto-review">
                 <div>
                   <h2 className={HEADING_CLASS}>Here&apos;s what we found</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">
+                  <p className="text-sm text-[var(--color-of-muted)]">
                     <Check className="w-3.5 h-3.5 inline text-[var(--color-primary)] mr-1" />
                     {autoAnalysis.transactionCount} transactions from {autoAnalysis.fileCount} file{autoAnalysis.fileCount > 1 ? "s" : ""}. Review and edit below.
                   </p>
@@ -697,10 +697,10 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   <TextInput type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} />
                 </div>
                 <div>
-                  <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-2">Budget plan</div>
+                  <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-2">Budget plan</div>
                   <BudgetPlanPicker value={plan} onChange={setPlan} accent={BRAND_THEME.accent} />
                   {incomeNum > 0 && (
-                    <p className="text-xs text-[var(--color-bk-muted)] mt-2">
+                    <p className="text-xs text-[var(--color-of-muted)] mt-2">
                       On {fmtCurrency(incomeNum)}/mo, that&apos;s {fmtCurrency(derivedSavings)} saved and {fmtCurrency(Number(budgetTarget))} to spend each month.
                     </p>
                   )}
@@ -708,12 +708,12 @@ export function OnboardingWizard({ userName }: { userName: string }) {
 
                 {/* Accounts */}
                 <div>
-                  <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-2">
+                  <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-2">
                     Accounts ({accounts.filter((a) => a.name).length})
                   </div>
-                  <div className="space-y-2 max-h-[160px] overflow-y-auto bk-scroll pr-1">
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto of-scroll pr-1">
                     {accounts.map((acc, i) => (
-                      <div key={i} className="flex gap-2 items-center p-2.5 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
+                      <div key={i} className="flex gap-2 items-center p-2.5 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
                         <div className="flex-1"><TextInput value={acc.name} onChange={(e) => updateAccount(i, "name", e.target.value)} placeholder="Account name" /></div>
                         <div className="w-32">
                           <SelectInput value={acc.type} onChange={(e) => updateAccount(i, "type", e.target.value)}>
@@ -722,7 +722,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                         </div>
                         <div className="w-28"><TextInput type="number" value={acc.balance} onChange={(e) => updateAccount(i, "balance", e.target.value)} placeholder="Balance" /></div>
                         {accounts.length > 1 && (
-                          <button onClick={() => removeAccount(i)} className="text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)]"><X className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => removeAccount(i)} className="text-[var(--color-of-muted)] hover:text-[var(--color-of-clay)]"><X className="w-3.5 h-3.5" /></button>
                         )}
                       </div>
                     ))}
@@ -734,12 +734,12 @@ export function OnboardingWizard({ userName }: { userName: string }) {
 
                 {/* Recurring */}
                 <div>
-                  <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-2">
+                  <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-2">
                     Recurring Expenses ({recurring.filter((r) => r.name).length})
                   </div>
-                  <div className="space-y-2 max-h-[160px] overflow-y-auto bk-scroll pr-1">
+                  <div className="space-y-2 max-h-[160px] overflow-y-auto of-scroll pr-1">
                     {recurring.map((rec, i) => (
-                      <div key={i} className="flex gap-2 items-center p-2.5 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
+                      <div key={i} className="flex gap-2 items-center p-2.5 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
                         <div className="flex-1"><TextInput value={rec.name} onChange={(e) => updateRecurring(i, "name", e.target.value)} placeholder="Expense name" /></div>
                         <div className="w-24"><TextInput type="number" value={rec.amount} onChange={(e) => updateRecurring(i, "amount", e.target.value)} placeholder="$" /></div>
                         <div className="w-32">
@@ -750,7 +750,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                           </SelectInput>
                         </div>
                         {recurring.length > 1 && (
-                          <button onClick={() => removeRecurring(i)} className="text-[var(--color-bk-muted)] hover:text-[var(--color-bk-clay)]"><X className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => removeRecurring(i)} className="text-[var(--color-of-muted)] hover:text-[var(--color-of-clay)]"><X className="w-3.5 h-3.5" /></button>
                         )}
                       </div>
                     ))}
@@ -760,7 +760,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   </button>
                 </div>
 
-                {error && <p className="text-sm text-[var(--color-bk-clay)] font-medium">{error}</p>}
+                {error && <p className="text-sm text-[var(--color-of-clay)] font-medium">{error}</p>}
               </div>
             )}
           </>
@@ -769,7 +769,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
         {/* Navigation */}
         <div className="flex justify-between mt-8 gap-3">
           {step > 0 && !(mode === "auto" && step === 1) ? (
-            <Button variant="ghost" size="sm" onClick={() => setStep(step - 1)} className="px-6 text-[var(--color-bk-muted)]">
+            <Button variant="ghost" size="sm" onClick={() => setStep(step - 1)} className="px-6 text-[var(--color-of-muted)]">
               Back
             </Button>
           ) : (
@@ -790,7 +790,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
             // Connecting stays the primary action so you can still link a bank
             // even if you didn't at first; skipping is an explicit secondary.
             <div className="flex gap-2">
-              <Button variant="ghost" size="sm" onClick={handleSubmit} disabled={loading} className="px-5 text-[var(--color-bk-muted)]">
+              <Button variant="ghost" size="sm" onClick={handleSubmit} disabled={loading} className="px-5 text-[var(--color-of-muted)]">
                 {loading ? "Setting up..." : "Skip for now"}
               </Button>
               <Button size="sm" onClick={() => setShowConnect(true)} disabled={loading} className="px-6">
@@ -847,45 +847,45 @@ function ReviewStep({
     <div className="space-y-6 sm:space-y-7" key="review">
       <div>
         <h2 className={HEADING_CLASS}>Looking Good!</h2>
-        <p className="text-sm text-[var(--color-bk-muted)]">Here&apos;s a summary. You can go back to edit anything.</p>
+        <p className="text-sm text-[var(--color-of-muted)]">Here&apos;s a summary. You can go back to edit anything.</p>
       </div>
       <div className="space-y-3">
-        <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
-          <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1">Monthly Income</div>
-          <div className="bk-num text-lg text-[var(--color-bk-ink)]">{fmtCurrency(monthlyIncome)} {currency}</div>
+        <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
+          <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1">Monthly Income</div>
+          <div className="of-num text-lg text-[var(--color-of-ink)]">{fmtCurrency(monthlyIncome)} {currency}</div>
         </div>
-        <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
-          <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1">Budget Plan</div>
-          <div className="text-lg font-semibold text-[var(--color-bk-ink)]">{planName} <span className="bk-num text-sm text-[var(--color-bk-muted)] font-normal">· {fmtCurrency(savings)}/mo saved ({Math.round((Number(savings) / Number(monthlyIncome)) * 100) || 0}% of income)</span></div>
+        <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
+          <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1">Budget Plan</div>
+          <div className="text-lg font-semibold text-[var(--color-of-ink)]">{planName} <span className="of-num text-sm text-[var(--color-of-muted)] font-normal">· {fmtCurrency(savings)}/mo saved ({Math.round((Number(savings) / Number(monthlyIncome)) * 100) || 0}% of income)</span></div>
         </div>
-        <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
-          <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1">Spending Budget</div>
-          <div className="bk-num text-lg text-[var(--color-bk-ink)]">{fmtCurrency(budgetTarget)}/mo</div>
+        <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
+          <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1">Spending Budget</div>
+          <div className="of-num text-lg text-[var(--color-of-ink)]">{fmtCurrency(budgetTarget)}/mo</div>
         </div>
         {accounts.some((a) => a.name) && (
-          <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
-            <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1">Accounts ({accounts.filter((a) => a.name).length})</div>
+          <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
+            <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1">Accounts ({accounts.filter((a) => a.name).length})</div>
             {accounts.filter((a) => a.name).map((a, i) => (
-              <div key={i} className="flex justify-between text-sm py-0.5 text-[var(--color-bk-ink)]">
-                <span>{a.name} <span className="text-[var(--color-bk-muted)]">· {a.type}</span></span>
+              <div key={i} className="flex justify-between text-sm py-0.5 text-[var(--color-of-ink)]">
+                <span>{a.name} <span className="text-[var(--color-of-muted)]">· {a.type}</span></span>
                 <span className="font-medium">{fmtCurrency(a.balance)}</span>
               </div>
             ))}
           </div>
         )}
         {recurring.some((r) => r.name) && (
-          <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-bk-line)]">
-            <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1">Recurring Expenses ({recurring.filter((r) => r.name).length})</div>
+          <div className="p-3 rounded-xl bg-[oklch(98%_0.004_90)] border border-[var(--color-of-line)]">
+            <div className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1">Recurring Expenses ({recurring.filter((r) => r.name).length})</div>
             {recurring.filter((r) => r.name).map((r, i) => (
-              <div key={i} className="flex justify-between text-sm py-0.5 text-[var(--color-bk-ink)]">
-                <span>{r.name} <span className="text-[var(--color-bk-muted)]">· {r.cycle}</span></span>
+              <div key={i} className="flex justify-between text-sm py-0.5 text-[var(--color-of-ink)]">
+                <span>{r.name} <span className="text-[var(--color-of-muted)]">· {r.cycle}</span></span>
                 <span className="font-medium">{fmtCurrency(r.amount)}</span>
               </div>
             ))}
           </div>
         )}
       </div>
-      {error && <p className="text-sm text-[var(--color-bk-clay)] font-medium">{error}</p>}
+      {error && <p className="text-sm text-[var(--color-of-clay)] font-medium">{error}</p>}
     </div>
   );
 }

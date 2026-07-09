@@ -8,8 +8,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { DateInput } from "@/components/bulga/form";
-import { ConfirmButton } from "@/components/bulga/confirm-button";
+import { DateInput } from "@/components/otterfund/form";
+import { ConfirmButton } from "@/components/otterfund/confirm-button";
 import { Trash2, ChevronDown } from "lucide-react";
 import type { TransactionView } from "@/lib/types";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
@@ -118,70 +118,70 @@ export function EditTransactionModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[480px] p-6 sm:p-9">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <DialogTitle className="text-2xl font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
             Edit transaction
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 mt-2">
           <div>
-            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
               Description
             </label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="bk-field"
+              className="of-field"
             />
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
                 Amount
               </label>
               <input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="bk-field"
+                className="of-field"
               />
             </div>
             <div className="w-32">
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
                 Type
               </label>
               <div className="relative">
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as "debit" | "credit")}
-                  className="bk-field-select"
+                  className="of-field-select"
                 >
                   <option value="debit">Expense</option>
                   <option value="credit">Income</option>
                 </select>
-                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-bk-muted)]" />
+                <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-of-muted)]" />
               </div>
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
               Category
             </label>
             <div className="relative">
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="bk-field-select"
+                className="of-field-select"
               >
                 {displayCategories.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-bk-muted)]" />
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-of-muted)]" />
             </div>
           </div>
           <div>
-            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
               Date (leave blank to keep current)
             </label>
             <DateInput value={date} onChange={(e) => setDate(e.target.value)} />
@@ -189,7 +189,7 @@ export function EditTransactionModal({
         </div>
 
         {error && (
-          <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{error}</p>
+          <p className="text-sm text-[var(--color-of-clay)] font-medium mt-2">{error}</p>
         )}
 
         <div className="flex items-center gap-3 mt-7">

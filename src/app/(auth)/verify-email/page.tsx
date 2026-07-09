@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { GuillocheSeal } from "@/components/bulga/guilloche";
-import { BRAND_THEME } from "@/components/bulga/theme";
+import { GuillocheSeal } from "@/components/otterfund/guilloche";
+import { BRAND_THEME } from "@/components/otterfund/theme";
 
 // Post-sign-up confirmation screen. When Supabase email confirmation is on,
 // sign-up returns no session — we send the user here (a calm success state)
@@ -13,20 +13,20 @@ export default async function VerifyEmailPage({
   const { email } = await searchParams;
 
   return (
-    <div className="bk-enter flex flex-col items-center gap-5 text-center">
+    <div className="of-enter flex flex-col items-center gap-5 text-center">
       <div className="h-16 w-16" aria-hidden="true">
         <GuillocheSeal accent={BRAND_THEME.accent} accentDeep={BRAND_THEME.accentDeep} label="✓" />
       </div>
 
       <div className="flex flex-col gap-2">
-        <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+        <h1 className="text-[24px] font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
           Check your email
         </h1>
-        <p className="text-sm leading-relaxed text-[var(--color-bk-muted)]">
+        <p className="text-sm leading-relaxed text-[var(--color-of-muted)]">
           {email ? (
             <>
               We sent a confirmation link to{" "}
-              <span className="font-semibold text-[var(--color-bk-ink)]">{email}</span>. Open it to
+              <span className="font-semibold text-[var(--color-of-ink)]">{email}</span>. Open it to
               activate your account, then sign in.
             </>
           ) : (
@@ -42,7 +42,7 @@ export default async function VerifyEmailPage({
         Back to sign in
       </Link>
 
-      <p className="text-[13px] text-[var(--color-bk-muted)]">
+      <p className="text-[13px] text-[var(--color-of-muted)]">
         Didn&apos;t get it? Check your spam folder, or{" "}
         <Link
           href="/register"

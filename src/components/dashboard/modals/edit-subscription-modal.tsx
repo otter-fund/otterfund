@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ConfirmButton } from "@/components/bulga/confirm-button";
+import { ConfirmButton } from "@/components/otterfund/confirm-button";
 import { Trash2 } from "lucide-react";
 import {
   SubscriptionForm,
@@ -115,7 +115,7 @@ export function EditSubscriptionModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[460px] p-6 sm:p-9">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-of-ink)]">
             Edit subscription
           </DialogTitle>
         </DialogHeader>
@@ -123,7 +123,7 @@ export function EditSubscriptionModal({
           <SubscriptionForm values={values} errors={errors} onChange={change} open={open} idPrefix="edit-sub" />
         </div>
         {formError && (
-          <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{formError}</p>
+          <p className="text-sm text-[var(--color-of-clay)] font-medium mt-2">{formError}</p>
         )}
         <div className="flex items-center gap-2.5 mt-6">
           <ConfirmButton

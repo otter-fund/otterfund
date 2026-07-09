@@ -9,26 +9,26 @@
   --color-foreground: var(--foreground);
   --font-mono: var(--font-geist-mono);
 
-  /* ── Bulga design system ── */
+  /* ── otterfund design system ── */
   --font-ui: var(--font-ui);     /* Hanken Grotesk — interface & data */
   --font-num: var(--font-num);   /* Newsreader — display & figures */
 
   /* Static brand tokens (the accent + its derived tones are injected at
      runtime by the theme helper as CSS vars on the shell, since they are
      hue-derived and user-switchable). These are the non-accent neutrals. */
-  --color-bk-canvas: oklch(96.5% 0.006 90);   /* page background */
-  --color-bk-surface: oklch(99.2% 0.003 95);  /* cards */
-  --color-bk-ink: oklch(24% 0.012 70);         /* primary text */
-  --color-bk-muted: oklch(52% 0.012 80);       /* secondary text */
-  --color-bk-faint: oklch(56% 0.012 80);       /* tertiary text */
-  --color-bk-line: oklch(92% 0.006 85);        /* card borders */
-  --color-bk-line-soft: oklch(94.5% 0.004 85); /* inner dividers */
-  --color-bk-track: oklch(94% 0.005 85);       /* progress track */
-  --color-bk-sidebar: oklch(96.5% 0.006 90);   /* rail — matches the page canvas */
-  --color-bk-sidebar-line: oklch(92% 0.006 85);
-  --color-bk-rail-icon: oklch(48% 0.012 80);   /* resting rail icon */
-  --color-bk-clay: oklch(52% 0.14 33);         /* alert */
-  --color-bk-clay-tint: oklch(95% 0.04 38);
+  --color-of-canvas: oklch(96.5% 0.006 90);   /* page background */
+  --color-of-surface: oklch(99.2% 0.003 95);  /* cards */
+  --color-of-ink: oklch(24% 0.012 70);         /* primary text */
+  --color-of-muted: oklch(52% 0.012 80);       /* secondary text */
+  --color-of-faint: oklch(56% 0.012 80);       /* tertiary text */
+  --color-of-line: oklch(92% 0.006 85);        /* card borders */
+  --color-of-line-soft: oklch(94.5% 0.004 85); /* inner dividers */
+  --color-of-track: oklch(94% 0.005 85);       /* progress track */
+  --color-of-sidebar: oklch(96.5% 0.006 90);   /* rail — matches the page canvas */
+  --color-of-sidebar-line: oklch(92% 0.006 85);
+  --color-of-rail-icon: oklch(48% 0.012 80);   /* resting rail icon */
+  --color-of-clay: oklch(52% 0.14 33);         /* alert */
+  --color-of-clay-tint: oklch(95% 0.04 38);
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -69,7 +69,7 @@
 }
 
 :root {
-  /* ── Bulga design system — drives shadcn/base-ui ui/ primitives ──
+  /* ── otterfund design system — drives shadcn/base-ui ui/ primitives ──
      Every <Button>/<Input>/<Badge>/<Select> reads these tokens, so the whole
      primitive layer stays on-brand and future devs keep building on it. */
   --background: oklch(96.5% 0.006 90);          /* warm canvas */
@@ -122,49 +122,49 @@
        automatic font inflation when rotating to landscape. The background
        shows through rubber-band overscroll (and tints Safari's retracted
        chrome) — warm canvas, never default white. */
-    background: var(--color-bk-canvas);
+    background: var(--color-of-canvas);
     -webkit-tap-highlight-color: transparent;
     -webkit-text-size-adjust: 100%;
   }
 }
 
-/* ══ Bulga design system ══ */
+/* ══ otterfund design system ══ */
 
 /* Figures & display use Newsreader with tabular, lining numerals */
-.bk-num {
+.of-num {
   font-family: var(--font-num), Georgia, serif;
   font-feature-settings: "tnum" 1, "lnum" 1;
 }
 
 /* The one system field — every modal input/select shares this. No per-modal
    overrides: change the field look here and it changes everywhere. Defined as
-   Tailwind v4 @utility classes so `.bk-field-select` can @apply `bk-field`. */
-@utility bk-field {
-  @apply w-full h-11 rounded-xl border border-[var(--color-bk-line)] bg-[oklch(98%_0.004_90)] px-4 text-sm text-[var(--color-bk-ink)] placeholder:text-[var(--color-bk-faint)] outline-none transition-colors focus:border-[var(--color-primary)];
+   Tailwind v4 @utility classes so `.of-field-select` can @apply `of-field`. */
+@utility of-field {
+  @apply w-full h-11 rounded-xl border border-[var(--color-of-line)] bg-[oklch(98%_0.004_90)] px-4 text-sm text-[var(--color-of-ink)] placeholder:text-[var(--color-of-faint)] outline-none transition-colors focus:border-[var(--color-primary)];
 }
 /* Same field, for <select>: strips platform chrome and leaves room on the
    right for the shared <ChevronDown> overlay. Wrap in a relative div + icon. */
-@utility bk-field-select {
-  @apply bk-field pr-10 appearance-none;
+@utility of-field-select {
+  @apply of-field pr-10 appearance-none;
 }
 /* iOS Safari auto-zooms the page when a focused text control's font-size is
    under 16px. Fields are text-sm (14px) on desktop; at touch widths hold them
    at 16px so tapping into a field never triggers the zoom. 1024px (the app's
    tablet stop) rather than the phone stop because iPhones in LANDSCAPE are up
    to ~932px CSS wide and Safari zooms there too. Both classes need the
-   override — `bk-field-select` @applies bk-field's STYLES but its elements
-   don't carry the bk-field class. (Un-layered rule, so it wins over the
+   override — `of-field-select` @applies of-field's STYLES but its elements
+   don't carry the of-field class. (Un-layered rule, so it wins over the
    @utility layer.) */
 @media (max-width: 1024px) {
-  .bk-field,
-  .bk-field-select {
+  .of-field,
+  .of-field-select {
     font-size: 16px;
   }
 }
 
 /* Native date input, themed to brand: tint the calendar picker indicator to
    the accent and give it a pointer cursor so it reads as on-brand, not OS. */
-@utility bk-field-date {
+@utility of-field-date {
   &::-webkit-calendar-picker-indicator {
     cursor: pointer;
     opacity: 0.55;
@@ -174,7 +174,7 @@
   }
   &:hover::-webkit-calendar-picker-indicator { opacity: 0.85; }
   /* Clicking the indicator opens the native calendar WITHOUT reliably focusing
-     the input (the popup is its own window), so bk-field's :focus accent never
+     the input (the popup is its own window), so of-field's :focus accent never
      shows on that path. :open matches a temporal input while its picker is up —
      accent the field for that whole interaction. (Standalone rule: browsers
      without :open just ignore it; there, tapping the field focuses it and the
@@ -182,23 +182,23 @@
   &:open { border-color: var(--color-primary); }
 }
 
-/* Priority segmented control (bulga/priority-picker.tsx) — the bk-field shell
+/* Priority segmented control (otterfund/priority-picker.tsx) — the of-field shell
    with three equal segments and ONE sliding accent thumb. The thumb is an
    absolutely-placed span the component translates by 0/100/200%, so switching
    priority glides instead of repainting — and only `transform` animates (cheap,
-   smooth on mobile). Height matches bk-field (44px) = the iOS touch minimum. */
-.bk-priority {
+   smooth on mobile). Height matches of-field (44px) = the iOS touch minimum. */
+.of-priority {
   position: relative;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   height: 44px;
   padding: 4px;
-  border: 1px solid var(--color-bk-line);
+  border: 1px solid var(--color-of-line);
   border-radius: 12px;
   background: oklch(98% 0.004 90);
   touch-action: manipulation;
 }
-.bk-priority-thumb {
+.of-priority-thumb {
   position: absolute;
   top: 4px;
   bottom: 4px;
@@ -209,7 +209,7 @@
   transition: transform 0.28s cubic-bezier(0.22, 1.1, 0.36, 1);
   pointer-events: none;
 }
-.bk-priority-btn {
+.of-priority-btn {
   position: relative;
   z-index: 1;
   border: none;
@@ -218,71 +218,71 @@
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-bk-muted);
+  color: var(--color-of-muted);
   cursor: pointer;
   outline: none;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.18s ease;
 }
-.bk-priority-btn[aria-checked="true"] { color: #fff; }
+.of-priority-btn[aria-checked="true"] { color: #fff; }
 @media (hover: hover) {
-  .bk-priority-btn:not([aria-checked="true"]):hover { color: var(--color-bk-ink); }
+  .of-priority-btn:not([aria-checked="true"]):hover { color: var(--color-of-ink); }
 }
-.bk-priority-btn:focus-visible { box-shadow: inset 0 0 0 2px var(--color-ring); }
+.of-priority-btn:focus-visible { box-shadow: inset 0 0 0 2px var(--color-ring); }
 @media (prefers-reduced-motion: reduce) {
-  .bk-priority-thumb { transition: none; }
+  .of-priority-thumb { transition: none; }
 }
 
 /* Screen enter — calm fade-up, respects reduced motion */
-@keyframes bkIn {
+@keyframes ofIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: none; }
 }
-.bk-enter { animation: bkIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.of-enter { animation: ofIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 
 /* Drawer entrance — the scrim fades and the right panel slides in from the edge
    (insight drill-down). Paired so the overlay reads as one gesture. */
-@keyframes bkFadeIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes bkDrawerIn {
+@keyframes ofFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ofDrawerIn {
   from { opacity: 0; transform: translateX(24px); }
   to { opacity: 1; transform: none; }
 }
-.bk-fade-in { animation: bkFadeIn 0.24s ease both; }
-.bk-drawer-in { animation: bkDrawerIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.of-fade-in { animation: ofFadeIn 0.24s ease both; }
+.of-drawer-in { animation: ofDrawerIn 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 
 /* Rolling ticker — swap one line of text with a vertical roll: the outgoing line
    shifts up and out while the incoming line rises from below into its place
    (e.g. the advisor's cycling "thinking" phrase). Both live in a 1-line,
    overflow-hidden container, stacked. */
-@keyframes bkRollIn {
+@keyframes ofRollIn {
   from { opacity: 0; transform: translateY(100%); }
   to { opacity: 1; transform: translateY(0); }
 }
-@keyframes bkRollOut {
+@keyframes ofRollOut {
   from { opacity: 1; transform: translateY(0); }
   to { opacity: 0; transform: translateY(-100%); }
 }
-.bk-roll-in { animation: bkRollIn 0.36s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-.bk-roll-out { animation: bkRollOut 0.36s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.of-roll-in { animation: ofRollIn 0.36s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.of-roll-out { animation: ofRollOut 0.36s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 
 /* Allocation drill-down — horizontal slide between the accounts overview and one
    account's holdings. Forward (drill in) enters from the right; back enters from
    the left, so the motion mirrors the navigation direction. */
-@keyframes bkSlideInRight {
+@keyframes ofSlideInRight {
   from { opacity: 0; transform: translateX(28px); }
   to { opacity: 1; transform: none; }
 }
-@keyframes bkSlideInLeft {
+@keyframes ofSlideInLeft {
   from { opacity: 0; transform: translateX(-28px); }
   to { opacity: 1; transform: none; }
 }
-.bk-slide-in-right { animation: bkSlideInRight 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
-.bk-slide-in-left { animation: bkSlideInLeft 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.of-slide-in-right { animation: ofSlideInRight 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
+.of-slide-in-left { animation: ofSlideInLeft 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 
 /* Typing caret — the blinking bar at the end of text being "typed out" in the
    advisor reply. currentColor so it takes the text tone. */
-@keyframes bkBlink { 50% { opacity: 0; } }
-.bk-caret {
+@keyframes ofBlink { 50% { opacity: 0; } }
+.of-caret {
   display: inline-block;
   width: 2px;
   height: 1.05em;
@@ -290,48 +290,48 @@
   vertical-align: text-bottom;
   background: currentColor;
   opacity: 0.65;
-  animation: bkBlink 1s step-end infinite;
+  animation: ofBlink 1s step-end infinite;
 }
 
 /* Spinner — for in-progress actions (e.g. generating insights) */
-@keyframes bkSpin { to { transform: rotate(360deg); } }
-.bk-spin { animation: bkSpin 0.8s linear infinite; transform-origin: center; }
+@keyframes ofSpin { to { transform: rotate(360deg); } }
+.of-spin { animation: ofSpin 0.8s linear infinite; transform-origin: center; }
 
 /* Skeleton block — the loading.tsx placeholder language. A warm hairline-tint
    base with a slow left-to-right sheen. Layered so rounded-* utilities can
    override the default radius (e.g. rounded-full pills and donuts). */
-@keyframes bkShimmer { to { transform: translateX(100%); } }
+@keyframes ofShimmer { to { transform: translateX(100%); } }
 @layer components {
-  .bk-skel {
+  .of-skel {
     position: relative;
     overflow: hidden;
     border-radius: 10px;
-    background: color-mix(in oklab, var(--color-bk-line-soft) 60%, var(--color-bk-surface));
+    background: color-mix(in oklab, var(--color-of-line-soft) 60%, var(--color-of-surface));
   }
 }
-.bk-skel::after {
+.of-skel::after {
   content: "";
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
   background: linear-gradient(90deg, transparent, oklch(100% 0 0 / 0.55), transparent);
-  animation: bkShimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: ofShimmer 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* Popover reveal — calm scale-fade anchored to the top-right trigger
    (the month picker). Quicker than a page enter; same easing. */
-@keyframes bkPop {
+@keyframes ofPop {
   from { opacity: 0; transform: translateY(-4px) scale(0.97); }
   to { opacity: 1; transform: none; }
 }
-.bk-pop { animation: bkPop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1) both; transform-origin: var(--transform-origin, top right); }
+.of-pop { animation: ofPop 0.16s cubic-bezier(0.22, 0.61, 0.36, 1) both; transform-origin: var(--transform-origin, top right); }
 
 /* Month period control — ONE segmented pill (‹ · label · ›) in the outline-
    button language (matches the topbar bell). The container owns the border,
    radius and surface fill; each region is a transparent button that only tints
    on hover, so the three read as a single control. Hover turns the glyph/label
    accent, mirroring the bell's outline-hover. */
-.bk-month-nav {
+.of-month-nav {
   display: inline-flex;
   align-items: stretch;
   height: 40px;                        /* matches the sibling size="sm"/icon controls */
@@ -341,23 +341,23 @@
   overflow: hidden;
   transition: opacity 0.14s;
 }
-.bk-month-nav[data-pending] { opacity: 0.5; pointer-events: none; }
+.of-month-nav[data-pending] { opacity: 0.5; pointer-events: none; }
 
-.bk-month-nav-step,
-.bk-month-nav-label {
+.of-month-nav-step,
+.of-month-nav-label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: none;
   background: transparent;
-  color: var(--color-bk-ink);
+  color: var(--color-of-ink);
   cursor: pointer;
   font-family: inherit;
   transition: background 0.14s, color 0.14s, border-color 0.14s, box-shadow 0.14s;
   outline: none;
 }
-.bk-month-nav-step:focus-visible,
-.bk-month-nav-label:focus-visible {
+.of-month-nav-step:focus-visible,
+.of-month-nav-label:focus-visible {
   box-shadow: inset 0 0 0 2px var(--color-ring);
 }
 
@@ -365,23 +365,23 @@
    ring (inset box-shadow, so it follows the pill's clip) with an accent glyph —
    a restrained outline rather than a solid fill, matching the bell's outline
    hover. */
-.bk-month-nav-step {
+.of-month-nav-step {
   width: 40px;
-  color: var(--color-bk-muted);
+  color: var(--color-of-muted);
   box-shadow: inset 0 0 0 0 transparent;
 }
 /* Round the outer end so the hover ring follows the pill's curve, not a square
    corner poking past it. */
-.bk-month-nav-step:first-child { border-radius: 9999px 0 0 9999px; }
-.bk-month-nav-step:last-child { border-radius: 0 9999px 9999px 0; }
-.bk-month-nav-step:hover:not(:disabled) {
+.of-month-nav-step:first-child { border-radius: 9999px 0 0 9999px; }
+.of-month-nav-step:last-child { border-radius: 0 9999px 9999px 0; }
+.of-month-nav-step:hover:not(:disabled) {
   color: var(--color-primary);
   box-shadow: inset 0 0 0 1.5px var(--color-primary);
 }
-.bk-month-nav-step:disabled { opacity: 0.35; cursor: default; }
+.of-month-nav-step:disabled { opacity: 0.35; cursor: default; }
 
 /* Center trigger — the month label, framed by hairline dividers. */
-.bk-month-nav-label {
+.of-month-nav-label {
   padding: 0 16px;
   font-size: 13px;
   font-weight: 500;
@@ -390,16 +390,16 @@
   border-right: 1px solid var(--color-border);
   box-shadow: inset 0 0 0 0 transparent;
 }
-.bk-month-nav-label:hover:not(:disabled),
-.bk-month-nav-label[data-popup-open] {
+.of-month-nav-label:hover:not(:disabled),
+.of-month-nav-label[data-popup-open] {
   color: var(--color-primary);
   box-shadow: inset 0 0 0 1.5px var(--color-primary);
   border-color: transparent; /* drop the grey hairlines so the accent ring is the only frame */
 }
-.bk-month-nav-label:disabled { cursor: default; }
+.of-month-nav-label:disabled { cursor: default; }
 
 /* Round ghost icon button — the month picker's year stepper. */
-.bk-stepper-btn {
+.of-stepper-btn {
   display: grid;
   place-items: center;
   width: 30px;
@@ -407,17 +407,17 @@
   border: none;
   border-radius: 9px;
   background: transparent;
-  color: var(--color-bk-muted);
+  color: var(--color-of-muted);
   cursor: pointer;
   transition: background 0.14s, color 0.14s;
 }
-.bk-stepper-btn:hover { background: oklch(96% 0.005 90); color: var(--color-bk-ink); }
-.bk-stepper-btn:disabled { opacity: 0.3; cursor: default; }
-.bk-stepper-btn:disabled:hover { background: transparent; color: var(--color-bk-muted); }
+.of-stepper-btn:hover { background: oklch(96% 0.005 90); color: var(--color-of-ink); }
+.of-stepper-btn:disabled { opacity: 0.3; cursor: default; }
+.of-stepper-btn:disabled:hover { background: transparent; color: var(--color-of-muted); }
 
 /* Month-grid cell — the selected cell sets bg/color inline (accent fill),
    which wins over this hover wash, so the active month stays on-accent. */
-.bk-month-cell {
+.of-month-cell {
   display: grid;
   place-items: center;
   height: 44px;
@@ -427,30 +427,30 @@
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
-  color: var(--color-bk-muted);
+  color: var(--color-of-muted);
   cursor: pointer;
   transition: background 0.14s, color 0.14s;
 }
-.bk-month-cell:hover { background: oklch(96% 0.005 90); color: var(--color-bk-ink); }
+.of-month-cell:hover { background: oklch(96% 0.005 90); color: var(--color-of-ink); }
 
 /* Sidebar icon-rail buttons — hover only when not the active (filled) item.
    Soft grey wash + ink, matching the Settings tab rail's hover state. */
-.bk-rail-btn:not([aria-current="page"]):hover {
-  background: var(--color-bk-line-soft);
-  color: var(--color-bk-ink) !important;
+.of-rail-btn:not([aria-current="page"]):hover {
+  background: var(--color-of-line-soft);
+  color: var(--color-of-ink) !important;
 }
 
 /* Slim, warm-neutral scrollbar */
-.bk-scroll::-webkit-scrollbar { width: 9px; height: 9px; }
-.bk-scroll::-webkit-scrollbar-thumb {
+.of-scroll::-webkit-scrollbar { width: 9px; height: 9px; }
+.of-scroll::-webkit-scrollbar-thumb {
   background: oklch(86% 0.006 85);
   border-radius: 9px;
-  border: 2px solid var(--color-bk-canvas);
+  border: 2px solid var(--color-of-canvas);
 }
-.bk-scroll::-webkit-scrollbar-track { background: transparent; }
+.of-scroll::-webkit-scrollbar-track { background: transparent; }
 
 /* Topbar Add menu rows */
-.bk-menu-item {
+.of-menu-item {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -462,38 +462,38 @@
   font-family: inherit;
   font-size: 13.5px;
   font-weight: 600;
-  color: var(--color-bk-ink);
+  color: var(--color-of-ink);
   text-align: left;
   text-decoration: none;
   cursor: pointer;
   transition: background 0.14s;
 }
-.bk-menu-item:hover {
+.of-menu-item:hover {
   background: oklch(96% 0.005 90);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bk-enter { animation: none; }
-  .bk-fade-in { animation: none; }
-  .bk-drawer-in { animation: none; }
-  .bk-slide-in-right { animation: none; }
-  .bk-slide-in-left { animation: none; }
-  .bk-roll-in { animation: none; }
-  .bk-roll-out { display: none; }
-  .bk-caret { animation: none; }
-  .bk-pop { animation: none; }
-  .bk-spin { animation-duration: 1.4s; }
-  .bk-skel::after { animation: none; }
+  .of-enter { animation: none; }
+  .of-fade-in { animation: none; }
+  .of-drawer-in { animation: none; }
+  .of-slide-in-right { animation: none; }
+  .of-slide-in-left { animation: none; }
+  .of-roll-in { animation: none; }
+  .of-roll-out { display: none; }
+  .of-caret { animation: none; }
+  .of-pop { animation: none; }
+  .of-spin { animation-duration: 1.4s; }
+  .of-skel::after { animation: none; }
 }
 
 /* ── Paper grain ──
    Cotton-rag stock: a fixed feTurbulence speckle laid over the whole viewport,
    blended soft-light so it darkens pores and lifts fibers WITHOUT shifting the
-   palette — every token underneath stays exactly as authored. Apply `bk-paper`
+   palette — every token underneath stays exactly as authored. Apply `of-paper`
    to a page root (landing uses it; any pre-auth surface can). The layer is
    non-interactive and paints above content like a print finish, so keep the
    opacity low — past ~0.35 large serif text starts to fuzz. */
-.bk-paper::before {
+.of-paper::before {
   content: "";
   position: fixed;
   inset: 0;
@@ -514,48 +514,48 @@
 
 /* Scroll reveal — hidden until an IntersectionObserver flips `data-in`;
    `--d` staggers siblings. */
-.bk-reveal {
+.of-reveal {
   opacity: 0;
   transform: translateY(18px);
   transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 0.61, 0.36, 1);
   transition-delay: var(--d, 0ms);
 }
-.bk-reveal[data-in] { opacity: 1; transform: none; }
+.of-reveal[data-in] { opacity: 1; transform: none; }
 
 /* CTA arrow nudges right on hover. */
-.bk-lp-cta .bk-lp-arrow { transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1); }
-.bk-lp-cta:hover .bk-lp-arrow { transform: translateX(3px); }
+.of-lp-cta .of-lp-arrow { transition: transform 0.25s cubic-bezier(0.22, 0.61, 0.36, 1); }
+.of-lp-cta:hover .of-lp-arrow { transform: translateX(3px); }
 
 /* Hero line-work eases in on mount — synced with the headline entrance — so the
    texture arrives together with the pitch instead of a dash segment ("tail")
    drifting into the corner a beat later. */
-.bk-lp-guilloche { animation: bkFadeIn 1.1s ease 0.12s both; }
+.of-lp-guilloche { animation: ofFadeIn 1.1s ease 0.12s both; }
 
 /* Dashboard preview: the sparkline draws itself once the card scrolls in
    (pathLength=1 normalizes the dash to one unit), then the area wash and the
    end dot follow. */
-.bk-lp-line { stroke-dasharray: 1; stroke-dashoffset: 1; }
-[data-in] .bk-lp-line { animation: bkDraw 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards; }
-@keyframes bkDraw { to { stroke-dashoffset: 0; } }
-.bk-lp-area { opacity: 0; transition: opacity 0.9s ease 1.1s; }
-[data-in] .bk-lp-area { opacity: 1; }
-.bk-lp-dot { opacity: 0; transition: opacity 0.35s ease 1.6s; }
-[data-in] .bk-lp-dot { opacity: 1; }
+.of-lp-line { stroke-dasharray: 1; stroke-dashoffset: 1; }
+[data-in] .of-lp-line { animation: ofDraw 1.5s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards; }
+@keyframes ofDraw { to { stroke-dashoffset: 0; } }
+.of-lp-area { opacity: 0; transition: opacity 0.9s ease 1.1s; }
+[data-in] .of-lp-area { opacity: 1; }
+.of-lp-dot { opacity: 0; transition: opacity 0.35s ease 1.6s; }
+[data-in] .of-lp-dot { opacity: 1; }
 /* Auth panel: a subtle "matrix" drizzle inside the net-worth area fill — small
    glints fall on staggered loops so the chart feels quietly alive. Each streak
    fades in/out as it falls (peak opacity via per-streak --o) and travels from
    just above the area to below it (user units; chart viewBox is 96 tall). */
-.bk-lp-rain { animation-name: bkRain; animation-timing-function: linear; animation-iteration-count: infinite; }
-@keyframes bkRain {
+.of-lp-rain { animation-name: ofRain; animation-timing-function: linear; animation-iteration-count: infinite; }
+@keyframes ofRain {
   0% { transform: translateY(-20px); opacity: 0; }
   12% { opacity: var(--o, 0.4); }
   88% { opacity: var(--o, 0.4); }
   100% { transform: translateY(116px); opacity: 0; }
 }
 /* …then the end dot breathes: a soft ring radiates out every few seconds. */
-.bk-lp-pulse { opacity: 0; transform-box: fill-box; transform-origin: center; }
-[data-in] .bk-lp-pulse { animation: bkPulse 3.2s ease-out 2.1s infinite; }
-@keyframes bkPulse {
+.of-lp-pulse { opacity: 0; transform-box: fill-box; transform-origin: center; }
+[data-in] .of-lp-pulse { animation: ofPulse 3.2s ease-out 2.1s infinite; }
+@keyframes ofPulse {
   0% { opacity: 0.5; transform: scale(0.35); }
   55% { opacity: 0; transform: scale(1); }
   100% { opacity: 0; transform: scale(1); }
@@ -566,14 +566,14 @@
    line-work. The field's own dashes keep drifting, so the reveal reads as live
    water, not a fade. The clip edge runs top-right → bottom-left: at rest it sits
    just off the left edge (nothing shown); on hover it sweeps fully across. */
-.bk-wave-wash {
+.of-wave-wash {
   opacity: 0;
   clip-path: polygon(0% 0%, 0% 0%, -100% 100%, 0% 100%);
   transition: opacity 0.45s ease, clip-path 0.75s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-.group:hover .bk-wave-wash,
-.group:focus-within .bk-wave-wash,
-.group[data-wash="on"] .bk-wave-wash {
+.group:hover .of-wave-wash,
+.group:focus-within .of-wave-wash,
+.group[data-wash="on"] .of-wave-wash {
   opacity: 1;
   clip-path: polygon(0% 0%, 200% 0%, 100% 100%, 0% 100%);
 }
@@ -582,80 +582,80 @@
    time with the 4.5s rotation, so the section reads as a guided tour rather
    than content that jumps on its own. Hidden entirely under reduced motion
    (the rotation doesn't run there either). */
-.bk-step-fill {
+.of-step-fill {
   transform: scaleX(0);
   transform-origin: left;
-  animation: bkStepFill 4.5s linear forwards;
+  animation: ofStepFill 4.5s linear forwards;
 }
-@keyframes bkStepFill { to { transform: scaleX(1); } }
+@keyframes ofStepFill { to { transform: scaleX(1); } }
 
-/* "Why Bulga" headline — the feeling word remounts on card change and rises in
+/* "Why otterfund" headline — the feeling word remounts on card change and rises in
    softly instead of snapping. */
-.bk-word-swap {
+.of-word-swap {
   display: inline-block;
-  animation: bkWordIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: ofWordIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
-@keyframes bkWordIn {
+@keyframes ofWordIn {
   from { opacity: 0; transform: translateY(0.3em); }
 }
 
 /* Engine-turned seal — the rosette ring revolves once per ~70s, so slow it
    reads as craft rather than motion. Applied by <GuillocheSeal spin>. */
-.bk-seal-spin { animation: bkSpinSlow 70s linear infinite; transform-box: fill-box; transform-origin: center; }
-@keyframes bkSpinSlow { to { transform: rotate(360deg); } }
+.of-seal-spin { animation: ofSpinSlow 70s linear infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes ofSpinSlow { to { transform: rotate(360deg); } }
 
 /* Transaction ticker — two identical halves; shifting by exactly one half
    (-50%) loops seamlessly. Pauses on hover; the clip fades at both edges so
    chips never hit a hard border. */
-.bk-ticker { display: flex; width: max-content; animation: bkTicker 46s linear infinite; }
-.bk-ticker-clip {
+.of-ticker { display: flex; width: max-content; animation: ofTicker 46s linear infinite; }
+.of-ticker-clip {
   overflow: hidden;
   mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
   -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
 }
-.bk-ticker-clip:hover .bk-ticker { animation-play-state: paused; }
-@keyframes bkTicker { to { transform: translateX(-50%); } }
+.of-ticker-clip:hover .of-ticker { animation-play-state: paused; }
+@keyframes ofTicker { to { transform: translateX(-50%); } }
 
 /* Hero loop — the rotating headline noun, cycling month label, and floating
    goal-card name all rise in softly on remount (React re-keys them each cycle),
-   sharing the "Why Bulga" word-swap motion. */
-.bk-hero-word {
+   sharing the "Why otterfund" word-swap motion. */
+.of-hero-word {
   display: inline-block;
-  animation: bkWordIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  animation: ofWordIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
 /* The floating goal chip drifts a few pixels on a slow loop, so the hero reads
    as a live surface with depth rather than a flat screenshot. */
-.bk-hero-float { animation: bkFloat 6.5s ease-in-out infinite; }
-@keyframes bkFloat {
+.of-hero-float { animation: ofFloat 6.5s ease-in-out infinite; }
+@keyframes ofFloat {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-9px); }
 }
 
 /* Live badge dot — a soft ring pings outward on a loop, echoing the chart's
    end-dot pulse. */
-.bk-ping { animation: bkPing 2.4s cubic-bezier(0, 0, 0.2, 1) infinite; }
-@keyframes bkPing {
+.of-ping { animation: ofPing 2.4s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@keyframes ofPing {
   75%, 100% { transform: scale(2.4); opacity: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bk-reveal { opacity: 1; transform: none; transition: none; }
-  .bk-lp-cta .bk-lp-arrow { transition: none; }
-  .bk-lp-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
-  .bk-lp-area, .bk-lp-dot { opacity: 1; transition: none; }
-  .bk-lp-pulse { animation: none; }
-  .bk-lp-rain { animation: none; opacity: 0; }
-  .bk-seal-spin { animation: none; }
-  .bk-step-track { display: none; }
-  .bk-word-swap { animation: none; }
-  .bk-hero-word { animation: none; }
-  .bk-hero-float { animation: none; }
-  .bk-ping { animation: none; }
-  .bk-lp-guilloche { animation: none; }
-  .bk-ticker { animation: none; }
+  .of-reveal { opacity: 1; transform: none; transition: none; }
+  .of-lp-cta .of-lp-arrow { transition: none; }
+  .of-lp-line { stroke-dasharray: none; stroke-dashoffset: 0; animation: none; }
+  .of-lp-area, .of-lp-dot { opacity: 1; transition: none; }
+  .of-lp-pulse { animation: none; }
+  .of-lp-rain { animation: none; opacity: 0; }
+  .of-seal-spin { animation: none; }
+  .of-step-track { display: none; }
+  .of-word-swap { animation: none; }
+  .of-hero-word { animation: none; }
+  .of-hero-float { animation: none; }
+  .of-ping { animation: none; }
+  .of-lp-guilloche { animation: none; }
+  .of-ticker { animation: none; }
   /* No sweep under reduced motion — the wash just cross-fades. */
-  .bk-wave-wash { clip-path: none; transition: opacity 0.3s ease; }
+  .of-wave-wash { clip-path: none; transition: opacity 0.3s ease; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -674,23 +674,23 @@
    Pages are authored maxWidth:1000 + margin:auto but without width:100%, and
    their grid/flex children default to min-width:auto — so a long merchant name,
    the insight paragraph, or a wide scheme row refuses to shrink and pushes past
-   the viewport, scrolling the whole app sideways. `.bk-page` gives every page
+   the viewport, scrolling the whole app sideways. `.of-page` gives every page
    wrapper a real width cap that never exceeds its column, and the canvas clips
    any residual sub-pixel spill. Grid/flex text cells still need their own
    min-width:0 (added inline where they hold ellipsised text). */
-.bk-page { width: 100%; max-width: 1000px; margin: 0 auto; }
-.bk-canvas { overflow-y: auto; overflow-x: hidden; }
+.of-page { width: 100%; max-width: 1000px; margin: 0 auto; }
+.of-canvas { overflow-y: auto; overflow-x: hidden; }
 /* Desktop scrolls the canvas div inside a fixed-height shell; phones flip both
    (see the ≤768px block) so the DOCUMENT scrolls instead. */
-.bk-shell { overflow: hidden; }
+.of-shell { overflow: hidden; }
 
 /* Mobile-only bell slot — shown ≤768px (see the topbar block below). */
-.bk-bell-inline { display: none; }
+.of-bell-inline { display: none; }
 
 /* Full-viewport height with iOS honesty: 100vh on iOS Safari includes the band
    behind the retractable toolbar, so the app's bottom edge hides under it.
    100dvh tracks the toolbar; the 100vh line is the fallback for old engines. */
-.bk-vh { height: 100vh; height: 100dvh; }
+.of-vh { height: 100vh; height: 100dvh; }
 
 /* Full-bleed page — cancel the shell's canvas gutter so a page fills the content
    region edge to edge (the full-screen advisor). Desktop/tablet cancel the
@@ -700,17 +700,17 @@
    topbar; here we only cancel the gutter (matching each breakpoint's canvas
    padding, safe-areas included) and provide a min-height fallback for the frame
    before that measurement lands. */
-.bk-fullbleed { height: calc(100% + 68px); margin: -34px; }
-@media (max-width: 1024px) { .bk-fullbleed { height: calc(100% + 48px); margin: -24px; } }
+.of-fullbleed { height: calc(100% + 68px); margin: -34px; }
+@media (max-width: 1024px) { .of-fullbleed { height: calc(100% + 48px); margin: -24px; } }
 @media (max-width: 768px) {
-  .bk-fullbleed {
+  .of-fullbleed {
     height: auto;
     min-height: 60dvh;
     margin: -24px calc(-1 * max(24px, env(safe-area-inset-right))) calc(-1 * (24px + env(safe-area-inset-bottom))) calc(-1 * max(24px, env(safe-area-inset-left)));
   }
 }
 @media (max-width: 640px) {
-  .bk-fullbleed {
+  .of-fullbleed {
     margin: -16px calc(-1 * max(16px, env(safe-area-inset-right))) calc(-1 * (16px + env(safe-area-inset-bottom))) calc(-1 * max(16px, env(safe-area-inset-left)));
   }
 }
@@ -722,8 +722,8 @@
    viewport-fit=cover (layout.tsx) a landscape iPhone would otherwise tuck
    content beneath the notch. */
 @media (max-width: 1024px) {
-  .bk-canvas { padding: 24px max(24px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)) !important; }
-  .bk-topbar { padding: 18px max(24px, env(safe-area-inset-right)) 18px max(24px, env(safe-area-inset-left)) !important; }
+  .of-canvas { padding: 24px max(24px, env(safe-area-inset-right)) calc(24px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left)) !important; }
+  .of-topbar { padding: 18px max(24px, env(safe-area-inset-right)) 18px max(24px, env(safe-area-inset-left)) !important; }
 }
 /* At/below the hamburger breakpoint the topbar wraps: title (with hamburger)
    on top, controls beneath — so the picker/bell/Add never squeeze. */
@@ -738,16 +738,16 @@
   /* clip, NOT hidden — overflow-x: hidden would turn body into a scroll
      container, which silently un-sticks the sticky topbar below. */
   html, body { overflow-x: clip; }
-  .bk-shell { height: auto; min-height: 100dvh; overflow: visible; }
-  .bk-shell > main { height: auto; min-height: 100dvh; }
+  .of-shell { height: auto; min-height: 100dvh; overflow: visible; }
+  .of-shell > main { height: auto; min-height: 100dvh; }
   /* overflow-x: clip (not hidden) — hidden would silently promote overflow-y
      to auto, re-creating the inner scroll container this block removes. */
-  .bk-canvas { overflow-y: visible; overflow-x: clip; }
-  .bk-topbar {
+  .of-canvas { overflow-y: visible; overflow-x: clip; }
+  .of-topbar {
     position: sticky;
     top: 0;
     z-index: 30;
-    background: var(--color-bk-surface);
+    background: var(--color-of-surface);
     flex-wrap: wrap;
     /* When Safari's chrome retracts the page extends under the status bar
        (viewport-fit=cover) — env(safe-area-inset-top) keeps the title clear. */
@@ -757,73 +757,73 @@
   }
   /* Controls drop to their own row, left-aligned. The month-nav keeps its
      natural size (never stretches to fill the row) — flex:1 made it balloon. */
-  .bk-topbar-actions {
+  .of-topbar-actions {
     width: 100%;
     justify-content: flex-start;
     max-height: 44px;
     overflow: hidden;
     transition: max-height 0.3s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease;
   }
-  .bk-topbar-actions .bk-month-nav { flex: 0 1 auto; max-width: 280px; min-width: 0; }
+  .of-topbar-actions .of-month-nav { flex: 0 1 auto; max-width: 280px; min-width: 0; }
 
   /* Bell placement: on mobile it leaves the actions row and rides the title
      row instead (hamburger · title · bell), right-aligned — so notifications
      stay reachable even while the bar is collapsed. Exactly one of the two
-     rendered bells is ever visible (.bk-bell-inline default-hidden below). */
-  .bk-topbar-lead { flex: 1; }
-  .bk-bell-inline { display: block; margin-left: auto; }
-  .bk-bell-top { display: none; }
+     rendered bells is ever visible (.of-bell-inline default-hidden below). */
+  .of-topbar-lead { flex: 1; }
+  .of-bell-inline { display: block; margin-left: auto; }
+  .of-bell-top { display: none; }
 
-  /* ── Collapse-on-scroll (data-collapsed set by BulgaChrome, phones only) ──
+  /* ── Collapse-on-scroll (data-collapsed set by OtterfundChrome, phones only) ──
      Scrolling down tucks the subtitle + the actions row away and tightens the
      bar to one slim row (hamburger + title); scrolling up restores it. Only
      max-height/opacity/padding move, and the popovers (month picker, bell,
      Add) portal to <body>, so the row's overflow:hidden never clips them. */
-  .bk-topbar-title p {
+  .of-topbar-title p {
     max-height: 20px;
     overflow: hidden;
     transition: max-height 0.3s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.22s ease, margin-top 0.3s cubic-bezier(0.22, 0.61, 0.36, 1);
   }
-  .bk-topbar[data-collapsed] {
+  .of-topbar[data-collapsed] {
     padding-top: max(10px, env(safe-area-inset-top)) !important;
     padding-bottom: 10px !important;
     row-gap: 0 !important;
   }
-  .bk-topbar[data-collapsed] .bk-topbar-actions {
+  .of-topbar[data-collapsed] .of-topbar-actions {
     max-height: 0;
     opacity: 0;
     pointer-events: none;
   }
-  .bk-topbar[data-collapsed] .bk-topbar-title p {
+  .of-topbar[data-collapsed] .of-topbar-title p {
     max-height: 0;
     opacity: 0;
     margin-top: 0 !important;
   }
 }
 @media (max-width: 640px) {
-  .bk-canvas { padding: 16px max(16px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) !important; }
-  .bk-topbar {
+  .of-canvas { padding: 16px max(16px, env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)) !important; }
+  .of-topbar {
     padding-top: max(14px, env(safe-area-inset-top)) !important;
     padding-bottom: 14px !important;
     padding-left: max(16px, env(safe-area-inset-left)) !important;
     padding-right: max(16px, env(safe-area-inset-right)) !important;
   }
-  .bk-topbar-title h1 { font-size: 18px !important; }
+  .of-topbar-title h1 { font-size: 18px !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .bk-topbar,
-  .bk-topbar-actions,
-  .bk-topbar-title p { transition: none !important; }
+  .of-topbar,
+  .of-topbar-actions,
+  .of-topbar-title p { transition: none !important; }
 }
 
 /* Navigation: desktop shows the persistent icon rail; the hamburger is hidden.
    At/below the breakpoint the rail collapses entirely and the topbar hamburger
    opens the dropdown nav (MobileNav) instead. One breakpoint owns the swap so
    the two can never both show. */
-.bk-hamburger { display: none; }
+.of-hamburger { display: none; }
 @media (max-width: 768px) {
-  .bk-rail { display: none !important; }
-  .bk-hamburger { display: grid !important; }
+  .of-rail { display: none !important; }
+  .of-hamburger { display: grid !important; }
 }
 /* Defense in depth: the sheet + backdrop are portaled and driven purely by the
    MobileNav JS open state. If a resize past the breakpoint races the matchMedia
@@ -831,58 +831,58 @@
    the desktop layout with the rail still showing. This hard-hides both above the
    breakpoint so the mobile sheet can NEVER render on desktop, regardless of JS. */
 @media (min-width: 769px) {
-  .bk-sheet,
-  .bk-sheet-backdrop { display: none !important; }
+  .of-sheet,
+  .of-sheet-backdrop { display: none !important; }
 }
 
 /* Animated hamburger → X. Three lines centered in the button; on open (Base UI
    sets data-popup-open on the trigger) the outer two rotate into an X and the
    middle fades. Line color flips to white when the trigger fills with accent. */
-.bk-burger {
+.of-burger {
   position: relative;
   display: block;
   width: 18px;
   height: 12px;
 }
-.bk-burger > span {
+.of-burger > span {
   position: absolute;
   left: 0;
   width: 100%;
   height: 2px;
   border-radius: 2px;
-  background: var(--color-bk-ink);
+  background: var(--color-of-ink);
   transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1), opacity 0.18s ease, background 0.14s ease;
 }
-.bk-burger > span:nth-child(1) { top: 0; }
-.bk-burger > span:nth-child(2) { top: 5px; }
-.bk-burger > span:nth-child(3) { top: 10px; }
-.bk-hamburger[data-popup-open] .bk-burger > span { background: #fff; }
-.bk-hamburger[data-popup-open] .bk-burger > span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
-.bk-hamburger[data-popup-open] .bk-burger > span:nth-child(2) { opacity: 0; }
-.bk-hamburger[data-popup-open] .bk-burger > span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
+.of-burger > span:nth-child(1) { top: 0; }
+.of-burger > span:nth-child(2) { top: 5px; }
+.of-burger > span:nth-child(3) { top: 10px; }
+.of-hamburger[data-popup-open] .of-burger > span { background: #fff; }
+.of-hamburger[data-popup-open] .of-burger > span:nth-child(1) { transform: translateY(5px) rotate(45deg); }
+.of-hamburger[data-popup-open] .of-burger > span:nth-child(2) { opacity: 0; }
+.of-hamburger[data-popup-open] .of-burger > span:nth-child(3) { transform: translateY(-5px) rotate(-45deg); }
 
 /* Bottom sheet — springs up from the bottom edge on open, drops back on close.
    Base UI keeps it mounted through data-closed so both directions animate.
    One quiet shadow; the surface does the rest. The max-height uses dvh where
    supported so the sheet clears iOS Safari's retracting toolbar (the class
    carries max-h-[86vh] as the fallback). */
-.bk-sheet {
+.of-sheet {
   max-height: 86dvh;
   transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   box-shadow: 0 -8px 40px oklch(20% 0.02 80 / 0.12);
 }
-.bk-sheet[data-open] { transform: translateY(0); }
+.of-sheet[data-open] { transform: translateY(0); }
 /* Off-screen while closed AND on the enter/exit transition frames — Base UI
    sets data-starting-style alongside data-open on the first styled frame, so
    without these the sheet pops in fully risen instead of sliding up like the
    CRUD bottom sheets. (Placed after the data-open rule so they win that frame.) */
-.bk-sheet[data-closed],
-.bk-sheet[data-starting-style],
-.bk-sheet[data-ending-style] { transform: translateY(100%); }
+.of-sheet[data-closed],
+.of-sheet[data-starting-style],
+.of-sheet[data-ending-style] { transform: translateY(100%); }
 
 /* One scrim language for every sheet + dialog: the warm dark wash gains a soft
    backdrop blur, lifting the sheet off the page the way iOS system sheets do. */
-.bk-sheet-backdrop,
+.of-sheet-backdrop,
 [data-slot="dialog-overlay"] {
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
@@ -891,40 +891,40 @@
 /* Grab handle + the swipe-down zone around it. touch-action:none keeps the
    browser from claiming the gesture (scroll / pull-to-refresh) so the sheet
    can track the finger. */
-.bk-sheet-grip { touch-action: none; }
-.bk-sheet-handle {
+.of-sheet-grip { touch-action: none; }
+.of-sheet-handle {
   display: block;
   width: 40px;
   height: 4px;
   margin: 10px auto 8px;
   border-radius: 999px;
-  background: var(--color-bk-line);
+  background: var(--color-of-line);
 }
 
 /* Staggered row reveal — each row eases up in sequence via its --i index,
    only on open. */
-@keyframes bkRowIn {
+@keyframes ofRowIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
 }
-.bk-sheet[data-open] .bk-nav-row {
-  animation: bkRowIn 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+.of-sheet[data-open] .of-nav-row {
+  animation: ofRowIn 0.34s cubic-bezier(0.22, 0.61, 0.36, 1) both;
   animation-delay: calc(90ms + var(--i, 0) * 26ms);
 }
 /* Hover only on inactive rows, and only on real pointer devices — on touch,
    :hover sticks after a tap (the tapped row stays highlighted until you touch
    elsewhere), which made the just-tapped row look boxed/uneven. */
 @media (hover: hover) {
-  .bk-nav-row:not([aria-current="page"]):hover { background: var(--color-bk-line-soft); }
+  .of-nav-row:not([aria-current="page"]):hover { background: var(--color-of-line-soft); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bk-burger > span { transition: none; }
-  .bk-sheet { transition: none; }
-  .bk-sheet[data-closed],
-  .bk-sheet[data-starting-style],
-  .bk-sheet[data-ending-style] { transform: none; opacity: 0; }
-  .bk-sheet[data-open] .bk-nav-row { animation: none; }
+  .of-burger > span { transition: none; }
+  .of-sheet { transition: none; }
+  .of-sheet[data-closed],
+  .of-sheet[data-starting-style],
+  .of-sheet[data-ending-style] { transform: none; opacity: 0; }
+  .of-sheet[data-open] .of-nav-row { animation: none; }
 }
 
 /* ── Generic responsive grids (apply on any inline-styled grid section) ── */
@@ -933,41 +933,41 @@
    merchant names, the insight paragraph) refuse to shrink and overflow the
    column. Force every direct child of our responsive grids to be allowed to
    shrink — this is what actually stops the sideways scroll. */
-.bk-grid-2up > *,
-.bk-grid-split > *,
-.bk-grid-3 > * { min-width: 0; }
+.of-grid-2up > *,
+.of-grid-split > *,
+.of-grid-3 > * { min-width: 0; }
 
 /* Two-up + asymmetric split (1.5fr 1fr) → single column on tablet & below. */
 @media (max-width: 1024px) {
-  .bk-grid-2up,
-  .bk-grid-split { grid-template-columns: 1fr !important; }
+  .of-grid-2up,
+  .of-grid-split { grid-template-columns: 1fr !important; }
 }
 /* Three-up stat row → 1 column on phone (stays 3-up on tablet, it fits). */
 @media (max-width: 640px) {
-  .bk-grid-3 { grid-template-columns: 1fr !important; }
+  .of-grid-3 { grid-template-columns: 1fr !important; }
 }
 
 /* Hero rows that place a figure beside action buttons: on phone, stack and
    let the actions sit full-width beneath the figure. */
 @media (max-width: 640px) {
-  .bk-hero-row {
+  .of-hero-row {
     flex-direction: column !important;
     align-items: stretch !important;
     gap: 18px;
   }
-  .bk-hero-actions { align-items: stretch !important; }
-  .bk-hero-actions > div { flex-wrap: wrap; }
+  .of-hero-actions { align-items: stretch !important; }
+  .of-hero-actions > div { flex-wrap: wrap; }
 }
 
 /* Overview net-worth hero: figure + sparkline → stack, hide the wide spark on
    phone (it reads as noise at that width). */
 @media (max-width: 640px) {
-  .bk-nw-hero {
+  .of-nw-hero {
     grid-template-columns: 1fr !important;
     gap: 10px !important;
     align-items: start !important;
   }
-  .bk-nw-hero .bk-nw-spark { display: none; }
+  .of-nw-hero .of-nw-spark { display: none; }
 }
 
 /* ── Brand-kit ── */
@@ -978,28 +978,28 @@
 @media (max-width: 1024px) {
   /* Scheme cards → horizontal snap-scroll strip (comparing palettes is the
      point; don't crush 8 into one row). */
-  .bk-scheme-grid {
+  .of-scheme-grid {
     display: flex !important;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 6px;
   }
-  .bk-scheme-grid > * {
+  .of-scheme-grid > * {
     flex: 0 0 auto;
     width: 220px;
     scroll-snap-align: start;
   }
   /* Swatch strip: 7 across is far too tight. Motion demo: 4 → 2. */
-  .bk-grid-swatches { grid-template-columns: repeat(4, 1fr) !important; }
-  .bk-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
+  .of-grid-swatches { grid-template-columns: repeat(4, 1fr) !important; }
+  .of-grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 640px) {
-  .bk-grid-swatches { grid-template-columns: repeat(3, 1fr) !important; }
-  .bk-grid-4 { grid-template-columns: 1fr !important; }
+  .of-grid-swatches { grid-template-columns: repeat(3, 1fr) !important; }
+  .of-grid-4 { grid-template-columns: 1fr !important; }
   /* Brand hero: 52px padding is huge on a phone. */
-  .bk-brand-hero { padding: 28px 22px !important; }
-  .bk-brand-hero span { font-size: 30px !important; }
+  .of-brand-hero { padding: 28px 22px !important; }
+  .of-brand-hero span { font-size: 30px !important; }
 }
 
 /* ── Transactions table ── */
@@ -1007,29 +1007,29 @@
    on phone drop Category too, leaving Merchant + Amount. Column visibility is
    driven here so both the header row and the data rows stay in lockstep. */
 @media (max-width: 1024px) {
-  .bk-tx-row {
+  .of-tx-row {
     grid-template-columns: 26px 2.4fr 1.3fr 1fr !important;
     gap: 12px !important;
     padding-left: 18px !important;
     padding-right: 18px !important;
   }
-  .bk-tx-col-date { display: none !important; }
+  .of-tx-col-date { display: none !important; }
 }
 @media (max-width: 640px) {
-  .bk-tx-row {
+  .of-tx-row {
     grid-template-columns: 22px 1fr auto !important;
     gap: 10px !important;
     padding-left: 14px !important;
     padding-right: 14px !important;
   }
-  .bk-tx-col-cat { display: none !important; }
+  .of-tx-col-cat { display: none !important; }
 }
 
 /* Bulk-action bar: its inline `left: 60` clears the desktop icon rail so it
    centers over the content column. At/below the hamburger breakpoint the rail
    is hidden, so reset to the full-width viewport to keep it centered. */
 @media (max-width: 768px) {
-  .bk-bulkbar { left: 0 !important; }
+  .of-bulkbar { left: 0 !important; }
 }
 
 /* ── Popovers ──
@@ -1039,21 +1039,21 @@
    so they stay on-screen at any width with no hand-rolled anchors here. The
    only responsive tweak is trimming the month grid's padding on phones. */
 @media (max-width: 640px) {
-  .bk-month-pop { padding: 12px !important; }
+  .of-month-pop { padding: 12px !important; }
 }
 
 /* ── Modals → bottom sheets on phones ──
    Every CRUD/settings modal shares ui/dialog.tsx, whose popup carries
-   `bk-dialog`. Below md (768) the dialog is authored as a bottom sheet: pinned
+   `of-dialog`. Below md (768) the dialog is authored as a bottom sheet: pinned
    to the bottom edge, rounded top, safe-area padded, sliding up/down on the
-   SAME transition + data-attribute states as the nav sheet (.bk-sheet) — the
+   SAME transition + data-attribute states as the nav sheet (.of-sheet) — the
    pattern proven to animate both directions. The component's centering and
    zoom-fade animation classes are all md:-scoped, so nothing fights the
    transition here (no animation/!important overrides needed) and desktop
    keeps the centered card. Un-layered, so width/radius/padding-bottom beat
    the sm: utility overrides that callers pass for the desktop presentation. */
 @media (max-width: 767px) {
-  .bk-dialog {
+  .of-dialog {
     top: auto;
     bottom: 0;
     left: 0;
@@ -1069,16 +1069,16 @@
     padding-bottom: max(28px, env(safe-area-inset-bottom));
     transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  .bk-dialog[data-open] { transform: translateY(0); }
+  .of-dialog[data-open] { transform: translateY(0); }
   /* After the open rule so the off-screen start wins the first styled frame
      (Base UI sets data-starting-style alongside data-open on enter). */
-  .bk-dialog[data-closed],
-  .bk-dialog[data-starting-style],
-  .bk-dialog[data-ending-style] { transform: translateY(100%); }
+  .of-dialog[data-closed],
+  .of-dialog[data-starting-style],
+  .of-dialog[data-ending-style] { transform: translateY(100%); }
   @media (prefers-reduced-motion: reduce) {
-    .bk-dialog { transition: none; }
-    .bk-dialog[data-closed],
-    .bk-dialog[data-starting-style],
-    .bk-dialog[data-ending-style] { transform: none; opacity: 0; }
+    .of-dialog { transition: none; }
+    .of-dialog[data-closed],
+    .of-dialog[data-starting-style],
+    .of-dialog[data-ending-style] { transform: none; opacity: 0; }
   }
 }

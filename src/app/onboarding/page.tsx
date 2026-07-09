@@ -18,7 +18,7 @@ export default async function OnboardingPage() {
 
   // The wizard renders the full split-screen shell (brand panel + form column).
   return (
-    <div className="text-[var(--color-bk-ink)]">
+    <div className="text-[var(--color-of-ink)]">
       <OnboardingWizard userName={profile?.name ?? ""} />
     </div>
   );

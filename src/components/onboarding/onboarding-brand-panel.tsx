@@ -1,6 +1,6 @@
 "use client";
 
-// Bulga — onboarding brand panel.
+// otterfund — onboarding brand panel.
 //
 // The left half of the onboarding split-screen, on the shared evergreen
 // banknote field. It greets the user by name and doubles as a live progress
@@ -17,7 +17,7 @@ import {
   PANEL_MUTED,
   PANEL_ACCENT,
   PANEL_LINE,
-} from "@/components/bulga/brand-panel";
+} from "@/components/otterfund/brand-panel";
 
 export interface PanelStep {
   label: string;
@@ -49,7 +49,7 @@ export function OnboardingBrandPanel({
       {/* ── greeting + progress ── */}
       <div className="relative flex max-w-[440px] flex-1 flex-col justify-center">
         <div
-          className="bk-enter"
+          className="of-enter"
           style={{
             animationDelay: "80ms",
             fontSize: 12,
@@ -62,7 +62,7 @@ export function OnboardingBrandPanel({
           Set up your budget
         </div>
         <h2
-          className="bk-enter mt-4 text-balance"
+          className="of-enter mt-4 text-balance"
           style={{
             animationDelay: "160ms",
             fontFamily: "var(--font-num), Georgia, serif",
@@ -76,7 +76,7 @@ export function OnboardingBrandPanel({
           Welcome, <em style={{ fontStyle: "italic", color: PANEL_ACCENT }}>{first}.</em>
         </h2>
         <p
-          className="bk-enter mt-4 mb-10"
+          className="of-enter mt-4 mb-10"
           style={{ animationDelay: "220ms", fontSize: 14.5, lineHeight: 1.6, color: PANEL_MUTED, maxWidth: 360 }}
         >
           {steps
@@ -92,7 +92,7 @@ export function OnboardingBrandPanel({
 
 function ExpectList() {
   return (
-    <ul className="bk-enter relative flex flex-col gap-4" style={{ animationDelay: "280ms" }}>
+    <ul className="of-enter relative flex flex-col gap-4" style={{ animationDelay: "280ms" }}>
       {EXPECT.map((line) => (
         <li key={line} className="flex items-center gap-3" style={{ color: PANEL_INK }}>
           <span
@@ -110,7 +110,7 @@ function ExpectList() {
 
 function StepTracker({ steps, step }: { steps: PanelStep[]; step: number }) {
   return (
-    <ol className="bk-enter relative flex flex-col gap-1" style={{ animationDelay: "280ms" }}>
+    <ol className="of-enter relative flex flex-col gap-1" style={{ animationDelay: "280ms" }}>
       {/* the spine — a single line the nodes sit over */}
       <span
         aria-hidden
