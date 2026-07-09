@@ -68,7 +68,7 @@ builder.mutationField("createPlaidLinkToken", (t) =>
 
       const res = await plaid.linkTokenCreate({
         user: { client_user_id: userId },
-        client_name: "Bulga",
+        client_name: "otterfund",
         language: "en",
         country_codes: plaidCountryCodes(),
         products: PLAID_PRODUCTS,
@@ -160,7 +160,7 @@ builder.mutationField("createPlaidUpdateLinkToken", (t) =>
 
       const res = await plaid.linkTokenCreate({
         user: { client_user_id: userId },
-        client_name: "Bulga",
+        client_name: "otterfund",
         language: "en",
         country_codes: plaidCountryCodes(),
         access_token: decryptToken(item.accessToken),

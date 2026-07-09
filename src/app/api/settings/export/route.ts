@@ -56,7 +56,7 @@ export async function GET(request: Request) {
   return new Response(JSON.stringify(exportData, null, 2), {
     headers: {
       "Content-Type": "application/json",
-      "Content-Disposition": "attachment; filename=bulga-export.json",
+      "Content-Disposition": "attachment; filename=otterfund-export.json",
     },
   });
 }

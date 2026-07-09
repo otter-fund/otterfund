@@ -47,7 +47,7 @@ export interface AdvisorTurn {
  * carry planted instructions). The hard guarantees live in the tool layer (see
  * the file header); this prompt is defense-in-depth on top of that.
  */
-const SYSTEM = `You are Bulga's budget advisor: a professional, level-headed personal-finance assistant embedded in the Bulga budgeting app. You are speaking with one signed-in user about THEIR OWN money.
+const SYSTEM = `You are otterfund's budget advisor: a professional, level-headed personal-finance assistant embedded in the otterfund budgeting app. You are speaking with one signed-in user about THEIR OWN money.
 
 ## What you do
 - Help the user understand their accounts, transactions, spending, budgets, goals, and subscriptions, and give practical, grounded money advice (budgeting, saving, cash-flow, debt paydown, subscription hygiene, progress toward goals).
@@ -156,6 +156,22 @@ interface ToolOutput {
 function now() {
   const d = new Date();
   return { month: d.getMonth() + 1, year: d.getFullYear() };
+}
+
+/**
+ * The system prompt with today's date appended. Claude has no clock of its own,
+ * so without this it resolves "this year" / "this month" against its training
+ * baseline (which reads as the wrong year to the user). Computed per request so
+ * a long-lived server process never serves a stale date.
+ */
+function datedSystem(): string {
+  const d = new Date();
+  const long = d.toLocaleDateString("en-CA", { year: "numeric", month: "long", day: "numeric" });
+  const iso = d.toISOString().slice(0, 10);
+  return `${SYSTEM}
+
+## Today's date
+Today is ${long} (${iso}). This is the current date; treat it as authoritative and ignore any other assumption about the year or month. When the user says "this month", "this year", "last month", "year to date", or anything similar without an explicit date, resolve it relative to today, and default any month/year tool argument you leave unset to the current month and year.`;
 }
 
 const asInt = (v: unknown): number | undefined =>
@@ -366,6 +382,9 @@ export async function askAdvisor(
 ): Promise<{ answer: string; sources: AdvisorSource[]; usage: TokenUsage; model: string }> {
   const user = await getUserRow(userId);
   const ctx: ToolCtx = { userId, currency: user?.currency || "CAD" };
+  // System prompt with today's date baked in — computed once so every model
+  // call this turn (tool loop + forced-final) sees the same current date.
+  const system = datedSystem();
   // Token usage summed across every model call this turn (the tool loop below
   // plus the forced-final), attributed to the advisor chat for cost tracking.
   const usage = emptyUsage();
@@ -393,7 +412,7 @@ export async function askAdvisor(
     const res = await anthropic.messages.create({
       model: MODEL,
       max_tokens: MAX_TOKENS,
-      system: SYSTEM,
+      system,
       tools: TOOLS,
       messages,
     });
@@ -421,7 +440,7 @@ export async function askAdvisor(
   const final = await anthropic.messages.create({
     model: MODEL,
     max_tokens: MAX_TOKENS,
-    system: SYSTEM,
+    system,
     messages,
   });
   addUsage(usage, final.usage);

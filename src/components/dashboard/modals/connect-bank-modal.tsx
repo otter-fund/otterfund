@@ -2,7 +2,7 @@
 
 // Connect-a-bank flow (Plaid Link). Fetches a link_token from our server, opens
 // the Plaid Link overlay, then exchanges the public_token server-side. The
-// access_token never touches the client. Styled from Bulga primitives.
+// access_token never touches the client. Styled from otterfund primitives.
 
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -139,7 +139,7 @@ export function ConnectBankModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[440px] p-6 sm:p-9">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <DialogTitle className="text-2xl font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
             {isUpdate ? "Reconnect bank" : "Connect a bank"}
           </DialogTitle>
         </DialogHeader>
@@ -156,7 +156,7 @@ export function ConnectBankModal({
             )}
           </div>
 
-          <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--color-bk-muted)]">
+          <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--color-of-muted)]">
             {phase === "linking"
               ? isUpdate
                 ? "Reconnecting and refreshing your data…"
@@ -165,18 +165,18 @@ export function ConnectBankModal({
                 ? "All set. Your accounts are syncing."
                 : isUpdate
                   ? "Re-authenticate with your bank to resume automatic syncing."
-                  : "Securely link your bank so balances and transactions sync automatically. Your credentials are encrypted and handled by Plaid. Bulga never sees or stores them."}
+                  : "Securely link your bank so balances and transactions sync automatically. Your credentials are encrypted and handled by Plaid. otterfund never sees or stores them."}
           </p>
 
           {message && (
-            <p className="mt-3 text-[13px] font-medium text-[var(--color-bk-clay)]">
+            <p className="mt-3 text-[13px] font-medium text-[var(--color-of-clay)]">
               {message}
             </p>
           )}
 
           <div
             className="mt-4 flex items-center gap-1.5 text-[11.5px] font-medium"
-            style={{ color: "var(--color-bk-faint)" }}
+            style={{ color: "var(--color-of-faint)" }}
           >
             <ShieldCheck className="h-3.5 w-3.5" />
             256-bit encryption · powered by Plaid

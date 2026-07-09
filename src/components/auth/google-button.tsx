@@ -43,9 +43,9 @@ export function GoogleAuthButton({ label }: { label: string }) {
   return (
     <div className="mt-5 flex flex-col gap-4">
       <div className="flex items-center gap-3" aria-hidden>
-        <span className="h-px flex-1 bg-[var(--color-bk-line)]" />
-        <span className="text-xs text-[var(--color-bk-faint)]">or</span>
-        <span className="h-px flex-1 bg-[var(--color-bk-line)]" />
+        <span className="h-px flex-1 bg-[var(--color-of-line)]" />
+        <span className="text-xs text-[var(--color-of-faint)]">or</span>
+        <span className="h-px flex-1 bg-[var(--color-of-line)]" />
       </div>
 
       <Button
@@ -60,7 +60,7 @@ export function GoogleAuthButton({ label }: { label: string }) {
       </Button>
 
       {error && (
-        <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
+        <p className="text-sm font-medium text-[var(--color-of-clay)]">{error}</p>
       )}
     </div>
   );

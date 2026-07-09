@@ -1,4 +1,4 @@
-import { BulgaChrome } from "@/components/bulga/bulga-chrome";
+import { OtterfundChrome } from "@/components/otterfund/otterfund-chrome";
 import {
   requireUser,
   currentPeriod,
@@ -27,7 +27,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ]);
 
   return (
-    <BulgaChrome
+    <OtterfundChrome
       initialAccent={prefs.accent}
       todayMonth={todayMonth}
       todayYear={todayYear}
@@ -48,6 +48,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
       }}
     >
       {children}
-    </BulgaChrome>
+    </OtterfundChrome>
   );
 }

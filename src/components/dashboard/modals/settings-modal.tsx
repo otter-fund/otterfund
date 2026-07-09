@@ -9,16 +9,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Tabs, type TabItem } from "@/components/bulga/tabs";
+import { Tabs, type TabItem } from "@/components/otterfund/tabs";
 import { Menu, MenuTrigger, MenuContent, MenuRadioGroup, MenuRadioItem } from "@/components/ui/menu";
-import { SchemePicker } from "@/components/bulga/scheme-picker";
-import { braid } from "@/components/bulga/guilloche";
-import { deriveTheme } from "@/components/bulga/theme";
-import { ConfirmButton } from "@/components/bulga/confirm-button";
-import { useBulgaChrome } from "@/components/bulga/chrome-context";
+import { SchemePicker } from "@/components/otterfund/scheme-picker";
+import { braid } from "@/components/otterfund/guilloche";
+import { deriveTheme } from "@/components/otterfund/theme";
+import { ConfirmButton } from "@/components/otterfund/confirm-button";
+import { useOtterfundChrome } from "@/components/otterfund/chrome-context";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
-import { BudgetPlanPicker } from "@/components/bulga/budget-plan-picker";
+import { BudgetPlanPicker } from "@/components/otterfund/budget-plan-picker";
 import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus } from "lucide-react";
 import { CURRENCIES, getBudgetPlan } from "@/lib/constants";
 
@@ -94,7 +94,7 @@ interface SettingsModalProps {
 }
 
 const fieldLabelCls =
-  "block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5";
+  "block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5";
 
 function SectionHead({
   icon: Icon,
@@ -107,8 +107,8 @@ function SectionHead({
   desc: string;
   tone?: "accent" | "clay";
 }) {
-  const tint = tone === "clay" ? "var(--color-bk-clay-tint)" : "var(--accent)";
-  const ink = tone === "clay" ? "var(--color-bk-clay)" : "var(--color-primary)";
+  const tint = tone === "clay" ? "var(--color-of-clay-tint)" : "var(--accent)";
+  const ink = tone === "clay" ? "var(--color-of-clay)" : "var(--color-primary)";
   return (
     <div className="flex items-start gap-3 mb-5">
       <div
@@ -118,10 +118,10 @@ function SectionHead({
         <Icon className="w-[17px] h-[17px]" strokeWidth={1.9} />
       </div>
       <div>
-        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--color-bk-ink)] leading-tight">
+        <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)] leading-tight">
           {title}
         </h3>
-        <p className="text-[12.5px] text-[var(--color-bk-muted)] mt-0.5">{desc}</p>
+        <p className="text-[12.5px] text-[var(--color-of-muted)] mt-0.5">{desc}</p>
       </div>
     </div>
   );
@@ -129,7 +129,7 @@ function SectionHead({
 
 export function SettingsModal({ open, onClose, user, accent, onAccentChange, onSaved }: SettingsModalProps) {
   const router = useRouter();
-  const { connectBank } = useBulgaChrome();
+  const { connectBank } = useOtterfundChrome();
   const theme = deriveTheme(accent);
   const [tab, setTab] = useState<SettingsTab>("profile");
 
@@ -359,7 +359,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
           {/* ── Left rail (desktop) / top dropdown (mobile): tabs. On small
                screens 5 pills won't fit a phone width, so the rail collapses to
                a single pill-styled dropdown; md+ is the vertical rail. ── */}
-          <div className="border-b border-[var(--color-bk-line-soft)] px-4 py-3 md:w-[196px] md:shrink-0 md:border-b-0 md:border-r md:py-6 md:px-4">
+          <div className="border-b border-[var(--color-of-line-soft)] px-4 py-3 md:w-[196px] md:shrink-0 md:border-b-0 md:border-r md:py-6 md:px-4">
             {(() => {
               const onValueChange = (v: string) => {
                 disarmDelete();
@@ -390,7 +390,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                                   {Icon && <Icon className="h-4 w-4 shrink-0" strokeWidth={1.9} />}
                                   {t.label}
                                 </span>
-                                {t.value === tab && <Check className="h-4 w-4 shrink-0 text-[var(--color-bk-muted)]" />}
+                                {t.value === tab && <Check className="h-4 w-4 shrink-0 text-[var(--color-of-muted)]" />}
                               </MenuRadioItem>
                             );
                           })}
@@ -413,10 +413,10 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
 
           {/* ── Right: active panel — scrolls internally so the dialog footprint
                stays fixed and roomy across every tab. ── */}
-          <div className="bk-scroll flex-1 overflow-y-auto px-8 py-7">
+          <div className="of-scroll flex-1 overflow-y-auto px-8 py-7">
             {tab === "profile" && (
-              <section className="bk-enter">
-                <SectionHead icon={User} title="Profile" desc="How you show up across Bulga." />
+              <section className="of-enter">
+                <SectionHead icon={User} title="Profile" desc="How you show up across otterfund." />
                 <div className="flex max-w-[420px] flex-col gap-5">
                   <div>
                     <label className={fieldLabelCls}>Name</label>
@@ -424,22 +424,22 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                       value={name}
                       onChange={(e) => editName(e.target.value)}
                       aria-invalid={!!nameError || undefined}
-                      className={`bk-field ${nameError ? "border-[var(--color-bk-clay)] focus:border-[var(--color-bk-clay)]" : ""}`}
+                      className={`of-field ${nameError ? "border-[var(--color-of-clay)] focus:border-[var(--color-of-clay)]" : ""}`}
                     />
                     {nameError && (
-                      <p className="mt-1.5 text-[12px] font-medium text-[var(--color-bk-clay)]">{nameError}</p>
+                      <p className="mt-1.5 text-[12px] font-medium text-[var(--color-of-clay)]">{nameError}</p>
                     )}
                   </div>
                   <div>
                     <label className={fieldLabelCls}>Email</label>
-                    <input value={user.email} disabled className="bk-field opacity-60" />
+                    <input value={user.email} disabled className="of-field opacity-60" />
                   </div>
                 </div>
               </section>
             )}
 
             {tab === "money" && (
-              <section className="bk-enter">
+              <section className="of-enter">
                 <SectionHead icon={Wallet} title="Money" desc="Drives net worth, budget, and savings rate." />
                 <div className="flex max-w-[420px] flex-col gap-5">
                   <div className="grid grid-cols-2 gap-4">
@@ -449,7 +449,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                         type="number"
                         value={monthlyIncome}
                         onChange={(e) => editIncome(e.target.value)}
-                        className="bk-field"
+                        className="of-field"
                       />
                     </div>
                     <div>
@@ -458,7 +458,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                         type="number"
                         value={budgetTarget}
                         onChange={(e) => editBudget(e.target.value)}
-                        className="bk-field"
+                        className="of-field"
                       />
                     </div>
                   </div>
@@ -468,7 +468,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                       <select
                         value={currency}
                         onChange={(e) => editCurrency(e.target.value)}
-                        className="bk-field-select"
+                        className="of-field-select"
                       >
                         {CURRENCIES.map((c) => (
                           <option key={c} value={c}>
@@ -476,7 +476,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                           </option>
                         ))}
                       </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-bk-muted)]" />
+                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none text-[var(--color-of-muted)]" />
                     </div>
                   </div>
                 </div>
@@ -484,7 +484,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                 <div className="mt-7 max-w-[540px]">
                   <label className={fieldLabelCls}>Budget plan</label>
                   <BudgetPlanPicker value={planId} onChange={changePlan} accent={accent} />
-                  <p className="mt-2 text-[12px] text-[var(--color-bk-muted)]">
+                  <p className="mt-2 text-[12px] text-[var(--color-of-muted)]">
                     Splits your income across needs, wants, and savings, and powers the Spending page. Switching recomputes this month&apos;s category budgets.
                   </p>
                 </div>
@@ -492,15 +492,15 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
             )}
 
             {tab === "connections" && (
-              <section className="bk-enter">
+              <section className="of-enter">
                 <SectionHead icon={Landmark} title="Connections" desc="Linked banks that sync balances and transactions automatically." />
 
                 {connLoading && connections === null ? (
-                  <div className="flex items-center gap-2 text-[13px] text-[var(--color-bk-muted)]">
+                  <div className="flex items-center gap-2 text-[13px] text-[var(--color-of-muted)]">
                     <Loader2 className="w-4 h-4 animate-spin" /> Loading…
                   </div>
                 ) : connections && connections.length > 0 ? (
-                  <div className="overflow-hidden rounded-[20px] border border-[var(--color-bk-line)] bg-[var(--color-bk-surface)]">
+                  <div className="overflow-hidden rounded-[20px] border border-[var(--color-of-line)] bg-[var(--color-of-surface)]">
                     {connections.map((c, i) => {
                       const needsFix = c.status === "login_required" || c.status === "error";
                       const statusLabel =
@@ -510,7 +510,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                         <div
                           key={c.itemId}
                           className="flex flex-col gap-3 px-[22px] py-[18px] sm:flex-row sm:items-center sm:gap-[15px]"
-                          style={{ borderTop: i === 0 ? "none" : "1px solid var(--color-bk-line-soft)" }}
+                          style={{ borderTop: i === 0 ? "none" : "1px solid var(--color-of-line-soft)" }}
                         >
                           <div className="flex min-w-0 flex-1 items-center gap-[15px]">
                             <div
@@ -521,21 +521,21 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                             </div>
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
-                                <span className="truncate text-[14.5px] font-semibold text-[var(--color-bk-ink)]">
+                                <span className="truncate text-[14.5px] font-semibold text-[var(--color-of-ink)]">
                                   {c.institutionName || "Bank"}
                                 </span>
                                 <span
                                   className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.02em]"
                                   style={
                                     needsFix
-                                      ? { background: "var(--color-bk-clay-tint)", color: "var(--color-bk-clay)" }
+                                      ? { background: "var(--color-of-clay-tint)", color: "var(--color-of-clay)" }
                                       : { background: "var(--accent)", color: "var(--accent-foreground)" }
                                   }
                                 >
                                   {statusLabel}
                                 </span>
                               </div>
-                              <div className="text-[12.5px] text-[var(--color-bk-muted)] mt-0.5">
+                              <div className="text-[12.5px] text-[var(--color-of-muted)] mt-0.5">
                                 {c.accountCount} {c.accountCount === 1 ? "account" : "accounts"}
                                 {c.lastSyncedAt
                                   ? ` · Updated ${new Date(c.lastSyncedAt).toLocaleDateString("en-CA", { month: "short", day: "numeric" })}`
@@ -570,7 +570,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                     })}
                   </div>
                 ) : (
-                  <p className="text-[13px] text-[var(--color-bk-muted)] max-w-[420px]">
+                  <p className="text-[13px] text-[var(--color-of-muted)] max-w-[420px]">
                     No banks connected yet. Link one to import balances and transactions automatically.
                   </p>
                 )}
@@ -582,17 +582,17 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
             )}
 
             {tab === "appearance" && (
-              <section className="bk-enter">
+              <section className="of-enter">
                 <SectionHead icon={Palette} title="Appearance" desc="Choose an accent color." />
                 <SchemePicker accent={accent} onAccentChange={onAccentChange} />
               </section>
             )}
 
             {tab === "data" && (
-              <div className="bk-enter flex flex-col gap-8">
+              <div className="of-enter flex flex-col gap-8">
                 <section
                   className="rounded-2xl p-6"
-                  style={{ background: "var(--color-bk-surface)", border: "1px solid var(--color-bk-line)" }}
+                  style={{ background: "var(--color-of-surface)", border: "1px solid var(--color-of-line)" }}
                 >
                   <SectionHead icon={Database} title="Your data" desc="Export all of your user data." />
                   <Button
@@ -605,7 +605,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement("a");
                         a.href = url;
-                        a.download = "bulga-export.json";
+                        a.download = "otterfund-export.json";
                         a.click();
                       }
                     }}
@@ -617,7 +617,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                 {/* Danger zone — delete only */}
                 <section
                   className="rounded-2xl p-6"
-                  style={{ background: "var(--color-bk-clay-tint)", border: "1px solid var(--color-bk-clay)" }}
+                  style={{ background: "var(--color-of-clay-tint)", border: "1px solid var(--color-of-clay)" }}
                 >
                   <SectionHead
                     icon={ShieldAlert}
@@ -631,11 +631,11 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                       Delete account
                     </Button>
                   ) : (
-                    <div className="bk-enter">
-                      <p className="text-[13px] font-semibold text-[var(--color-bk-clay)]">
+                    <div className="of-enter">
+                      <p className="text-[13px] font-semibold text-[var(--color-of-clay)]">
                         Are you sure? This permanently deletes your account and can’t be undone.
                       </p>
-                      <p className="mt-3 text-[12.5px] text-[var(--color-bk-ink)]">
+                      <p className="mt-3 text-[12.5px] text-[var(--color-of-ink)]">
                         Type <span className="font-semibold">{DELETE_PHRASE}</span> to confirm.
                       </p>
                       <input
@@ -648,7 +648,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                         }}
                         placeholder={DELETE_PHRASE}
                         aria-label={`Type "${DELETE_PHRASE}" to confirm`}
-                        className="bk-field mt-2 max-w-[300px] bg-[var(--color-bk-surface)]"
+                        className="of-field mt-2 max-w-[300px] bg-[var(--color-of-surface)]"
                       />
                       <div className="mt-3 flex items-center gap-2.5">
                         <Button
@@ -675,7 +675,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                 Data has its own actions, so this shows only on the form tabs. */}
             {(tab === "profile" || tab === "money") && saveStatus !== "idle" && (
               <div className="mt-7 flex items-center gap-1.5 text-[12.5px] font-medium">
-                {saveStatus === "saving" && <span className="text-[var(--color-bk-faint)]">Saving…</span>}
+                {saveStatus === "saving" && <span className="text-[var(--color-of-faint)]">Saving…</span>}
                 {saveStatus === "saved" && (
                   <span className="flex items-center gap-1.5 text-[var(--color-primary)]">
                     <Check className="w-3.5 h-3.5" strokeWidth={2.4} />
@@ -683,7 +683,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                   </span>
                 )}
                 {saveStatus === "error" && (
-                  <span className="text-[var(--color-bk-clay)]">Couldn’t save. Check your connection.</span>
+                  <span className="text-[var(--color-of-clay)]">Couldn’t save. Check your connection.</span>
                 )}
               </div>
             )}

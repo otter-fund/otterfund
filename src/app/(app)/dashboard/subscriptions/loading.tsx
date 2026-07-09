@@ -1,4 +1,4 @@
-import { SkeletonPage, SkelHero, SkelCard, SkelAvatarRows, SkelBarList } from "@/components/bulga/skeleton";
+import { SkeletonPage, SkelHero, SkelCard, SkelAvatarRows, SkelBarList } from "@/components/otterfund/skeleton";
 
 // Subscriptions: monthly-total hero + "New subscription" action, then the
 // Services list and annual-projection cards side by side.
@@ -6,7 +6,7 @@ export default function Loading() {
   return (
     <SkeletonPage>
       <SkelHero sub actions={1} />
-      <section className="bk-grid-2up grid grid-cols-2 gap-4">
+      <section className="of-grid-2up grid grid-cols-2 gap-4">
         <SkelCard>
           <SkelAvatarRows rows={5} />
         </SkelCard>

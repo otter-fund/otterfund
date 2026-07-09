@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/dashboard-context";
-import { BrandKitView } from "@/components/bulga/pages/brand-kit-view";
+import { BrandKitView } from "@/components/otterfund/pages/brand-kit-view";
 
 export default async function BrandKitPage() {
   await requireUser();

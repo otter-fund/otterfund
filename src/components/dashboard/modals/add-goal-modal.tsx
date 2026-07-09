@@ -8,9 +8,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { EmojiPicker } from "@/components/bulga/emoji-picker";
-import { PriorityPicker } from "@/components/bulga/priority-picker";
-import { DateInput } from "@/components/bulga/form";
+import { EmojiPicker } from "@/components/otterfund/emoji-picker";
+import { PriorityPicker } from "@/components/otterfund/priority-picker";
+import { DateInput } from "@/components/otterfund/form";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
 
 const CREATE_GOAL = /* GraphQL */ `
@@ -72,7 +72,7 @@ export function AddGoalModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[480px] p-6 sm:p-9">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-bk-ink)]">New Goal</DialogTitle>
+          <DialogTitle className="text-2xl font-bold tracking-[-0.02em] text-[var(--color-of-ink)]">New Goal</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 mt-2">
           <div className="flex gap-3">
@@ -80,34 +80,34 @@ export function AddGoalModal({
               <EmojiPicker value={emoji} onChange={setEmoji} />
             </div>
             <div className="flex-1">
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Goal Name</label>
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">Goal Name</label>
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Vacation Fund"
-                className="bk-field"
+                className="of-field"
               />
             </div>
           </div>
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Target Amount</label>
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">Target Amount</label>
               <input
                 type="number"
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
                 placeholder="10000"
-                className="bk-field"
+                className="of-field"
               />
             </div>
             <div className="flex-1">
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Already Saved</label>
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">Already Saved</label>
               <input
                 type="number"
                 value={saved}
                 onChange={(e) => setSaved(e.target.value)}
                 placeholder="0"
-                className="bk-field"
+                className="of-field"
               />
             </div>
           </div>
@@ -115,19 +115,19 @@ export function AddGoalModal({
               don't fit half a sheet width. Side-by-side again from sm up. */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Priority</label>
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">Priority</label>
               <PriorityPicker value={priority} onChange={setPriority} />
             </div>
             <div>
-              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)] mb-1.5">Deadline</label>
+              <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">Deadline</label>
               <DateInput value={deadline} onChange={(e) => setDeadline(e.target.value)} />
             </div>
           </div>
-          <p className="text-[12px] text-[var(--color-bk-muted)]">
+          <p className="text-[12px] text-[var(--color-of-muted)]">
             Higher priority claims a bigger share of your monthly savings. Goals of equal priority split it evenly.
           </p>
         </div>
-        {error && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-2">{error}</p>}
+        {error && <p className="text-sm text-[var(--color-of-clay)] font-medium mt-2">{error}</p>}
         <div className="flex gap-3 mt-7">
           <Button variant="secondary" size="sm" onClick={onClose} className="flex-1">Cancel</Button>
           <Button size="sm" onClick={handleSubmit} disabled={isPending} className="flex-[2]">

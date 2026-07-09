@@ -1,4 +1,4 @@
-import { Skel } from "@/components/bulga/skeleton";
+import { Skel } from "@/components/otterfund/skeleton";
 
 // Insights page: a single top bar (New chat + centered toggle, no divider) above
 // a full-screen chat workspace (sidebar + thread), with a continuous side line.
@@ -7,12 +7,12 @@ export default function Loading() {
     <div
       role="status"
       aria-label="Loading page"
-      className="bk-fullbleed flex flex-col"
-      style={{ background: "var(--color-bk-surface)" }}
+      className="of-fullbleed flex flex-col"
+      style={{ background: "var(--color-of-surface)" }}
     >
       {/* top bar */}
       <div className="relative flex h-14 shrink-0 items-center">
-        <div className="flex h-full w-[248px] shrink-0 items-center gap-2 border-r border-[var(--color-bk-line-soft)] px-3">
+        <div className="flex h-full w-[248px] shrink-0 items-center gap-2 border-r border-[var(--color-of-line-soft)] px-3">
           <Skel className="h-8 w-8 rounded-full" />
           <Skel className="h-9 w-28 rounded-full" />
         </div>
@@ -23,7 +23,7 @@ export default function Loading() {
 
       {/* workspace */}
       <div className="flex min-h-0 flex-1">
-        <aside className="hidden w-[248px] shrink-0 flex-col gap-2 border-r border-[var(--color-bk-line-soft)] p-3 md:flex">
+        <aside className="hidden w-[248px] shrink-0 flex-col gap-2 border-r border-[var(--color-of-line-soft)] p-3 md:flex">
           {Array.from({ length: 8 }, (_, i) => (
             <Skel key={i} className="h-11 w-full rounded-[10px]" />
           ))}
@@ -36,7 +36,7 @@ export default function Loading() {
               <Skel className="h-12 w-2/5 self-end rounded-2xl" />
             </div>
           </div>
-          <div className="border-t border-[var(--color-bk-line-soft)] p-5">
+          <div className="border-t border-[var(--color-of-line-soft)] p-5">
             <Skel className="mx-auto h-14 w-full max-w-[720px] rounded-2xl" />
           </div>
         </div>

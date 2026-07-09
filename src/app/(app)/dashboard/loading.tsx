@@ -1,5 +1,5 @@
-import { Card } from "@/components/bulga/card";
-import { SkeletonPage, Skel, SkelHero, SkelCard, SkelBarList, SkelAvatarRows } from "@/components/bulga/skeleton";
+import { Card } from "@/components/otterfund/card";
+import { SkeletonPage, Skel, SkelHero, SkelCard, SkelBarList, SkelAvatarRows } from "@/components/otterfund/skeleton";
 
 // Overview: net-worth hero + sparkline · 3 stat cards · "Where it went" +
 // "Goals on track" bar cards · "Recent activity" + insight split.
@@ -7,7 +7,7 @@ export default function Loading() {
   return (
     <SkeletonPage>
       <SkelHero chart />
-      <section className="bk-grid-3 mb-4 grid grid-cols-3 gap-4">
+      <section className="of-grid-3 mb-4 grid grid-cols-3 gap-4">
         {[0, 1, 2].map((i) => (
           <Card key={i} className="px-6 py-[22px]">
             <Skel className="h-3 w-16 rounded-md" />
@@ -15,7 +15,7 @@ export default function Loading() {
           </Card>
         ))}
       </section>
-      <section className="bk-grid-2up mb-4 grid grid-cols-2 gap-4">
+      <section className="of-grid-2up mb-4 grid grid-cols-2 gap-4">
         <SkelCard>
           <SkelBarList rows={4} />
         </SkelCard>
@@ -23,7 +23,7 @@ export default function Loading() {
           <SkelBarList rows={4} />
         </SkelCard>
       </section>
-      <section className="bk-grid-split grid grid-cols-[1.5fr_1fr] gap-4">
+      <section className="of-grid-split grid grid-cols-[1.5fr_1fr] gap-4">
         <SkelCard>
           <SkelAvatarRows rows={5} />
         </SkelCard>

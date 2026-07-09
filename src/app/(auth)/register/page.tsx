@@ -9,7 +9,7 @@ import {
   PasswordInput,
   PasswordStrength,
   passwordMeetsRules,
-} from "@/components/bulga/form";
+} from "@/components/otterfund/form";
 import { Button } from "@/components/ui/button";
 import { GoogleAuthButton } from "@/components/auth/google-button";
 
@@ -24,7 +24,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Clear a field's inline error as the user edits it (Bulga form pattern).
+  // Clear a field's inline error as the user edits it (otterfund form pattern).
   function clearErrors(...fields: (keyof FieldErrors)[]) {
     setFieldErrors((prev) => {
       if (!fields.some((f) => prev[f])) return prev;
@@ -83,13 +83,13 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="bk-enter">
+    <div className="of-enter">
       <header className="mb-8">
-        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+        <h1 className="text-[27px] font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
           Create your account
         </h1>
-        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-bk-muted)]">
-          Start budgeting with Bulga. It only takes a minute.
+        <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-of-muted)]">
+          Start budgeting with otterfund. It only takes a minute.
         </p>
       </header>
 
@@ -157,7 +157,7 @@ export default function RegisterPage() {
         </Field>
 
         {error && (
-          <p className="text-sm font-medium text-[var(--color-bk-clay)]">{error}</p>
+          <p className="text-sm font-medium text-[var(--color-of-clay)]">{error}</p>
         )}
 
         <Button
@@ -171,7 +171,7 @@ export default function RegisterPage() {
 
       <GoogleAuthButton label="Sign up with Google" />
 
-      <p className="mt-8 text-center text-sm text-[var(--color-bk-muted)]">
+      <p className="mt-8 text-center text-sm text-[var(--color-of-muted)]">
         Already have an account?{" "}
         <Link
           href="/login"

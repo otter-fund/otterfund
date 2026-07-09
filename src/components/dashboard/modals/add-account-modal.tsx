@@ -86,7 +86,7 @@ export function AddAccountModal({
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[480px] p-6 sm:p-9">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">
+          <DialogTitle className="text-2xl font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">
             Add account
           </DialogTitle>
         </DialogHeader>
@@ -95,7 +95,7 @@ export function AddAccountModal({
           <AccountForm values={values} errors={errors} onChange={change} />
         </div>
 
-        {formError && <p className="text-sm text-[var(--color-bk-clay)] font-medium mt-3">{formError}</p>}
+        {formError && <p className="text-sm text-[var(--color-of-clay)] font-medium mt-3">{formError}</p>}
 
         <div className="flex gap-3 mt-7">
           <Button variant="secondary" size="sm" onClick={onClose} className="flex-1">

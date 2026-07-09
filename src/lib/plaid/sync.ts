@@ -1,4 +1,4 @@
-// Plaid → Bulga sync. Server-only.
+// Plaid → otterfund sync. Server-only.
 //
 // Pulls transaction deltas via /transactions/sync (cursor-based), upserts the
 // local Account + Transaction rows, and reconciles each synced account's stored
@@ -17,8 +17,8 @@ import { decryptToken } from "@/lib/crypto";
 import { plaid } from "./client";
 import {
   mapPlaidAccountType,
-  isDebtBulgaType,
-  plaidCategoryToBulga,
+  isDebtOtterfundType,
+  plaidCategoryToOtterfund,
   iconColorFor,
 } from "./mappers";
 
@@ -210,9 +210,9 @@ async function upsertTransaction(
   tx: PlaidTransaction,
   resolveCategory: (name: string) => Promise<string>
 ) {
-  // Plaid: positive = money OUT (debit). Bulga: positive = income. Flip.
+  // Plaid: positive = money OUT (debit). otterfund: positive = income. Flip.
   const amount = -tx.amount;
-  const category = plaidCategoryToBulga(
+  const category = plaidCategoryToOtterfund(
     tx.personal_finance_category?.primary,
     tx.personal_finance_category?.detailed
   );
@@ -256,14 +256,14 @@ async function upsertTransaction(
 async function reconcileAnchor(localAccountId: string, acct: AccountBase) {
   const base = acct.balances?.current ?? acct.balances?.available;
   if (base == null) return; // nothing to anchor to
-  // Sign off the Bulga type (not Plaid's raw type) so a name-inferred loan/
+  // Sign off the otterfund type (not Plaid's raw type) so a name-inferred loan/
   // mortgage is shown negative too, matching how it's grouped.
-  const bulgaType = mapPlaidAccountType(
+  const otterfundType = mapPlaidAccountType(
     String(acct.type),
     acct.subtype ? String(acct.subtype) : null,
     acct.name || acct.official_name
   );
-  const target = isDebtBulgaType(bulgaType) ? -Math.abs(base) : base;
+  const target = isDebtOtterfundType(otterfundType) ? -Math.abs(base) : base;
   await prisma.account.update({
     where: { id: localAccountId },
     data: { balance: target },

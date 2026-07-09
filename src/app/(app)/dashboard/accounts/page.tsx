@@ -1,6 +1,6 @@
 import { requireUser, userCurrency } from "@/lib/dashboard-context";
 import { getAccounts } from "@/lib/db/queries";
-import { AccountsView } from "@/components/bulga/pages/accounts-view";
+import { AccountsView } from "@/components/otterfund/pages/accounts-view";
 
 export default async function AccountsPage() {
   const user = await requireUser();

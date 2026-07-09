@@ -18,7 +18,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
         danger:
-          "bg-[var(--color-bk-clay)] text-white hover:opacity-90 focus-visible:ring-destructive/30",
+          "bg-[var(--color-of-clay)] text-white hover:opacity-90 focus-visible:ring-destructive/30",
         // Inline text link (e.g. a card header's "View all →"). Self-contained:
         // resets the base pill's height/padding/rounding so it sits on the text
         // baseline regardless of `size`. Accent-toned, subtle hover.

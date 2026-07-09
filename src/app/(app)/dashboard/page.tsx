@@ -1,5 +1,5 @@
 import { requireUser, currentPeriod, resolvePeriod, dashboardOverview } from "@/lib/dashboard-context";
-import { OverviewView } from "@/components/bulga/pages/overview-view";
+import { OverviewView } from "@/components/otterfund/pages/overview-view";
 
 const EMPTY_OVERVIEW = {
   netWorth: 0, netWorthChange: 0, cash: 0, monthlyIncome: 0, monthlySpend: 0, monthlySurplus: 0,

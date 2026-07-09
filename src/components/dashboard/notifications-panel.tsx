@@ -74,8 +74,8 @@ export function NotificationsPanel({
   }
 
   const iconMap = {
-    warning: <TrendingUp className="w-4 h-4 text-[var(--color-bk-clay)]" />,
-    alert: <AlertTriangle className="w-4 h-4 text-[var(--color-bk-clay)]" />,
+    warning: <TrendingUp className="w-4 h-4 text-[var(--color-of-clay)]" />,
+    alert: <AlertTriangle className="w-4 h-4 text-[var(--color-of-clay)]" />,
     info: <Calendar className="w-4 h-4 text-[var(--color-primary)]" />,
   };
 
@@ -84,21 +84,21 @@ export function NotificationsPanel({
   // on wide screens; the Popover caps it to the viewport on small ones.
   return (
     <div className="w-[320px] max-w-full">
-      <div className="px-4 py-3 border-b border-[var(--color-bk-line)]">
-        <span className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-bk-faint)]">
+      <div className="px-4 py-3 border-b border-[var(--color-of-line)]">
+        <span className="text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)]">
           Notifications
         </span>
       </div>
-      <div className="max-h-[360px] overflow-y-auto bk-scroll">
+      <div className="max-h-[360px] overflow-y-auto of-scroll">
         {notifications.map((n, i) => (
           <div
             key={i}
-            className="flex gap-3 px-4 py-3 border-b border-[var(--color-bk-line-soft)] last:border-b-0 hover:bg-[oklch(98%_0.004_90)]"
+            className="flex gap-3 px-4 py-3 border-b border-[var(--color-of-line-soft)] last:border-b-0 hover:bg-[oklch(98%_0.004_90)]"
           >
             <div className="mt-0.5 shrink-0">{iconMap[n.type]}</div>
             <div>
-              <div className="text-[13px] font-semibold tracking-[-0.02em] text-[var(--color-bk-ink)]">{n.title}</div>
-              <div className="text-[11px] text-[var(--color-bk-muted)] mt-0.5">{n.message}</div>
+              <div className="text-[13px] font-semibold tracking-[-0.02em] text-[var(--color-of-ink)]">{n.title}</div>
+              <div className="text-[11px] text-[var(--color-of-muted)] mt-0.5">{n.message}</div>
             </div>
           </div>
         ))}

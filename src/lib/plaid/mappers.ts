@@ -1,4 +1,4 @@
-// Pure mappings from Plaid shapes onto Bulga's domain. Server-only.
+// Pure mappings from Plaid shapes onto otterfund's domain. Server-only.
 
 import { AccountType } from "plaid";
 import { CATEGORY_ICON_MAP } from "@/lib/ai/categorize";
@@ -16,7 +16,7 @@ function inferLoanTypeFromName(name?: string | null): "mortgage" | "loan" | null
 }
 
 /**
- * Map a Plaid account type/subtype onto Bulga's account-type string
+ * Map a Plaid account type/subtype onto otterfund's account-type string
  * (lowercase-hyphenated, matching what the manual Add-account form stores).
  * Trusts Plaid's own classification first; only when Plaid leaves the type
  * unknown ("other") do we fall back to inferring loan/mortgage from the name.
@@ -48,13 +48,13 @@ export function mapPlaidAccountType(
   }
 }
 
-/** True for Bulga account types that represent debt (balance shown as negative). */
-export function isDebtBulgaType(type: string): boolean {
+/** True for otterfund account types that represent debt (balance shown as negative). */
+export function isDebtOtterfundType(type: string): boolean {
   return type === "credit-card" || type === "loan" || type === "mortgage";
 }
 
-// Plaid personal_finance_category.primary → Bulga category name.
-const PFC_TO_BULGA: Record<string, string> = {
+// Plaid personal_finance_category.primary → otterfund category name.
+const PFC_TO_otterfund: Record<string, string> = {
   INCOME: "Income",
   ENTERTAINMENT: "Entertainment",
   TRANSPORTATION: "Transport",
@@ -68,19 +68,19 @@ const PFC_TO_BULGA: Record<string, string> = {
 };
 
 /**
- * Map Plaid's personal-finance category onto Bulga's fixed category set.
+ * Map Plaid's personal-finance category onto otterfund's fixed category set.
  * Uses the `detailed` code to split the two ambiguous primaries
  * (food → groceries vs dining; rent/utilities → housing vs bills).
  */
-export function plaidCategoryToBulga(primary?: string, detailed?: string): string {
+export function plaidCategoryToOtterfund(primary?: string, detailed?: string): string {
   const p = (primary || "").toUpperCase();
   const d = (detailed || "").toUpperCase();
   if (p === "FOOD_AND_DRINK") return d.includes("GROCERIES") ? "Groceries" : "Dining Out";
   if (p === "RENT_AND_UTILITIES") return d.includes("RENT") ? "Housing" : "Bills";
-  return PFC_TO_BULGA[p] || "Other";
+  return PFC_TO_otterfund[p] || "Other";
 }
 
-/** Icon + display color for a Bulga category (reuses the import pipeline's map). */
+/** Icon + display color for a otterfund category (reuses the import pipeline's map). */
 export function iconColorFor(category: string): { icon: string; color: string } {
   return CATEGORY_ICON_MAP[category] || CATEGORY_ICON_MAP.Other;
 }

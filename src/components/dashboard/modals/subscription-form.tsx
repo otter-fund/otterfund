@@ -6,7 +6,7 @@
 // calls and the values/errors state.
 
 import { useEffect, useState } from "react";
-import { Field, TextInput, SelectInput } from "@/components/bulga/form";
+import { Field, TextInput, SelectInput } from "@/components/otterfund/form";
 import { SUBSCRIPTION_CYCLES } from "@/lib/constants";
 import { gqlClient } from "@/lib/graphql/client";
 

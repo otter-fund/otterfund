@@ -5,7 +5,7 @@
 // card, and per-field validation. The parent owns submit/delete + API calls.
 
 import { Check } from "lucide-react";
-import { Field, TextInput, SelectInput } from "@/components/bulga/form";
+import { Field, TextInput, SelectInput } from "@/components/otterfund/form";
 import { ACCOUNT_TYPES } from "@/lib/constants";
 
 export const ACCOUNT_COLORS: { name: string; value: string }[] = [
@@ -120,7 +120,7 @@ export function AccountForm({ values, errors, onChange, lockBalance }: AccountFo
                 aria-pressed={selected}
                 className={`relative w-9 h-9 rounded-full transition-transform duration-200 cursor-pointer ${
                   selected
-                    ? "scale-110 ring-2 ring-offset-2 ring-offset-[var(--color-bk-surface)]"
+                    ? "scale-110 ring-2 ring-offset-2 ring-offset-[var(--color-of-surface)]"
                     : "hover:scale-110"
                 }`}
                 style={{ background: c.value, ...(selected ? { ["--tw-ring-color" as string]: ringColor } : {}) }}
@@ -137,7 +137,7 @@ export function AccountForm({ values, errors, onChange, lockBalance }: AccountFo
       {/* live preview */}
       <div className="rounded-xl p-4 text-white" style={{ background: values.gradient }} aria-hidden>
         <div className="text-[12px] font-semibold opacity-80">{values.name || "Account name"}</div>
-        <div className="bk-num text-[22px] tracking-[-0.03em] mt-1">
+        <div className="of-num text-[22px] tracking-[-0.03em] mt-1">
           {`$${(Number(values.balance) || 0).toLocaleString("en-CA", { minimumFractionDigits: 2 })}`}
         </div>
       </div>
