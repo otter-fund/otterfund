@@ -12,7 +12,7 @@
 // to a calm static layout under prefers-reduced-motion (CSS in globals.css,
 // sections "of-enter" / "Landing").
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -43,7 +43,6 @@ import {
   PANEL_INK,
   PANEL_LINE,
   PANEL_LINE_DEEP,
-  PANEL_MUTED,
 } from "@/components/otterfund/brand-panel";
 import { BUDGET_PLANS, getBudgetPlan } from "@/lib/constants";
 import { buttonVariants } from "@/components/ui/button";
@@ -124,7 +123,12 @@ function Reveal({
     width with softly rounded corners and eases down into its laid-out card
     size as it climbs toward the middle of the screen. Styles are mutated
     directly so scrolling never re-renders the tree; inert under
-    prefers-reduced-motion (the element just keeps its resting card look). */
+    prefers-reduced-motion (the element just keeps its resting card look).
+
+    Scroll position is treated as a *target*, not applied 1:1: a rAF loop
+    eases the current pose toward it (time-based exponential smoothing) and
+    stops once converged. Notched mouse wheels move the scroll offset in
+    ~100px steps — mapping directly made the band resize in visible jumps. */
 function useSettleOnScroll<T extends HTMLElement>(radius = 28, radiusFrom = 12) {
   const ref = useRef<T>(null);
   useEffect(() => {
@@ -135,33 +139,69 @@ function useSettleOnScroll<T extends HTMLElement>(radius = 28, radiusFrom = 12) 
     // band up over the tail of the previous section while it's fullscreen.
     el.style.transformOrigin = "50% 0%";
     let raf = 0;
-    const update = () => {
-      const rect = el.getBoundingClientRect();
-      const vh = window.innerHeight;
-      // f = how far the band's top has climbed into the viewport (0 at the
-      // bottom edge → 1 at the top). Hold fullscreen until 30% in, then settle
-      // to the card by 75%. Cubic ease-out so the settle decelerates.
-      const f = (vh - rect.top) / vh;
+    let running = false;
+    let last = 0;
+    let pose = -1; // smoothed eased progress (0 = fullscreen, 1 = card)
+
+    // Scroll-derived target pose. f = how far the band's top has climbed into
+    // the viewport (0 at the bottom edge → 1 at the top). Hold fullscreen
+    // until 30% in, then settle to the card by 75%. Cubic ease-out so the
+    // settle decelerates. (Scale keeps the top edge fixed, so rect.top is
+    // unaffected by the transform we apply.)
+    const target = () => {
+      const f = (window.innerHeight - el.getBoundingClientRect().top) / window.innerHeight;
       const t = Math.min(1, Math.max(0, (f - 0.3) / 0.45));
-      const e = 1 - Math.pow(1 - t, 3);
+      return 1 - Math.pow(1 - t, 3);
+    };
+
+    const apply = (e: number) => {
       // Cap the entrance scale — a hint of extra width reads as "settling in";
       // true edge-to-edge on wide screens felt like it started too big.
       const max = Math.min(1.12, window.innerWidth / el.offsetWidth);
       const s = max - (max - 1) * e;
-      el.style.transform = s > 1.001 ? `scale(${s.toFixed(4)})` : "";
+      const settled = s <= 1.001;
+      el.style.transform = settled ? "" : `scale(${s.toFixed(4)})`;
       el.style.borderRadius = `${(radiusFrom + (radius - radiusFrom) * e).toFixed(1)}px`;
+      // Own compositor layer only while mid-flight — the band is a large
+      // patterned surface and re-rasterizing it per frame is the jank.
+      el.style.willChange = settled ? "" : "transform";
     };
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(update);
+
+    const tick = (now: number) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      const t = target();
+      // ~90ms time constant: frame-rate independent, converges in ~a third of
+      // a second — quick enough to track the scroll, slow enough to absorb
+      // the wheel's steps.
+      pose += (t - pose) * (1 - Math.exp(-dt / 90));
+      if (Math.abs(t - pose) < 0.002) {
+        pose = t;
+        apply(pose);
+        running = false;
+        return;
+      }
+      apply(pose);
+      raf = requestAnimationFrame(tick);
     };
-    update();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
+
+    const kick = () => {
+      if (running) return;
+      running = true;
+      last = performance.now();
+      raf = requestAnimationFrame(tick);
+    };
+
+    // First paint lands directly on the correct pose — no glide on load when
+    // the page is restored mid-scroll.
+    pose = target();
+    apply(pose);
+    window.addEventListener("scroll", kick, { passive: true });
+    window.addEventListener("resize", kick);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("scroll", kick);
+      window.removeEventListener("resize", kick);
     };
   }, [radius, radiusFrom]);
   return ref;
@@ -215,17 +255,57 @@ function useTween(target: number, run: boolean, duration = 1100) {
 const HERO_WORDS = ["balance.", "focus.", "order.", "reach."];
 
 /** Swaps the trailing headline noun on a loop, each new word rising in via
-    `of-hero-word` (remounted by `key`). */
-function RotatingWord({ words, interval = 2600 }: { words: string[]; interval?: number }) {
+    `of-hero-word` (remounted by `key`). The slot is sized to the *active*
+    word and its width animates on each swap, so the centered headline stays
+    optically centered on every word (a fixed widest-word slot left the
+    shorter words looking off-center). */
+function RotatingWord({ words, interval = 3600 }: { words: string[]; interval?: number }) {
   const [i, setI] = useState(0);
+  const measurers = useRef<Record<string, HTMLSpanElement | null>>({});
+  const [width, setWidth] = useState<number>();
+
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const id = setInterval(() => setI((n) => (n + 1) % words.length), interval);
     return () => clearInterval(id);
   }, [words.length, interval]);
+
+  // Size the slot to the active word. Glyph widths move when the vw-clamped
+  // font size (resize) or the loaded serif face (fonts.ready) changes.
+  useLayoutEffect(() => {
+    const measure = () => {
+      const el = measurers.current[words[i]];
+      if (el) setWidth(el.offsetWidth);
+    };
+    measure();
+    document.fonts?.ready.then(measure);
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [i, words]);
+
   return (
-    <span key={words[i]} className="of-hero-word inline-block">
-      {words[i]}
+    <span
+      className="relative inline-block align-baseline whitespace-nowrap"
+      style={{ width, transition: "width 0.5s cubic-bezier(0.22, 0.61, 0.36, 1)" }}
+    >
+      {/* Invisible copies: the active word sits in-flow (giving the slot its
+          height and baseline); the rest are absolute so each word's natural
+          width can be read off its own span. */}
+      {words.map((w) => (
+        <span
+          key={w}
+          ref={(el) => {
+            measurers.current[w] = el;
+          }}
+          className={cn("invisible whitespace-nowrap", w !== words[i] && "absolute left-0 top-0")}
+          aria-hidden
+        >
+          {w}
+        </span>
+      ))}
+      <span key={words[i]} className="of-hero-word absolute inset-0">
+        {words[i]}
+      </span>
     </span>
   );
 }
@@ -336,12 +416,30 @@ const STEPS = [
 const SHOWCASE_INCOME = 6450;
 const SHOWCASE_PLAN = getBudgetPlan("50-30-20");
 
-// Three cohesive light shades of the evergreen hue for the dark banknote field.
-const PANEL_BUCKET: Record<"needs" | "wants" | "savings", string> = {
-  needs: "oklch(66% 0.12 158)",
-  wants: "oklch(80% 0.11 158)",
-  savings: "oklch(91% 0.06 158)",
-};
+// Each plan tab wears one Canadian-banknote colour ($5 blue, $10 purple,
+// $20 green, $50 red) — the same mapping as the Features row — and the band's
+// light-on-dark accents re-derive from the active plan's hue. At hue 158 this
+// reproduces the panel's original evergreen tones exactly.
+function notePanel(hue: string) {
+  return {
+    accent: `oklch(84% 0.1 ${hue})`, // light accent for text/em on the dark field
+    badgeBg: `oklch(90% 0.09 ${hue} / 0.14)`,
+    // The dark banknote field itself, and its guilloché line tones — the same
+    // formula as the brand panel's evergreen (PANEL_BG / PANEL_LINE*), hue-swapped.
+    bg: `linear-gradient(158deg, oklch(34% 0.064 ${hue}) 0%, oklch(25% 0.052 ${hue}) 52%, oklch(20% 0.044 ${hue}) 100%)`,
+    line: `oklch(90% 0.05 ${hue})`,
+    lineDeep: `oklch(82% 0.06 ${hue})`,
+    muted: `oklch(86% 0.03 ${hue})`, // secondary copy on the dark field (PANEL_MUTED, hue-swapped)
+    // Three cohesive light shades of the hue for the dark banknote field.
+    bucket: {
+      needs: `oklch(66% 0.12 ${hue})`,
+      wants: `oklch(80% 0.11 ${hue})`,
+      savings: `oklch(91% 0.06 ${hue})`,
+    } as Record<"needs" | "wants" | "savings", string>,
+  };
+}
+
+const PLAN_HUES = BUDGET_PLANS.map((_, i) => hueOf(SCHEMES[i % SCHEMES.length].value));
 
 // ── pieces ──────────────────────────────────────────────────────────────────
 
@@ -519,9 +617,11 @@ const PLAN_BLURBS: Record<string, string> = {
 
 /** The deep-evergreen showpiece band — mirrors the auth/onboarding brand panel
     and renders the app's real Needs/Wants/Savings donut against a sample income.
-    The four budget plans are tabs: switching one re-splits the buckets and the
-    donut animates to the new shares, so the visitor plays with the actual
-    product decision right on the landing page. */
+    The four budget plans are tabs in the Features row's banknote colours
+    ($5 blue, $10 purple, $20 green, $50 red): selecting one re-splits the
+    buckets, animates the donut, and re-tints the band's accents to that note's
+    hue. The active plan auto-advances every 10s while the band is on screen
+    (hover hands over, leave resumes — same rhythm as Features). */
 function PlanShowpiece() {
   const { ref, inView } = useInView<HTMLDivElement>(0.3);
   // Fullscreen → card: the band enters at viewport width with square corners
@@ -530,14 +630,31 @@ function PlanShowpiece() {
   const [active, setActive] = useState(
     Math.max(0, BUDGET_PLANS.findIndex((p) => p.recommended))
   );
+  const [paused, setPaused] = useState(false);
   const plan = BUDGET_PLANS[active];
+  const note = notePanel(PLAN_HUES[active]);
   const buckets = (["needs", "wants", "savings"] as const).map((key) => ({
     key,
     label: key[0].toUpperCase() + key.slice(1),
     pct: plan[key],
     amount: (plan[key] / 100) * SHOWCASE_INCOME,
   }));
-  const segments = buckets.map((b) => ({ value: b.pct, color: PANEL_BUCKET[b.key] }));
+  const segments = buckets.map((b) => ({ value: b.pct, color: note.bucket[b.key] }));
+
+  // Same guided rhythm as the Features row, at a reading pace: the active plan
+  // advances on its own while the band is on screen, hands over on hover, and
+  // resumes once the pointer leaves. Reduced motion opts out.
+  useEffect(() => {
+    if (!inView || paused) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setActive((i) => (i + 1) % BUDGET_PLANS.length), 10000);
+    return () => clearInterval(t);
+  }, [inView, paused]);
+
+  const pick = (i: number) => {
+    setPaused(true);
+    setActive(i);
+  };
 
   return (
     <div
@@ -549,7 +666,26 @@ function PlanShowpiece() {
       className="relative overflow-hidden rounded-[28px] p-8 sm:p-12 shadow-[0_28px_70px_oklch(22%_0.04_160/0.28)]"
       style={{ background: PANEL_BG }}
     >
-      <GuillocheFlow accent={PANEL_LINE} accentDeep={PANEL_LINE_DEEP} opacity={0.14} fade="none" speed={4} />
+      {/* Per-plan dark fields — the active hue's gradient sits over the rest.
+          Gradients can't transition, so each is its own stacked layer and only
+          opacity animates (the evergreen PANEL_BG above is the first-paint base). */}
+      {BUDGET_PLANS.map((p, i) => (
+        <div
+          key={p.id}
+          aria-hidden
+          className="pointer-events-none absolute inset-0 transition-opacity duration-700 ease-out"
+          style={{ background: notePanel(PLAN_HUES[i]).bg, opacity: active === i ? 1 : 0 }}
+        />
+      ))}
+      {/* stroke transitions so the line-work re-tints in step with the field */}
+      <GuillocheFlow
+        accent={note.line}
+        accentDeep={note.lineDeep}
+        opacity={0.14}
+        fade="none"
+        speed={4}
+        className="[&_path]:transition-[stroke] [&_path]:duration-700"
+      />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -559,7 +695,10 @@ function PlanShowpiece() {
         }}
       />
 
-      <div className="relative grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-16">
+      {/* Two columns from md up — stacking only on true mobile. At tablet
+          widths the stacked layout left the bucket amounts and the donut
+          floating in a sea of dark field. */}
+      <div className="relative grid items-center gap-10 md:grid-cols-[1fr_auto] md:gap-12 lg:gap-16">
         {/* pitch + buckets */}
         <div>
           <div
@@ -568,7 +707,8 @@ function PlanShowpiece() {
               fontWeight: 600,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
-              color: PANEL_ACCENT,
+              color: note.accent,
+              transition: "color .6s ease",
             }}
           >
             Choose your split
@@ -585,32 +725,51 @@ function PlanShowpiece() {
             }}
           >
             Split your income the{" "}
-            <em style={{ fontStyle: "italic", color: PANEL_ACCENT }}>way that fits.</em>
+            <em style={{ fontStyle: "italic", color: note.accent, transition: "color .6s ease" }}>
+              way that fits.
+            </em>
           </h2>
-          <p className="max-w-md text-[15px] leading-relaxed" style={{ color: PANEL_MUTED }}>
+          <p
+            className="text-[15px] leading-relaxed"
+            style={{ color: note.muted, transition: "color .6s ease" }}
+          >
             Pick a proven rule. otterfund tracks how each month lands against it.
           </p>
 
-          {/* plan tabs — switching re-splits the buckets and animates the donut */}
-          <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Budget plans">
+          {/* plan tabs — each wears its banknote colour; hovering (or the 10s
+              auto-cycle) selects it, re-splits the buckets, and re-tints the
+              band's accents. Hover hands the rhythm over; it resumes on leave. */}
+          <div
+            className="mt-6 flex flex-wrap gap-2"
+            role="tablist"
+            aria-label="Budget plans"
+            onMouseLeave={() => setPaused(false)}
+          >
             {BUDGET_PLANS.map((p, i) => {
               const selected = i === active;
+              // White pill with the dark note colour as text at rest, flipped
+              // (dark note fill, white text) while selected.
+              const noteValue = SCHEMES[i % SCHEMES.length].value;
               return (
                 <button
                   key={p.id}
                   role="tab"
                   aria-selected={selected}
-                  onClick={() => setActive(i)}
+                  onClick={() => pick(i)}
+                  onMouseEnter={() => pick(i)}
+                  onFocus={() => pick(i)}
                   className={cn(
-                    "of-num rounded-full border px-3.5 py-1.5 text-[13px] font-semibold tracking-[-0.01em] transition-colors",
-                    selected
-                      ? "border-transparent"
-                      : "border-[oklch(95%_0.03_150_/_0.16)] text-[oklch(86%_0.03_150)] hover:border-[oklch(95%_0.03_150_/_0.4)] hover:text-[oklch(97%_0.014_95)]"
+                    // Fixed-height flex pill: leading-none + items-center keeps
+                    // the serif digits truly centred (an inherited line-height
+                    // floated them high), and nothing moves on select — the
+                    // dark fill is the whole affordance.
+                    "of-num inline-flex h-8 items-center justify-center rounded-full px-3.5 text-[13px] font-semibold leading-none tracking-[-0.01em]",
+                    "transition-[background-color,color] duration-300 ease-[cubic-bezier(.22,.61,.36,1)]"
                   )}
                   style={
                     selected
-                      ? { background: PANEL_ACCENT, color: "oklch(24% 0.055 155)" }
-                      : undefined
+                      ? { background: noteValue, color: "#ffffff" }
+                      : { background: "#ffffff", color: noteValue }
                   }
                 >
                   {p.needs}/{p.wants}/{p.savings}
@@ -618,7 +777,11 @@ function PlanShowpiece() {
               );
             })}
           </div>
-          <p key={plan.id} className="of-enter mt-3 text-[13px] leading-relaxed" style={{ color: PANEL_MUTED }}>
+          <p
+            key={plan.id}
+            className="of-enter mt-3 text-[13px] leading-relaxed"
+            style={{ color: note.muted, transition: "color .6s ease" }}
+          >
             <span className="font-semibold" style={{ color: PANEL_INK }}>
               {PLAN_TITLES[plan.id] ?? plan.name}
             </span>
@@ -626,18 +789,23 @@ function PlanShowpiece() {
             {PLAN_BLURBS[plan.id] ?? plan.blurb}
           </p>
 
-          <div className="mt-7 grid gap-4 max-w-md">
+          {/* Centered while stacked (matching the donut below); flush-left in
+              the two-column layout. */}
+          <div className="mx-auto mt-7 grid w-full max-w-md gap-4 md:mx-0">
             {buckets.map((b) => (
               <div key={b.key} className="flex items-center gap-4">
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-sm"
-                  style={{ background: PANEL_BUCKET[b.key] }}
+                  style={{ background: note.bucket[b.key], transition: "background .6s ease" }}
                   aria-hidden
                 />
                 <span className="text-[14px] font-medium" style={{ color: PANEL_INK }}>
                   {b.label}
                 </span>
-                <span className="of-num text-[13px]" style={{ color: PANEL_MUTED }}>
+                <span
+                  className="of-num text-[13px]"
+                  style={{ color: note.muted, transition: "color .6s ease" }}
+                >
                   {b.pct}%
                 </span>
                 <span className="of-num ml-auto text-[15px] font-medium" style={{ color: PANEL_INK }}>
@@ -650,9 +818,19 @@ function PlanShowpiece() {
 
         {/* the real donut, drawn against a sample income */}
         <div className="flex flex-col items-center gap-4 lg:pr-4">
-          <DonutChart segments={segments} size={208} stroke={30} trackColor="oklch(100% 0 0 / 0.08)">
+          {/* Keyed by plan: switching remounts the donut so its draw-in sweep
+              replays in full with the new colours — cleaner than transitioning
+              arcs and strokes at the same time. */}
+          <DonutChart key={plan.id} segments={segments} size={208} stroke={30} trackColor="oklch(100% 0 0 / 0.08)">
             <span
-              style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: PANEL_MUTED }}
+              style={{
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: "0.1em",
+                textTransform: "uppercase",
+                color: note.muted,
+                transition: "color .6s ease",
+              }}
             >
               Monthly income
             </span>
@@ -662,7 +840,11 @@ function PlanShowpiece() {
           </DonutChart>
           <span
             className="of-num rounded-full px-3 py-1 text-[12px] font-semibold"
-            style={{ background: "oklch(90% 0.09 158 / 0.14)", color: PANEL_ACCENT }}
+            style={{
+              background: note.badgeBg,
+              color: note.accent,
+              transition: "background .6s ease, color .6s ease",
+            }}
           >
             {plan.needs}/{plan.wants}/{plan.savings}
           </span>
@@ -690,7 +872,7 @@ function FeaturesSection() {
   useEffect(() => {
     if (!inView || paused) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const t = setInterval(() => setActive((i) => (i + 1) % FEATURES.length), 4500);
+    const t = setInterval(() => setActive((i) => (i + 1) % FEATURES.length), 5500);
     return () => clearInterval(t);
   }, [inView, paused]);
 
@@ -779,7 +961,9 @@ function FeaturesSection() {
                   <f.icon className="h-5 w-5" strokeWidth={1.9} />
                 </div>
 
-                <div className="relative min-w-0 sm:mt-auto sm:pt-10">
+                {/* Top-anchored (not mt-auto) so titles line up across the row
+                    regardless of how many lines each description wraps to. */}
+                <div className="relative min-w-0 sm:pt-10">
                   <div className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)] sm:text-[15px]">{f.title}</div>
                   <div className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-of-muted)] sm:mt-1.5">{f.desc}</div>
                 </div>
@@ -1354,46 +1538,49 @@ export function LandingView() {
             />
           </div>
 
-          <div className="relative grid items-center gap-16 lg:min-h-[500px] lg:grid-cols-[1.02fr_1fr] lg:gap-20">
+          {/* Stacked, centered composition: headline band up top, card deck
+              below. The deck's back cards fan wide and upward, so giving them
+              their own full-width stage (instead of a side column) is what
+              keeps them clear of the headline at every viewport. */}
+          <div className="relative flex flex-col items-center text-center">
             {/* pitch */}
-            <div className="text-center lg:text-left">
-              <h1
-                className="of-enter text-[clamp(40px,5.6vw,66px)] tracking-[-0.03em] leading-[1.03] text-balance mb-5"
-                style={{ ...SERIF, fontWeight: 500, animationDelay: "140ms" }}
-              >
-                Your money,{" "}
-                  <em className="whitespace-nowrap text-[var(--color-primary)]" style={{ fontStyle: "italic" }}>
-                    in <RotatingWord words={HERO_WORDS} />
-                </em>
-              </h1>
-              <p
-                className="of-enter text-[17px] text-[var(--color-of-muted)] leading-relaxed max-w-md mx-auto lg:mx-0 mb-8"
-                style={{ animationDelay: "220ms" }}
-              >
-                Split every dollar across Needs, Wants, and Savings. otterfund does the
-                math so you don&apos;t have to.
-              </p>
-              <div
-                className="of-enter flex flex-wrap items-center justify-center lg:justify-start gap-3"
-                style={{ animationDelay: "300ms" }}
-              >
-                <Link href="/register" className={CTA_PRIMARY}>
-                  Start saving <ArrowRight className="of-lp-arrow w-4 h-4" />
-                </Link>
-                <a href="#how-it-works" onClick={scrollToId} className={CTA_SECONDARY}>
-                  See how it works
-                </a>
-              </div>
-              <p
-                className="of-enter mt-4 text-[12.5px] font-medium text-[var(--color-of-faint)]"
-                style={{ animationDelay: "360ms" }}
-              >
-                Free to get started · No credit card required
-              </p>
+            <h1
+              className="of-enter text-[clamp(30px,5vw,64px)] tracking-[-0.03em] leading-[1.03] sm:whitespace-nowrap mb-5"
+              style={{ ...SERIF, fontWeight: 500, animationDelay: "140ms" }}
+            >
+              Your money,{" "}
+              <em className="whitespace-nowrap text-[var(--color-primary)]" style={{ fontStyle: "italic" }}>
+                in <RotatingWord words={HERO_WORDS} />
+              </em>
+            </h1>
+            <p
+              className="of-enter text-[17px] text-[var(--color-of-muted)] leading-relaxed max-w-md mb-8"
+              style={{ animationDelay: "220ms" }}
+            >
+              Split every dollar across Needs, Wants, and Savings. otterfund does the
+              math so you don&apos;t have to.
+            </p>
+            <div
+              className="of-enter flex flex-wrap items-center justify-center gap-3"
+              style={{ animationDelay: "300ms" }}
+            >
+              <Link href="/register" className={CTA_PRIMARY}>
+                Start saving <ArrowRight className="of-lp-arrow w-4 h-4" />
+              </Link>
+              <a href="#how-it-works" onClick={scrollToId} className={CTA_SECONDARY}>
+                See how it works
+              </a>
             </div>
+            <p
+              className="of-enter mt-4 text-[12.5px] font-medium text-[var(--color-of-faint)]"
+              style={{ animationDelay: "360ms" }}
+            >
+              Free to get started · No credit card required
+            </p>
 
-            {/* live preview */}
-            <div className="of-enter" style={{ animationDelay: "420ms" }}>
+            {/* live preview — top margin clears the back cards' upward fan
+                (they translate ~-22% above the deck container). */}
+            <div className="of-enter w-full mt-20 sm:mt-28" style={{ animationDelay: "420ms" }}>
               <DashboardPreview />
             </div>
           </div>

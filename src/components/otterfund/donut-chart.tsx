@@ -2,11 +2,13 @@
 
 // otterfund — donut chart.
 //
-// A hand-built SVG donut in the same idiom as ProgressRing: it self-animates
-// (each slice sweeps out from its start on mount) and respects reduced-motion.
-// Segments are drawn as arcs of one stroked circle via strokeDasharray, so there
-// are no external chart deps. Colors are passed in by the caller (derived from
-// the active accent). Optional centered content renders upright over the ring.
+// A hand-built SVG donut in the same idiom as ProgressRing: it self-animates on
+// mount — one continuous clockwise fill from 12 o'clock, each slice's transition
+// delayed by its start angle and sized to its share so the fill front moves at
+// constant angular speed — and respects reduced-motion. Segments are drawn as
+// arcs of one stroked circle via strokeDasharray, so there are no external chart
+// deps. Colors are passed in by the caller (derived from the active accent).
+// Optional centered content renders upright over the ring.
 //
 // Pass `formatValue` to make it interactive: slices become hoverable and show a
 // tooltip (label · formatted value · percent), dimming the others. It's opt-in,
@@ -20,6 +22,9 @@ export interface DonutSegment {
   color: string;
   label?: string;
 }
+
+// Total duration of the mount fill — the full ring, regardless of slice count.
+const SWEEP_MS = 900;
 
 export function DonutChart({
   segments,
@@ -90,12 +95,18 @@ export function DonutChart({
             const v = Math.max(0, seg.value);
             if (v <= 0) return null;
             const len = (v / total) * circ;
+            const begin = start; // arc length consumed before this slice
             const offset = -start;
             start += len;
             const dash = filled
               ? `${len.toFixed(2)} ${(circ - len).toFixed(2)}`
               : `0 ${circ.toFixed(2)}`;
             const dim = interactive && hover != null && hover.i !== i;
+            // One clockwise fill: each slice starts when the fill front reaches
+            // it (delay ∝ start angle) and draws for its share of the total
+            // sweep (duration ∝ length), linear so the front never stalls.
+            const delay = (begin / circ) * SWEEP_MS;
+            const dur = (len / circ) * SWEEP_MS;
             return (
               <circle
                 key={i}
@@ -115,7 +126,7 @@ export function DonutChart({
                   opacity: dim ? 0.45 : 1,
                   transition: reduced
                     ? "opacity .15s"
-                    : "stroke-dasharray 0.9s cubic-bezier(.22,.61,.36,1), opacity .15s",
+                    : `stroke-dasharray ${dur.toFixed(0)}ms linear ${delay.toFixed(0)}ms, opacity .15s`,
                 }}
               />
             );
