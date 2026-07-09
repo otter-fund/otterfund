@@ -14,11 +14,20 @@ import { Button } from "@/components/ui/button";
  * Renders an "or" divider above itself so both auth pages share one identical
  * treatment — the only difference is the label.
  */
-export function GoogleAuthButton({ label }: { label: string }) {
+export function GoogleAuthButton({
+  label,
+  beforeStart,
+}: {
+  label: string;
+  /** Optional gate — return false to block the flow (e.g. Terms not accepted).
+      The parent is responsible for surfacing why it was blocked. */
+  beforeStart?: () => boolean;
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function handleGoogle() {
+    if (beforeStart && !beforeStart()) return;
     setError("");
     setLoading(true);
 

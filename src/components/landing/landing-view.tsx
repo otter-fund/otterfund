@@ -1437,6 +1437,18 @@ function ClosingBand() {
             >
               Sign in
             </Link>
+            <Link
+              href="/privacy"
+              className="text-[oklch(86%_0.03_150_/_0.75)] transition-colors hover:text-[oklch(97%_0.014_95)]"
+            >
+              Privacy
+            </Link>
+            <Link
+              href="/terms"
+              className="text-[oklch(86%_0.03_150_/_0.75)] transition-colors hover:text-[oklch(97%_0.014_95)]"
+            >
+              Terms
+            </Link>
           </nav>
           {/* The Canadian banknote palette — the brand's colour through-line. */}
           <div className="flex items-center gap-2" aria-hidden>

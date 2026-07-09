@@ -20,9 +20,19 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [agreed, setAgreed] = useState(false);
+  const [agreeError, setAgreeError] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Terms + Privacy acceptance is required to create an account (email or
+  // Google). Returns true when accepted; otherwise flags the checkbox.
+  function requireAgreement() {
+    if (agreed) return true;
+    setAgreeError(true);
+    return false;
+  }
 
   // Clear a field's inline error as the user edits it (otterfund form pattern).
   function clearErrors(...fields: (keyof FieldErrors)[]) {
@@ -45,7 +55,10 @@ export default function RegisterPage() {
       errors.password = "Choose a password that meets all three requirements below.";
     if (confirm !== password) errors.confirm = "Passwords don't match.";
 
-    if (Object.keys(errors).length > 0) {
+    // Terms acceptance is mandatory — flag it independently of the field errors.
+    const agreedOk = requireAgreement();
+
+    if (Object.keys(errors).length > 0 || !agreedOk) {
       setFieldErrors(errors);
       return;
     }
@@ -156,6 +169,40 @@ export default function RegisterPage() {
           />
         </Field>
 
+        {/* Required Terms + Privacy acceptance. Gates both the email submit
+            (handleSubmit) and Google sign-up (GoogleAuthButton beforeStart). */}
+        <div>
+          <label htmlFor="agree" className="flex cursor-pointer items-start gap-2.5">
+            <input
+              id="agree"
+              type="checkbox"
+              checked={agreed}
+              aria-invalid={agreeError}
+              onChange={(e) => {
+                setAgreed(e.target.checked);
+                if (e.target.checked) setAgreeError(false);
+              }}
+              className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-[var(--color-primary)]"
+            />
+            <span className="text-[13px] leading-relaxed text-[var(--color-of-muted)]">
+              I agree to otterfund&rsquo;s{" "}
+              <Link href="/terms" target="_blank" className="font-medium text-[var(--color-primary)] hover:underline">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" target="_blank" className="font-medium text-[var(--color-primary)] hover:underline">
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
+          {agreeError && (
+            <p className="mt-1.5 text-[13px] font-medium text-[var(--color-of-clay)]">
+              Please agree to the Terms of Service and Privacy Policy to continue.
+            </p>
+          )}
+        </div>
+
         {error && (
           <p className="text-sm font-medium text-[var(--color-of-clay)]">{error}</p>
         )}
@@ -169,7 +216,7 @@ export default function RegisterPage() {
         </Button>
       </form>
 
-      <GoogleAuthButton label="Sign up with Google" />
+      <GoogleAuthButton label="Sign up with Google" beforeStart={requireAgreement} />
 
       <p className="mt-8 text-center text-sm text-[var(--color-of-muted)]">
         Already have an account?{" "}

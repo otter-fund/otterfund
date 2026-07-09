@@ -34,11 +34,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <footer className="flex items-center justify-center gap-4 text-[12px] text-[var(--color-of-faint)]">
           <span>© {new Date().getFullYear()} otterfund</span>
           <span aria-hidden>·</span>
-          <Link href="/" className="transition-colors hover:text-[var(--color-of-muted)]">
+          <Link href="/privacy" className="transition-colors hover:text-[var(--color-of-muted)]">
             Privacy
           </Link>
           <span aria-hidden>·</span>
-          <Link href="/" className="transition-colors hover:text-[var(--color-of-muted)]">
+          <Link href="/terms" className="transition-colors hover:text-[var(--color-of-muted)]">
             Terms
           </Link>
         </footer>

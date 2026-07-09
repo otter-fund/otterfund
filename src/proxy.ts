@@ -36,7 +36,14 @@ export async function proxy(request: NextRequest) {
   // Public marketing pages — crawlable, no auth. The landing page does its own
   // logged-in redirect (to dashboard/onboarding); pricing is open to everyone.
   // Keep this list in sync with the sitemap (app/sitemap.ts).
-  if (pathname === "/" || pathname === "/pricing") return response;
+  if (
+    pathname === "/" ||
+    pathname === "/pricing" ||
+    pathname === "/privacy" ||
+    pathname === "/terms"
+  ) {
+    return response;
+  }
 
   // Signed-in users shouldn't sit on the auth pages.
   if (isAuthPage) {
