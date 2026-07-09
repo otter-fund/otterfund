@@ -66,5 +66,7 @@ function redirectKeepingCookies(
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
+  // icon.svg (the app-router favicon) must bypass auth, or signed-out browsers
+  // get a /login redirect instead of the icon and silently keep a stale one.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon|robots.txt|sitemap.xml|public).*)"],
 };

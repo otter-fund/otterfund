@@ -13,7 +13,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
-import { Home, List, CreditCard, Target, Sparkles, Bell, Plus, Settings, LogOut, PieChart, Repeat, MessageCircle, Landmark, TrendingUp, Gauge } from "lucide-react";
+import { Home, List, CreditCard, Target, Sparkles, Bell, Plus, Settings, LogOut, PieChart, Repeat, Landmark, TrendingUp, Gauge, type LucideProps } from "lucide-react";
 import { AddTransactionModal } from "@/components/dashboard/modals/add-transaction-modal";
 import { ImportModal } from "@/components/dashboard/modals/import-modal";
 import { EditTransactionModal } from "@/components/dashboard/modals/edit-transaction-modal";
@@ -30,7 +30,7 @@ import { NotificationsPanel } from "@/components/dashboard/notifications-panel";
 import { SettingsModal } from "@/components/dashboard/modals/settings-modal";
 import type { TransactionView, GoalView, AccountView, SubscriptionView, InvestmentView, SpendCategory, BillView } from "@/lib/types";
 import { DEFAULT_ACCENT, deriveTheme, themeVars } from "@/components/bulga/theme";
-import { LogoMark } from "@/components/bulga/logo";
+import { LogoMark, OtterFace } from "@/components/bulga/logo";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuTrigger, MenuContent, MenuItem } from "@/components/ui/menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -54,7 +54,7 @@ const PERIOD_KEY = "bulga:period";
 interface NavItem {
   href: string;
   label: string;
-  Icon: typeof Home;
+  Icon: React.ComponentType<LucideProps>;
 }
 
 const PRIMARY_NAV: NavItem[] = [
@@ -65,7 +65,7 @@ const PRIMARY_NAV: NavItem[] = [
   { href: "/dashboard/accounts", label: "Accounts", Icon: CreditCard },
   { href: "/dashboard/investments", label: "Investments", Icon: TrendingUp },
   { href: "/dashboard/goals", label: "Goals", Icon: Target },
-  { href: "/dashboard/insights", label: "Insights", Icon: MessageCircle },
+  { href: "/dashboard/insights", label: "Insights", Icon: OtterFace },
 ];
 
 const SECONDARY_NAV: NavItem[] = [
@@ -446,7 +446,7 @@ export function BulgaChrome({
         >
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", height: "100%", padding: "20px 0" }}>
             <div style={{ marginBottom: 12 }}>
-              <LogoMark size={50} />
+              <LogoMark size={38} />
             </div>
 
             <nav aria-label="Primary" style={{ display: "flex", flexDirection: "column", gap: 6 }}>

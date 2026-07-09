@@ -16,7 +16,7 @@ import { Dialog } from "@base-ui/react/dialog";
 import Link from "next/link";
 import { Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { LucideIcon } from "lucide-react";
+import type { LucideProps } from "lucide-react";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { LogoMark } from "@/components/bulga/logo";
 import { braid } from "@/components/bulga/guilloche";
@@ -32,7 +32,7 @@ const DRAG_CLOSE_PX = 90;
 interface NavItem {
   href: string;
   label: string;
-  Icon: LucideIcon;
+  Icon: React.ComponentType<LucideProps>;
 }
 
 /** Eyebrow section label — the CardLabel voice, tuned for the sheet. */

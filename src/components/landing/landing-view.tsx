@@ -24,7 +24,6 @@ import {
   type LucideIcon,
   PieChart,
   ShieldCheck,
-  Sparkles,
   Target,
   TrendingUp,
   Upload,
@@ -35,7 +34,7 @@ import { Card, CardLabel } from "@/components/bulga/card";
 import { GuillocheFlow } from "@/components/bulga/guilloche-flow";
 import { DonutChart } from "@/components/bulga/donut-chart";
 import { ProgressRing } from "@/components/bulga/progress";
-import { LogoMark } from "@/components/bulga/logo";
+import { LogoMark, OtterFace } from "@/components/bulga/logo";
 import { BRAND_THEME, SCHEMES, deriveTheme, hueOf, type BulgaTheme } from "@/components/bulga/theme";
 import {
   PANEL_ACCENT,
@@ -316,7 +315,7 @@ const FEATURES = [
   { icon: Wallet, title: "Every account, one net worth", desc: "Chequing, savings, credit, and investments add up to a single live balance.", word: "whole." },
   { icon: ListChecks, title: "Spending, made plain", desc: "Every transaction sorted into clean categories, so you see where it all goes.", word: "clear." },
   { icon: Target, title: "Goals that fund themselves", desc: "Your monthly savings split across goals by priority, each with a finish date.", word: "intentional." },
-  { icon: Sparkles, title: "Insights, not lectures", desc: "Quiet nudges drawn from your own numbers, written in plain language.", word: "understood." },
+  { icon: OtterFace, title: "Insights, not lectures", desc: "Quiet nudges drawn from your own numbers, written in plain language.", word: "understood." },
 ];
 
 // The three steps of the "How it works" band. Each doubles as a tab for the
@@ -966,7 +965,7 @@ function GoalsGraphic({ theme }: { theme: BulgaTheme }) {
         className="mt-3 flex items-start gap-2.5 rounded-xl border px-3.5 py-3"
         style={{ background: theme.accentTint, borderColor: theme.accentTintBorder }}
       >
-        <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: theme.accentDeep }} strokeWidth={2} />
+        <OtterFace className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: theme.accentDeep }} strokeWidth={2} />
         <p className="text-[12.5px] leading-relaxed" style={{ color: theme.accentDeep }}>
           You&apos;re two months ahead on Vacation. A quiet win worth keeping.
         </p>
