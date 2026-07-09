@@ -17,6 +17,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Check,
+  ChevronDown,
   Home,
   Landmark,
   ListChecks,
@@ -48,6 +49,7 @@ import { BUDGET_PLANS, getBudgetPlan } from "@/lib/constants";
 import { buttonVariants } from "@/components/ui/button";
 import { fmt, fmtWhole } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { FAQ_ITEMS } from "@/lib/seo";
 
 const SERIF: React.CSSProperties = { fontFamily: "var(--font-num), Georgia, serif" };
 
@@ -59,6 +61,7 @@ const NAV_LINKS = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#plans", label: "Plans" },
   { href: "#features", label: "Features" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 /** Anchor-link scroll for the nav/footer links — smooth unless the visitor
@@ -1133,6 +1136,56 @@ function HowItWorksSection() {
   );
 }
 
+/** FAQ — real, useful answers to the questions people actually search: how to
+    start budgeting, how to save money each month, how to allocate income across
+    Needs/Wants/Savings, is it free, does it use AI, is it secure. Native
+    <details> accordions (accessible, JS-free, fully crawlable) so the content is
+    indexed as-is; it mirrors the FAQPage JSON-LD emitted on the home route. */
+function FaqSection() {
+  return (
+    <section id="faq" className="mt-24 sm:mt-32 w-full max-w-[820px] scroll-mt-24">
+      <Reveal className="max-w-2xl">
+        <CardLabel>Answers</CardLabel>
+        <h2
+          className="mt-3 text-[clamp(26px,3.4vw,38px)] tracking-[-0.02em] leading-tight text-balance"
+          style={{ ...SERIF, fontWeight: 500 }}
+        >
+          Budgeting questions,{" "}
+          <em className="text-[var(--color-primary)]" style={{ fontStyle: "italic" }}>
+            answered plainly.
+          </em>
+        </h2>
+        <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-of-muted)]">
+          How to start budgeting, save money every month, and allocate your income
+          across Needs, Wants, and Savings — with otterfund doing the math.
+        </p>
+      </Reveal>
+
+      <div className="mt-8 grid gap-2.5 sm:mt-10">
+        {FAQ_ITEMS.map((item, i) => (
+          <Reveal key={item.q} delay={i * 60}>
+            <details className="group rounded-[20px] border border-[var(--color-of-line)] bg-[var(--color-of-surface)] px-5 py-4 sm:px-6 sm:py-5">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
+                <h3 className="text-[15px] font-semibold text-[var(--color-of-ink)] sm:text-[16px]">
+                  {item.q}
+                </h3>
+                <ChevronDown
+                  className="h-4 w-4 shrink-0 text-[var(--color-of-faint)] transition-transform duration-200 group-open:rotate-180"
+                  strokeWidth={2}
+                  aria-hidden
+                />
+              </summary>
+              <p className="mt-3 text-[14px] leading-relaxed text-[var(--color-of-muted)]">
+                {item.a}
+              </p>
+            </details>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 /** The closing finale — the layer the page sheet lifts off of (it's fixed
     behind the sheet; LandingView owns the curtain structure). The deep
     evergreen brand panel, oversized and minimal: engraved line-work, palette
@@ -1360,6 +1413,9 @@ export function LandingView() {
 
         {/* ── Features — banknote feature plates + reactive headline ── */}
         <FeaturesSection />
+
+        {/* ── FAQ — keyword-rich, genuinely useful answers (mirrors FAQ JSON-LD) ── */}
+        <FaqSection />
 
       </main>
       </div>

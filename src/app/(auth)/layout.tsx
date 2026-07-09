@@ -1,6 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { LogoMark } from "@/components/otterfund/logo";
 import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
+
+// Auth screens are thin, personal, and duplicative — keep them out of the index
+// (also disallowed in robots.ts) while still letting crawlers follow links out.
+export const metadata: Metadata = {
+  robots: { index: false, follow: true },
+};
 
 // Split-screen auth shell. An immersive banknote brand panel on the left
 // (lg+ only) carries the pitch; the form column on the right stays calm and

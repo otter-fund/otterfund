@@ -1,7 +1,23 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@/lib/db/prisma";
 import { LandingView } from "@/components/landing/landing-view";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE, faqLd } from "@/lib/seo";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: `${SITE_NAME} · ${SITE_TAGLINE} — Free AI Budgeting App`,
+  },
+  description: SITE_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: `${SITE_NAME} — Free AI Budgeting App`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+};
 
 export default async function LandingPage() {
   const supabase = await createClient();
@@ -18,5 +34,12 @@ export default async function LandingPage() {
     redirect(profile?.onboardingDone ? "/dashboard" : "/onboarding");
   }
 
-  return <LandingView />;
+  return (
+    <>
+      {/* FAQ structured data — mirrors the visible FAQ on the landing page and
+          is eligible for rich-result accordions in search. */}
+      <JsonLd data={faqLd()} />
+      <LandingView />
+    </>
+  );
 }

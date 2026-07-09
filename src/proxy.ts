@@ -33,8 +33,10 @@ export async function proxy(request: NextRequest) {
     // exists (email confirmation pending); signed-in users get bounced on.
     pathname.startsWith("/verify-email");
 
-  // Landing page is public; it does its own logged-in redirect.
-  if (pathname === "/") return response;
+  // Public marketing pages — crawlable, no auth. The landing page does its own
+  // logged-in redirect (to dashboard/onboarding); pricing is open to everyone.
+  // Keep this list in sync with the sitemap (app/sitemap.ts).
+  if (pathname === "/" || pathname === "/pricing") return response;
 
   // Signed-in users shouldn't sit on the auth pages.
   if (isAuthPage) {
@@ -66,7 +68,13 @@ function redirectKeepingCookies(
 }
 
 export const config = {
-  // icon.svg (the app-router favicon) must bypass auth, or signed-out browsers
-  // get a /login redirect instead of the icon and silently keep a stale one.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon|robots.txt|sitemap.xml|public).*)"],
+  // Public, crawlable metadata assets must bypass auth, or signed-out visitors
+  // (and search-engine / social crawlers) get a /login redirect instead of the
+  // real asset — which breaks favicons, share previews, and the manifest.
+  // Covers: favicon.ico / icon.svg / icon.png / apple-icon (favicons),
+  // opengraph-image + twitter-image (social cards), manifest.webmanifest,
+  // robots.txt, sitemap.xml, and /public.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icon.svg|icon.png|apple-icon|opengraph-image|twitter-image|manifest.webmanifest|robots.txt|sitemap.xml|public).*)",
+  ],
 };
