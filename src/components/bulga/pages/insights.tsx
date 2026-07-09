@@ -64,7 +64,7 @@ export function BulgaInsights({ insights: initial, accent, theme, currency }: Bu
     try {
       const { generateInsights } = await gqlClient.request(GENERATE_INSIGHTS);
       if (generateInsights.insights) setInsights(generateInsights.insights);
-      if (generateInsights.cached) setNote("You've already refreshed today — fresh insights once a day.");
+      if (generateInsights.cached) setNote("You've already refreshed today. Fresh insights arrive once a day.");
     } catch {
       setNote("Couldn't generate insights right now. Try again in a moment.");
     }
@@ -287,7 +287,7 @@ export function BulgaInsights({ insights: initial, accent, theme, currency }: Bu
                     <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
                   </div>
                   <p style={{ margin: 0, fontSize: 14, color: "var(--color-bk-muted)", maxWidth: 340, lineHeight: 1.55 }}>
-                    No insights yet — hit <strong style={{ color: "var(--color-bk-ink)" }}>Find insights</strong> for an AI read on your
+                    No insights yet. Hit <strong style={{ color: "var(--color-bk-ink)" }}>Find insights</strong> for an AI read on your
                     spending, savings, and trends.
                   </p>
                 </div>

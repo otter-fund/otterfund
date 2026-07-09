@@ -147,7 +147,7 @@ export function BulgaOverview({ overview, theme, onNavigate }: BulgaOverviewProp
   const topCat = [...overview.spendingByCategory].sort((a, b) => b.amount - a.amount)[0];
   const insight =
     savingsRate > 0
-      ? `You're saving ${savingsRate}% of your income this month — that's ${money(overview.monthlySurplus)} set aside toward what matters.`
+      ? `You're saving ${savingsRate}% of your income this month. That's ${money(overview.monthlySurplus)} set aside toward what matters.`
       : topCat
         ? `${topCat.name} is your largest category at ${money(topCat.amount)}, about ${Math.round(topCat.pct)}% of this month's spending.`
         : `You've spent ${money(overview.monthlySpend)} so far this month against ${money(overview.monthlyIncome)} of income.`;

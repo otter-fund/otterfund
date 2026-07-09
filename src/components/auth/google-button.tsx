@@ -53,7 +53,7 @@ export function GoogleAuthButton({ label }: { label: string }) {
         variant="outline"
         onClick={handleGoogle}
         disabled={loading}
-        className="w-full h-11 rounded-full text-sm font-semibold gap-2.5"
+        className="w-full font-semibold gap-2.5"
       >
         <GoogleG />
         {loading ? "Redirecting…" : label}

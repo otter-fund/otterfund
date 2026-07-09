@@ -44,7 +44,7 @@ export const BUDGET_PLANS: BudgetPlan[] = [
     needs: 50,
     wants: 30,
     savings: 20,
-    blurb: "The classic balance — half to essentials, a third to lifestyle, a fifth to savings.",
+    blurb: "The classic balance: half to essentials, a third to lifestyle, a fifth to savings.",
     recommended: true,
   },
   {
@@ -53,7 +53,7 @@ export const BUDGET_PLANS: BudgetPlan[] = [
     needs: 70,
     wants: 20,
     savings: 10,
-    blurb: "Room for high fixed costs like rent — save a little each month.",
+    blurb: "Room for high fixed costs like rent, with a little saved each month.",
   },
   {
     id: "60-20-20",

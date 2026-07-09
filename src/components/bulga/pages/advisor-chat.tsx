@@ -482,7 +482,7 @@ export function AdvisorChat({
                   Ask your advisor
                 </p>
                 <p style={{ margin: "8px auto 0", fontSize: 14, color: "var(--color-bk-muted)", maxWidth: 420, lineHeight: 1.55 }}>
-                  Anything about your money — spending, subscriptions, goals, or where to cut back. Answers cite your own accounts.
+                  Anything about your money: spending, subscriptions, goals, or where to cut back. Answers cite your own accounts.
                 </p>
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", maxWidth: 560 }}>

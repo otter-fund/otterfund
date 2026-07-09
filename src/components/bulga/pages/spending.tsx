@@ -236,7 +236,7 @@ export function BulgaSpending({ plan, theme }: BulgaSpendingProps) {
               ) : (
                 <p style={{ fontSize: 13, color: "var(--color-bk-muted)", padding: "6px 0 2px" }}>
                   {isSavings
-                    ? "No goals funded yet — add goals to direct your savings."
+                    ? "No goals funded yet. Add goals to direct your savings."
                     : "No spending in this bucket yet."}
                 </p>
               )}

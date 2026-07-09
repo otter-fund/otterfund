@@ -162,10 +162,10 @@ export function ConnectBankModal({
                 ? "Reconnecting and refreshing your data…"
                 : "Importing your accounts and transactions…"
               : phase === "done"
-                ? "All set — your accounts are syncing."
+                ? "All set. Your accounts are syncing."
                 : isUpdate
                   ? "Re-authenticate with your bank to resume automatic syncing."
-                  : "Securely link your bank so balances and transactions sync automatically. Your credentials are encrypted and handled by Plaid — Bulga never sees or stores them."}
+                  : "Securely link your bank so balances and transactions sync automatically. Your credentials are encrypted and handled by Plaid. Bulga never sees or stores them."}
           </p>
 
           {message && (

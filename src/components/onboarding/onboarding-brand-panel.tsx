@@ -27,7 +27,7 @@ export interface PanelStep {
 const EXPECT = [
   "Takes about two minutes",
   "Everything stays editable later",
-  "Private by default — your data is yours",
+  "Private by default. Your data stays yours",
 ];
 
 export function OnboardingBrandPanel({
@@ -81,7 +81,7 @@ export function OnboardingBrandPanel({
         >
           {steps
             ? "A calm, guided setup. You can jump back to any completed step."
-            : "Three ways to begin — pick whichever fits. We'll do the math from here."}
+            : "Three ways to begin. Pick whichever fits, and we'll do the math from here."}
         </p>
 
         {steps ? <StepTracker steps={steps} step={step} /> : <ExpectList />}

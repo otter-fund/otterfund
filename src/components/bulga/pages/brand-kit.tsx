@@ -79,9 +79,9 @@ export function BulgaBrandKit({ accent, theme, onAccentChange }: BulgaBrandKitPr
 
   const motions: { title: string; desc: string }[] = [
     { title: "Spring press", desc: "Buttons scale to 0.94 on tap, snap back with overshoot." },
-    { title: "Nav highlight", desc: "Active item fills smoothly — always know where you are." },
+    { title: "Nav highlight", desc: "Active item fills smoothly, so you always know where you are." },
     { title: "Bars grow", desc: "Progress sweeps left-to-right on every reveal." },
-    { title: "Soft enter", desc: "Screens fade up 10px — calm, never jarring." },
+    { title: "Soft enter", desc: "Screens fade up 10px. Calm, never jarring." },
   ];
 
   const muted = "oklch(54% 0.012 80)";
@@ -149,8 +149,8 @@ export function BulgaBrandKit({ accent, theme, onAccentChange }: BulgaBrandKitPr
           </span>
         </div>
         <p style={{ margin: "0 0 22px", fontSize: 13.5, color: muted }}>
-          One palette built from all five notes — $5 blue, $10 purple, $20 green,
-          $50 red, $100 brown — in a few tonal treatments. The whole set works
+          One palette built from all five notes ($5 blue, $10 purple, $20 green,
+          $50 red, $100 brown) in a few tonal treatments. The whole set works
           together for charts, categories and allocations.
         </p>
 
@@ -252,7 +252,7 @@ export function BulgaBrandKit({ accent, theme, onAccentChange }: BulgaBrandKitPr
           <span style={{ fontSize: 12.5, fontWeight: 600, color: faint }}>{activeScheme.name}</span>
         </div>
         <p style={{ margin: "0 0 22px", fontSize: 13.5, color: muted }}>
-          Where the palette earns its keep — one note colour per category, so a
+          Where the palette earns its keep: one note colour per category, so a
           breakdown reads at a glance instead of leaning on a single accent.
         </p>
 
@@ -330,7 +330,7 @@ export function BulgaBrandKit({ accent, theme, onAccentChange }: BulgaBrandKitPr
                 {p.fixed && (
                   <span
                     aria-hidden="true"
-                    title="Fixed — never follows the accent"
+                    title="Fixed: never follows the accent"
                     style={{
                       position: "absolute",
                       top: 7,
@@ -404,7 +404,7 @@ export function BulgaBrandKit({ accent, theme, onAccentChange }: BulgaBrandKitPr
             <div style={{ fontSize: 21, fontWeight: 700, letterSpacing: "-0.02em" }}>Heading · 700</div>
             <div style={{ fontSize: 15, fontWeight: 600, marginTop: 5 }}>Subhead · 600</div>
             <div style={{ fontSize: 13.5, color: "oklch(40% 0.012 80)", marginTop: 5, lineHeight: 1.5 }}>
-              Body copy stays friendly and plain — we explain, never lecture. 400
+              Body copy stays friendly and plain. We explain, never lecture. 400
               weight at 13–15px.
             </div>
           </div>
@@ -502,7 +502,7 @@ export function BulgaBrandKit({ accent, theme, onAccentChange }: BulgaBrandKitPr
       >
         <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700 }}>Loader</h3>
         <p style={{ margin: "0 0 22px", fontSize: 13.5, color: muted }}>
-          The guilloché seal, alive — the spinner shown while a chat loads. Its
+          The guilloché seal, alive: the spinner shown while a chat loads. Its
           rosette breathes and revolves in an endless rolling shift. Dial it in
           below; it follows the active accent.
         </p>
@@ -570,7 +570,7 @@ export function BulgaBrandKit({ accent, theme, onAccentChange }: BulgaBrandKitPr
       >
         <h3 style={{ margin: "0 0 4px", fontSize: 16, fontWeight: 700 }}>Motion &amp; feel</h3>
         <p style={{ margin: "0 0 20px", fontSize: 13.5, color: muted }}>
-          Snappy, never showy. Spring on press, ease on reveal — every action
+          Snappy, never showy. Spring on press, ease on reveal, and every action
           confirms itself.
         </p>
         <div className="bk-grid-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12 }}>

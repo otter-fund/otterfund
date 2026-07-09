@@ -76,7 +76,7 @@ function InUse({ accent, accentDeep, seal }: { accent: string; accentDeep: strin
           <span className="bk-num whitespace-nowrap text-[13px] text-[var(--color-bk-muted)]">June 2026</span>
         </div>
         <p className="mt-3 text-[12px] text-[var(--color-bk-muted)]">
-          The braided sine ribbon as a section divider — a lighter touch than a full field.
+          The braided sine ribbon as a section divider, a lighter touch than a full field.
         </p>
       </Card>
     </div>
@@ -331,7 +331,7 @@ function SealPlayground({
         </div>
       </div>
       <p className="text-[12px] text-[var(--color-bk-muted)]">
-        These controls also drive the “Verified seal” example in §01 — the two stay in sync.
+        These controls also drive the “Verified seal” example in §01; the two stay in sync.
       </p>
       <div className="flex flex-wrap items-center gap-2">
         <input value={seal.label} onChange={(e) => set("label", e.target.value)} maxLength={3} className="bk-field w-20" placeholder="$" />
@@ -493,7 +493,7 @@ export function BrandPatterns() {
       <Section
         n="01"
         title="Patterns in use"
-        desc="How the texture reads once it's applied to real Bulga surfaces — the reference for where and how to reach for it in the product. Everything below is a knob for tuning the pieces shown here."
+        desc="How the texture reads once it's applied to real Bulga surfaces: the reference for where and how to reach for it in the product. Everything below is a knob for tuning the pieces shown here."
       >
         <InUse accent={accent} accentDeep={accentDeep} seal={seal} />
       </Section>
@@ -501,7 +501,7 @@ export function BrandPatterns() {
       <Section
         n="02"
         title="Wave field · procedural SVG"
-        desc="The primary decorative backdrop. Engine-turned parallel lines that sit quietly behind cards, hero figures and empty states — subtle enough not to fight the content. Drop <GuillochePattern> into any relative card; tune density and dashing here."
+        desc="The primary decorative backdrop. Engine-turned parallel lines that sit quietly behind cards, hero figures and empty states, subtle enough not to fight the content. Drop <GuillochePattern> into any relative card; tune density and dashing here."
       >
         <Playground accent={accent} accentDeep={accentDeep} />
       </Section>
@@ -509,7 +509,7 @@ export function BrandPatterns() {
       <Section
         n="03"
         title="Flowing lines · animated dashes"
-        desc="The wave field in motion, for hero and landing moments where a little life helps. The dash offset drifts along each line for calm, flowing line-work — never a busy shader. Freezes under reduced-motion, so it's safe as a live background."
+        desc="The wave field in motion, for hero and landing moments where a little life helps. The dash offset drifts along each line for calm, flowing line-work, never a busy shader. Freezes under reduced-motion, so it's safe as a live background."
       >
         <FlowingWaves accent={accent} accentDeep={accentDeep} />
       </Section>
@@ -517,7 +517,7 @@ export function BrandPatterns() {
       <Section
         n="04"
         title="Engraving · canvas line-hatching"
-        desc="Turns a glyph — or any image — into banknote-style line-work, thickening the lines where the source is dark. For denomination marks, an illustrated logo treatment, or a hero graphic. This is the most decorative/heavy option; use it as a focal point, not a background."
+        desc="Turns a glyph (or any image) into banknote-style line-work, thickening the lines where the source is dark. For denomination marks, an illustrated logo treatment, or a hero graphic. This is the most decorative/heavy option; use it as a focal point, not a background."
       >
         <Engraving accent={accent} />
       </Section>

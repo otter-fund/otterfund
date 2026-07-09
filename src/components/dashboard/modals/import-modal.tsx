@@ -225,7 +225,7 @@ export function ImportModal({ open, onClose, onImported }: ImportModalProps) {
                   : "Drop CSV or PDF files here"}
               </p>
               <p className="text-xs text-[var(--color-bk-muted)] mt-1">
-                or click to browse — multiple files supported
+                or click to browse (multiple files supported)
               </p>
               <input
                 id="file-input"

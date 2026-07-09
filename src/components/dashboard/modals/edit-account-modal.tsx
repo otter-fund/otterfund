@@ -180,7 +180,7 @@ export function EditAccountModal({ open, account, onClose, onUpdated }: EditAcco
             style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
           >
             Synced from {account.institution || "your bank"}. To omit just this account,
-            hide it — it stays synced but drops out of your net worth. Disconnecting
+            hide it: it stays synced but drops out of your net worth. Disconnecting
             removes the entire bank and all its accounts.
           </div>
         )}

@@ -501,7 +501,7 @@ export function BulgaTransactions({ transactions, accounts, theme, currency = "C
         >
           <span style={{ fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap", color: deleteError ? "oklch(78% 0.09 33)" : "#fff" }}>
             {deleteError
-              ? "Couldn't delete — try again"
+              ? "Couldn't delete. Try again"
               : confirmingDelete
                 ? "Are you sure?"
                 : `${selected.size} selected`}

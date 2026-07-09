@@ -336,7 +336,7 @@ function GoalCard({
             {g.etaLabel && <> · on track to finish <span style={{ color: "var(--color-bk-ink)" }}>{g.etaLabel}</span></>}
           </span>
         ) : hasPool ? (
-          <span>Not funded this month — raise its priority to allocate savings here.</span>
+          <span>Not funded this month. Raise its priority to allocate savings here.</span>
         ) : (
           <span>Set your income and plan in Settings to fund this goal.</span>
         )}

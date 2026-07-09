@@ -89,7 +89,7 @@ export default function RegisterPage() {
           Create your account
         </h1>
         <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-bk-muted)]">
-          Start budgeting with Bulga — it only takes a minute.
+          Start budgeting with Bulga. It only takes a minute.
         </p>
       </header>
 
@@ -106,6 +106,7 @@ export default function RegisterPage() {
             }}
             placeholder="Your name"
             autoComplete="name"
+            autoFocus
             required
           />
         </Field>
@@ -162,7 +163,7 @@ export default function RegisterPage() {
         <Button
           type="submit"
           disabled={loading}
-          className="h-11 w-full rounded-full text-sm font-semibold"
+          className="w-full font-semibold"
         >
           {loading ? "Creating account…" : "Create account"}
         </Button>

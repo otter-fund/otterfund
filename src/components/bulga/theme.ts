@@ -55,7 +55,7 @@ export interface BanknoteScheme {
 export const BANKNOTE_SCHEMES: BanknoteScheme[] = [
   {
     name: "Polymer",
-    note: "The notes as issued — vivid, confident, unmistakably currency.",
+    note: "The notes as issued: vivid, confident, unmistakably currency.",
     accent: "oklch(50% 0.13 158)",
     colors: [
       { label: "$5", value: "oklch(52% 0.13 250)" },
@@ -67,7 +67,7 @@ export const BANKNOTE_SCHEMES: BanknoteScheme[] = [
   },
   {
     name: "Tundra",
-    note: "Lightened, low-chroma — calm fills and tints that stay legible.",
+    note: "Lightened, low-chroma: calm fills and tints that stay legible.",
     accent: "oklch(48% 0.115 158)",
     colors: [
       { label: "$5", value: "oklch(68% 0.08 250)" },

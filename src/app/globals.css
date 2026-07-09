@@ -545,6 +545,27 @@
   clip-path: polygon(0% 0%, 200% 0%, 100% 100%, 0% 100%);
 }
 
+/* "How it works" auto-advance — a thin fill sweeps along the active step in
+   time with the 4.5s rotation, so the section reads as a guided tour rather
+   than content that jumps on its own. Hidden entirely under reduced motion
+   (the rotation doesn't run there either). */
+.bk-step-fill {
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: bkStepFill 4.5s linear forwards;
+}
+@keyframes bkStepFill { to { transform: scaleX(1); } }
+
+/* "Why Bulga" headline — the feeling word remounts on card change and rises in
+   softly instead of snapping. */
+.bk-word-swap {
+  display: inline-block;
+  animation: bkWordIn 0.4s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+@keyframes bkWordIn {
+  from { opacity: 0; transform: translateY(0.3em); }
+}
+
 /* Engine-turned seal — the rosette ring revolves once per ~70s, so slow it
    reads as craft rather than motion. Applied by <GuillocheSeal spin>. */
 .bk-seal-spin { animation: bkSpinSlow 70s linear infinite; transform-box: fill-box; transform-origin: center; }
@@ -570,6 +591,8 @@
   .bk-lp-pulse { animation: none; }
   .bk-lp-rain { animation: none; opacity: 0; }
   .bk-seal-spin { animation: none; }
+  .bk-step-track { display: none; }
+  .bk-word-swap { animation: none; }
   .bk-ticker { animation: none; }
   /* No sweep under reduced motion — the wash just cross-fades. */
   .bk-wave-wash { clip-path: none; transition: opacity 0.3s ease; }

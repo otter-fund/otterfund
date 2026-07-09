@@ -17,8 +17,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   Check,
-  ChevronLeft,
-  ChevronRight,
   Landmark,
   ListChecks,
   Lock,
@@ -46,13 +44,32 @@ import {
   PANEL_MUTED,
 } from "@/components/bulga/brand-panel";
 import { BUDGET_PLANS, getBudgetPlan } from "@/lib/constants";
-import { fmt } from "@/lib/format";
+import { buttonVariants } from "@/components/ui/button";
+import { fmt, fmtWhole } from "@/lib/format";
 import { cn } from "@/lib/utils";
 
 const SERIF: React.CSSProperties = { fontFamily: "var(--font-num), Georgia, serif" };
 
-const CTA_PRIMARY =
-  "bk-lp-cta inline-flex items-center gap-2 text-sm font-semibold text-white bg-[var(--color-primary)] px-6 py-3 rounded-full hover:brightness-[1.06] transition-[filter] shadow-[0_1px_2px_oklch(40%_0.1_158/0.3)]";
+const CTA_PRIMARY = cn(buttonVariants({ variant: "default", size: "lg" }), "bk-lp-cta font-semibold");
+const CTA_SECONDARY = cn(buttonVariants({ variant: "outline", size: "lg" }), "font-semibold");
+
+// In-page sections the nav and footer link to (see scrollToId).
+const NAV_LINKS = [
+  { href: "#how-it-works", label: "How it works" },
+  { href: "#plans", label: "Plans" },
+  { href: "#features", label: "Features" },
+];
+
+/** Anchor-link scroll for the nav/footer links — smooth unless the visitor
+    prefers reduced motion; targets carry scroll-mt for the sticky nav. */
+function scrollToId(e: React.MouseEvent<HTMLAnchorElement>) {
+  const el = document.getElementById(e.currentTarget.hash.slice(1));
+  if (!el) return;
+  e.preventDefault();
+  el.scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+  });
+}
 
 // ── in-view + reveal helpers ────────────────────────────────────────────────
 
@@ -99,37 +116,51 @@ function Reveal({
   );
 }
 
-/** Flips true (once, latched) the moment the referenced element is FULLY within
-    the viewport. If the element is taller than the viewport it can never reach
-    100%, so we fire when it's as visible as it physically can be (fills the
-    viewport). Pins true immediately under reduced motion. */
-function useFullyVisible<T extends HTMLElement>() {
+/** Scroll-linked "settle" — the element enters scaled up toward the viewport
+    width with softly rounded corners and eases down into its laid-out card
+    size as it climbs toward the middle of the screen. Styles are mutated
+    directly so scrolling never re-renders the tree; inert under
+    prefers-reduced-motion (the element just keeps its resting card look). */
+function useSettleOnScroll<T extends HTMLElement>(radius = 28, radiusFrom = 12) {
   const ref = useRef<T>(null);
-  const [shown, setShown] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(true);
-      return;
-    }
-    const obs = new IntersectionObserver(
-      ([entry]) => {
-        // Max ratio this element can hit: 1 when it fits the viewport, less when
-        // it's taller — fire once it reaches (near) that ceiling.
-        const h = entry.boundingClientRect.height || 1;
-        const maxRatio = Math.min(1, window.innerHeight / h);
-        if (entry.intersectionRatio >= maxRatio - 0.01) {
-          setShown(true);
-          obs.disconnect();
-        }
-      },
-      { threshold: [0, 0.25, 0.5, 0.75, 0.9, 0.99, 1] }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, []);
-  return { ref, shown };
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // Grow downward from the top edge — scaling from the center would push the
+    // band up over the tail of the previous section while it's fullscreen.
+    el.style.transformOrigin = "50% 0%";
+    let raf = 0;
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      const vh = window.innerHeight;
+      // f = how far the band's top has climbed into the viewport (0 at the
+      // bottom edge → 1 at the top). Hold fullscreen until 30% in, then settle
+      // to the card by 75%. Cubic ease-out so the settle decelerates.
+      const f = (vh - rect.top) / vh;
+      const t = Math.min(1, Math.max(0, (f - 0.3) / 0.45));
+      const e = 1 - Math.pow(1 - t, 3);
+      // Cap the entrance scale — a hint of extra width reads as "settling in";
+      // true edge-to-edge on wide screens felt like it started too big.
+      const max = Math.min(1.12, window.innerWidth / el.offsetWidth);
+      const s = max - (max - 1) * e;
+      el.style.transform = s > 1.001 ? `scale(${s.toFixed(4)})` : "";
+      el.style.borderRadius = `${(radiusFrom + (radius - radiusFrom) * e).toFixed(1)}px`;
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [radius, radiusFrom]);
+  return ref;
 }
 
 /** True once the page has scrolled past `y` — drives the nav's blur/hairline. */
@@ -197,13 +228,15 @@ const FEATURES = [
   { icon: Wallet, title: "Every account, one net worth", desc: "Chequing, savings, credit, and investments add up to a single live balance.", word: "whole." },
   { icon: ListChecks, title: "Spending, made plain", desc: "Every transaction sorted into clean categories, so you see where it all goes.", word: "clear." },
   { icon: Target, title: "Goals that fund themselves", desc: "Your monthly savings split across goals by priority, each with a finish date.", word: "intentional." },
-  { icon: Sparkles, title: "Insights, not lectures", desc: "Quiet, AI-written nudges drawn from your own numbers — never judgment.", word: "understood." },
+  { icon: Sparkles, title: "Insights, not lectures", desc: "Quiet nudges drawn from your own numbers, written in plain language.", word: "understood." },
 ];
 
-const TRUST = [
-  { icon: Upload, title: "Import in seconds", desc: "Link a bank with Plaid, or drop a statement — Bulga categorizes it." },
-  { icon: PieChart, title: "Split every dollar", desc: "Needs, Wants, and Savings — a plan you can adjust anytime." },
-  { icon: ShieldCheck, title: "Private by default", desc: "Bank-grade encryption. Your numbers are never sold." },
+// The three steps of the "How it works" band. Each doubles as a tab for the
+// graphic panel below it, which shows the real product surface it names.
+const STEPS = [
+  { icon: Upload, title: "Connect your accounts", desc: "Link your bank through Plaid, or drop in a statement." },
+  { icon: PieChart, title: "Split every dollar", desc: "Needs, Wants, and Savings. A plan you can adjust anytime." },
+  { icon: Target, title: "Watch your goals grow", desc: "Whatever you save flows to your goals, by priority." },
 ];
 
 // ── budget-plan showpiece figures ───────────────────────────────────────────
@@ -340,36 +373,7 @@ function DashboardPreview() {
   );
 }
 
-/** A stacked Needs/Wants/Savings split bar — the plan's three shares in one
-    horizontal ribbon. Colors come from the caller so it works on light and dark. */
-function SplitBar({
-  plan,
-  colors,
-  track,
-}: {
-  plan: (typeof BUDGET_PLANS)[number];
-  colors: Record<"needs" | "wants" | "savings", string>;
-  track?: string;
-}) {
-  const parts: ["needs" | "wants" | "savings", number][] = [
-    ["needs", plan.needs],
-    ["wants", plan.wants],
-    ["savings", plan.savings],
-  ];
-  return (
-    <div
-      className="flex h-2.5 w-full overflow-hidden rounded-full"
-      style={{ background: track ?? "var(--color-bk-track)" }}
-      aria-hidden
-    >
-      {parts.map(([k, pct]) => (
-        <span key={k} style={{ width: `${pct}%`, background: colors[k] }} />
-      ))}
-    </div>
-  );
-}
-
-// Descriptive titles for the carousel subtitle. The plan `name` in constants is
+// Descriptive titles for the plan tabs' subtitle. The plan `name` in constants is
 // the ratio itself for three of the four plans ("70/20/10"), which just repeats
 // the big figure above it — so give each a real name here (the ratio already
 // shows as the headline + tab). Can't rename in constants: the Spending page
@@ -381,223 +385,43 @@ const PLAN_TITLES: Record<string, string> = {
   "50-20-30": "Aggressive Saver",
 };
 
-/** The "Choose your split" picker — one card the visitor clicks through instead
-    of a static grid. Plan tabs + prev/next step through the four plans; each one
-    reveals a touch more than the old cards did: the per-bucket dollar split
-    against a sample income. Content fades up on each switch (calms under
-    reduced motion via the shared .bk-enter rules). */
-function PlanCarousel({
-  active,
-  setActive,
-}: {
-  active: number;
-  setActive: React.Dispatch<React.SetStateAction<number>>;
-}) {
-  const count = BUDGET_PLANS.length;
+// The classic plan's blurb restates its title ("The Classic — The classic
+// balance…"), so the band shows this trimmed line instead.
+const PLAN_BLURBS: Record<string, string> = {
+  "50-30-20": "Half to essentials, a third to lifestyle, a fifth to savings.",
+};
+
+
+/** The deep-evergreen showpiece band — mirrors the auth/onboarding brand panel
+    and renders the app's real Needs/Wants/Savings donut against a sample income.
+    The four budget plans are tabs: switching one re-splits the buckets and the
+    donut animates to the new shares, so the visitor plays with the actual
+    product decision right on the landing page. */
+function PlanShowpiece() {
+  const { ref, inView } = useInView<HTMLDivElement>(0.3);
+  // Fullscreen → card: the band enters at viewport width with square corners
+  // and settles into the rounded panel as it scrolls up (see useSettleOnScroll).
+  const settleRef = useSettleOnScroll<HTMLDivElement>(28);
+  const [active, setActive] = useState(
+    Math.max(0, BUDGET_PLANS.findIndex((p) => p.recommended))
+  );
   const plan = BUDGET_PLANS[active];
-  const go = (dir: number) => setActive((i) => (i + dir + count) % count);
-
-  // The whole card re-tints to the active plan's Canadian-banknote colour, so
-  // stepping through the plans walks the $5→$100 palette. The three buckets are
-  // tonal shades of that one note hue (deep / accent / light) — cohesive, not a
-  // rainbow.
-  const note = SCHEMES[active % SCHEMES.length];
-  const noteTheme = deriveTheme(note.value);
-  const noteHue = hueOf(note.value);
-  const noteBucket: Record<"needs" | "wants" | "savings", string> = {
-    needs: noteTheme.accentDeep,
-    wants: note.value,
-    savings: `oklch(78% 0.07 ${noteHue})`,
-  };
-
   const buckets = (["needs", "wants", "savings"] as const).map((key) => ({
     key,
     label: key[0].toUpperCase() + key.slice(1),
     pct: plan[key],
     amount: (plan[key] / 100) * SHOWCASE_INCOME,
   }));
-
-  return (
-    <Card className="relative overflow-hidden p-6 sm:p-8">
-      {/* tabs + stepper */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div
-          role="tablist"
-          aria-label="Budget plans"
-          className="flex flex-wrap gap-2"
-        >
-          {BUDGET_PLANS.map((p, i) => {
-            const selected = i === active;
-            return (
-              <button
-                key={p.id}
-                role="tab"
-                aria-selected={selected}
-                onClick={() => setActive(i)}
-                onMouseEnter={() => setActive(i)}
-                onFocus={() => setActive(i)}
-                className={cn(
-                  "bk-num rounded-full px-3.5 py-1.5 text-[13px] font-semibold tracking-[-0.01em] transition-colors",
-                  selected
-                    ? "text-white"
-                    : "text-[var(--color-bk-muted)] bg-[var(--color-bk-canvas)] border border-[var(--color-bk-line-soft)] hover:text-[var(--color-bk-ink)]"
-                )}
-                style={
-                  selected
-                    ? { background: SCHEMES[i % SCHEMES.length].value }
-                    : undefined
-                }
-              >
-                {p.needs}/{p.wants}/{p.savings}
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="ml-auto flex items-center gap-2">
-          <button
-            onClick={() => go(-1)}
-            aria-label="Previous plan"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-bk-line-soft)] text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)] hover:bg-[var(--color-bk-canvas)]"
-          >
-            <ChevronLeft className="h-4 w-4" strokeWidth={2.2} />
-          </button>
-          <button
-            onClick={() => go(1)}
-            aria-label="Next plan"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-bk-line-soft)] text-[var(--color-bk-muted)] transition-colors hover:text-[var(--color-bk-ink)] hover:bg-[var(--color-bk-canvas)]"
-          >
-            <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
-          </button>
-        </div>
-      </div>
-
-      {/* body — remounts on switch so content fades up */}
-      <div key={active} className="bk-enter mt-8 grid gap-8 lg:grid-cols-[1fr_1.1fr] lg:gap-12">
-        {/* pitch */}
-        <div>
-          <div className="flex items-center gap-3">
-            <span
-              className="bk-num text-[38px] tracking-[-0.02em] leading-none"
-              style={{ color: noteTheme.accentDeep }}
-            >
-              {plan.needs}/{plan.wants}/{plan.savings}
-            </span>
-            {plan.recommended && (
-              <span
-                className="rounded-full px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.05em] text-white"
-                style={{ background: note.value }}
-              >
-                Recommended
-              </span>
-            )}
-          </div>
-          <div className="mt-3 text-[15px] font-semibold text-[var(--color-bk-ink)]">
-            {PLAN_TITLES[plan.id] ?? plan.name}
-          </div>
-          <p className="mt-2 max-w-sm text-[13.5px] leading-relaxed text-[var(--color-bk-muted)]">
-            {plan.blurb}
-          </p>
-        </div>
-
-        {/* the split, made tangible against a sample income */}
-        <div>
-          <div className="mb-4 flex items-baseline justify-between">
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-bk-faint)]">
-              On a {fmt(SHOWCASE_INCOME)} month
-            </span>
-          </div>
-          <SplitBar plan={plan} colors={noteBucket} />
-          <div className="mt-5 grid gap-3">
-            {buckets.map((b) => (
-              <div key={b.key} className="flex items-center gap-3">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-sm"
-                  style={{ background: noteBucket[b.key] }}
-                  aria-hidden
-                />
-                <span className="text-[13.5px] font-medium text-[var(--color-bk-ink)]">
-                  {b.label}
-                </span>
-                <span className="bk-num text-[12.5px] text-[var(--color-bk-muted)]">
-                  {b.pct}%
-                </span>
-                <span className="bk-num ml-auto text-[15px] font-medium text-[var(--color-bk-ink)]">
-                  {fmt(b.amount)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-/** The "Choose your split" section — owns the active-plan state so both the
-    heading's accent word and the drifting guilloché backdrop re-tint to the
-    selected plan's banknote colour, in step with the carousel below. */
-function PlanSection() {
-  const [active, setActive] = useState(
-    Math.max(0, BUDGET_PLANS.findIndex((p) => p.recommended))
-  );
-  const note = SCHEMES[active % SCHEMES.length];
-  const noteTheme = deriveTheme(note.value);
-
-  return (
-    <section className="relative mt-24 max-w-[1120px] w-full">
-      {/* Banknote line-work behind the section — re-tints and drifts with the
-          active plan; freezes under prefers-reduced-motion. */}
-      <div className="absolute -inset-x-10 -top-10 bottom-0" aria-hidden>
-        <GuillocheFlow
-          accent={noteTheme.accent}
-          accentDeep={noteTheme.accentDeep}
-          fade="radial"
-          opacity={0.1}
-        />
-      </div>
-
-      <div className="relative">
-        <Reveal className="max-w-xl">
-          <CardLabel>Choose your split</CardLabel>
-          <h2
-            className="text-[clamp(26px,3.4vw,38px)] tracking-[-0.02em] leading-tight text-balance mt-3 mb-2"
-            style={{ ...SERIF, fontWeight: 500 }}
-          >
-            Pick a plan, or make it{" "}
-            <em style={{ fontStyle: "italic", color: note.value }}>your own.</em>
-          </h2>
-          <p className="text-[15px] text-[var(--color-bk-muted)] leading-relaxed">
-            Start with a proven rule and adjust anytime. Every plan tracks Needs, Wants, and Savings.
-          </p>
-        </Reveal>
-
-        <Reveal className="mt-10">
-          <PlanCarousel active={active} setActive={setActive} />
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-/** The deep-evergreen showpiece band — mirrors the auth/onboarding brand panel
-    and renders the app's real Needs/Wants/Savings donut against a sample income,
-    so the landing shows the exact surface a new user lands on. */
-function PlanShowpiece() {
-  const { ref, inView } = useInView<HTMLDivElement>(0.3);
-  const buckets = (["needs", "wants", "savings"] as const).map((key) => ({
-    key,
-    label: key[0].toUpperCase() + key.slice(1),
-    pct: SHOWCASE_PLAN[key],
-    amount: (SHOWCASE_PLAN[key] / 100) * SHOWCASE_INCOME,
-  }));
   const segments = buckets.map((b) => ({ value: b.pct, color: PANEL_BUCKET[b.key] }));
 
   return (
     <div
-      ref={ref}
+      ref={(el) => {
+        ref.current = el;
+        settleRef.current = el;
+      }}
       data-in={inView ? "" : undefined}
-      className="relative overflow-hidden rounded-[28px] p-8 sm:p-12"
+      className="relative overflow-hidden rounded-[28px] p-8 sm:p-12 shadow-[0_28px_70px_oklch(22%_0.04_160/0.28)]"
       style={{ background: PANEL_BG }}
     >
       <GuillocheFlow accent={PANEL_LINE} accentDeep={PANEL_LINE_DEEP} opacity={0.14} fade="none" speed={4} />
@@ -622,7 +446,7 @@ function PlanShowpiece() {
               color: PANEL_ACCENT,
             }}
           >
-            A plan for every dollar
+            Choose your split
           </div>
           <h2
             className="mt-4 mb-3 text-balance"
@@ -639,11 +463,45 @@ function PlanShowpiece() {
             <em style={{ fontStyle: "italic", color: PANEL_ACCENT }}>way that fits.</em>
           </h2>
           <p className="max-w-md text-[15px] leading-relaxed" style={{ color: PANEL_MUTED }}>
-            Bulga divides what you earn into Needs, Wants, and Savings, then tracks how the
-            month actually lands against your plan — no spreadsheet required.
+            Pick a proven rule. Bulga tracks how each month lands against it.
           </p>
 
-          <div className="mt-8 grid gap-4 max-w-md">
+          {/* plan tabs — switching re-splits the buckets and animates the donut */}
+          <div className="mt-6 flex flex-wrap gap-2" role="tablist" aria-label="Budget plans">
+            {BUDGET_PLANS.map((p, i) => {
+              const selected = i === active;
+              return (
+                <button
+                  key={p.id}
+                  role="tab"
+                  aria-selected={selected}
+                  onClick={() => setActive(i)}
+                  className={cn(
+                    "bk-num rounded-full border px-3.5 py-1.5 text-[13px] font-semibold tracking-[-0.01em] transition-colors",
+                    selected
+                      ? "border-transparent"
+                      : "border-[oklch(95%_0.03_150_/_0.16)] text-[oklch(86%_0.03_150)] hover:border-[oklch(95%_0.03_150_/_0.4)] hover:text-[oklch(97%_0.014_95)]"
+                  )}
+                  style={
+                    selected
+                      ? { background: PANEL_ACCENT, color: "oklch(24% 0.055 155)" }
+                      : undefined
+                  }
+                >
+                  {p.needs}/{p.wants}/{p.savings}
+                </button>
+              );
+            })}
+          </div>
+          <p key={plan.id} className="bk-enter mt-3 text-[13px] leading-relaxed" style={{ color: PANEL_MUTED }}>
+            <span className="font-semibold" style={{ color: PANEL_INK }}>
+              {PLAN_TITLES[plan.id] ?? plan.name}
+            </span>
+            {": "}
+            {PLAN_BLURBS[plan.id] ?? plan.blurb}
+          </p>
+
+          <div className="mt-7 grid gap-4 max-w-md">
             {buckets.map((b) => (
               <div key={b.key} className="flex items-center gap-4">
                 <span
@@ -658,7 +516,7 @@ function PlanShowpiece() {
                   {b.pct}%
                 </span>
                 <span className="bk-num ml-auto text-[15px] font-medium" style={{ color: PANEL_INK }}>
-                  {fmt(b.amount)}
+                  {fmtWhole(b.amount)}
                 </span>
               </div>
             ))}
@@ -674,14 +532,14 @@ function PlanShowpiece() {
               Monthly income
             </span>
             <span className="bk-num" style={{ fontSize: 26, fontWeight: 500, letterSpacing: "-0.02em", color: PANEL_INK }}>
-              {fmt(SHOWCASE_INCOME)}
+              {fmtWhole(SHOWCASE_INCOME)}
             </span>
           </DonutChart>
           <span
-            className="rounded-full px-3 py-1 text-[12px] font-semibold"
+            className="bk-num rounded-full px-3 py-1 text-[12px] font-semibold"
             style={{ background: "oklch(90% 0.09 158 / 0.14)", color: PANEL_ACCENT }}
           >
-            {SHOWCASE_PLAN.name}
+            {plan.needs}/{plan.wants}/{plan.savings}
           </span>
         </div>
       </div>
@@ -695,12 +553,29 @@ function PlanShowpiece() {
     "whole.") is lit by default; hovering another lifts it instead, and the row
     falls back to the first once the pointer leaves. */
 function FeaturesSection() {
+  const { ref, inView } = useInView<HTMLElement>(0.25);
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
   const word = FEATURES[active].word;
   const wordColor = SCHEMES[active % SCHEMES.length].value;
 
+  // Same guided rhythm as "How it works": the lit card advances on its own
+  // while the section is on screen, hands over on hover, and resumes once the
+  // pointer leaves. Reduced motion opts out.
+  useEffect(() => {
+    if (!inView || paused) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setActive((i) => (i + 1) % FEATURES.length), 4500);
+    return () => clearInterval(t);
+  }, [inView, paused]);
+
+  const pick = (i: number) => {
+    setPaused(true);
+    setActive(i);
+  };
+
   return (
-    <section className="mt-24 max-w-[1120px] w-full">
+    <section id="features" ref={ref} className="mt-24 sm:mt-32 max-w-[1120px] w-full scroll-mt-24">
       <Reveal className="max-w-2xl">
         <CardLabel>Why Bulga</CardLabel>
         <h2
@@ -709,20 +584,24 @@ function FeaturesSection() {
         >
           Built to make money feel{" "}
           <em
-            className="transition-colors duration-300"
+            key={word}
+            className="bk-word-swap"
             style={{ fontStyle: "italic", color: wordColor }}
           >
             {word}
           </em>
         </h2>
         <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-bk-muted)]">
-          Accounts, spending, goals, and insights — everything Bulga does adds up to one
-          confident picture of your money.
+          Everything Bulga does adds up to one confident picture of your money.
         </p>
       </Reveal>
 
-      {/* First (blue) card is lit by default; the last card hovered stays lit. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
+      {/* First (blue) card is lit by default; hovering takes over, and the
+          auto-cycle picks back up from there once the pointer leaves. */}
+      <div
+        className="mt-8 grid grid-cols-1 gap-2.5 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
+        onMouseLeave={() => setPaused(false)}
+      >
         {FEATURES.map((f, i) => {
           // Each feature carries one Canadian-banknote colour ($5 blue,
           // $10 purple, $20 green, $50 red) so the row reads as a set of notes.
@@ -734,15 +613,15 @@ function FeaturesSection() {
               <Card
                 hover
                 data-wash={on ? "on" : undefined}
-                className="group relative flex h-full min-h-[208px] flex-col overflow-hidden p-6 text-left"
+                className="group relative flex h-full flex-row items-start gap-4 overflow-hidden p-4 text-left sm:min-h-[208px] sm:flex-col sm:gap-0 sm:p-6"
                 style={
                   {
                     "--card-note": note.value,
                     "--card-tint": noteTheme.accentTint,
                   } as React.CSSProperties
                 }
-                onMouseEnter={() => setActive(i)}
-                onFocus={() => setActive(i)}
+                onMouseEnter={() => pick(i)}
+                onFocus={() => pick(i)}
               >
                 {/* Wave wash — an engraved guilloché field with straight
                     (horizontal) waves that washes in along a 45° diagonal while
@@ -764,8 +643,8 @@ function FeaturesSection() {
                 {/* Icon plate — soft note tint at rest, filled solid while lit. */}
                 <div
                   className={cn(
-                    "relative flex h-12 w-12 items-center justify-center rounded-2xl transition-[background-color,color,transform] duration-300 ease-[cubic-bezier(.22,.61,.36,1)]",
-                    on && "-translate-y-0.5"
+                    "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-[background-color,color,translate,rotate,scale] duration-300 ease-[cubic-bezier(.22,.61,.36,1)] sm:h-12 sm:w-12 sm:rounded-2xl",
+                    on && "-translate-y-0.5 -rotate-2 scale-[1.05]"
                   )}
                   style={{
                     background: on ? "var(--card-note)" : "var(--card-tint)",
@@ -775,9 +654,9 @@ function FeaturesSection() {
                   <f.icon className="h-5 w-5" strokeWidth={1.9} />
                 </div>
 
-                <div className="relative mt-auto pt-10">
-                  <div className="text-[15px] font-semibold tracking-[-0.01em] text-[var(--color-bk-ink)]">{f.title}</div>
-                  <div className="mt-1.5 text-[12.5px] leading-relaxed text-[var(--color-bk-muted)]">{f.desc}</div>
+                <div className="relative min-w-0 sm:mt-auto sm:pt-10">
+                  <div className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--color-bk-ink)] sm:text-[15px]">{f.title}</div>
+                  <div className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-bk-muted)] sm:mt-1.5">{f.desc}</div>
                 </div>
               </Card>
             </Reveal>
@@ -788,12 +667,13 @@ function FeaturesSection() {
   );
 }
 
-// ── trust strip + reactive graphic ──────────────────────────────────────────
-// The three claims double as tabs: hovering one cross-fades the panel below to a
-// small graphic that mirrors the *real* product surface it names — Plaid bank
-// connect, the plan→goals split, the encryption layer. Each claim wears one
-// banknote colour ($5 blue, $10 purple, $20 green) and its graphic re-tints to
-// match, so this section joins the same palette as Features and Plans.
+// ── "How it works" band — three steps + reactive graphic ────────────────────
+// The steps double as tabs: hovering (or the gentle auto-advance) slides the
+// panel below to a graphic that mirrors the *real* product surface it names —
+// Plaid bank connect, the Needs/Wants/Savings split, the goals it funds. Each
+// step wears one banknote colour ($5 blue, $10 purple, $20 green) and its
+// graphic re-tints to match, so this section joins the same palette as
+// Features and Plans.
 
 /** Tonal Needs/Wants/Savings shades derived from one note hue (deep/accent/light). */
 function splitColors(theme: BulgaTheme): Record<"needs" | "wants" | "savings", string> {
@@ -815,12 +695,6 @@ const SYNCED_ACCOUNTS = [
 const SAVINGS_GOALS = [
   { emoji: "🏝️", name: "Vacation", pct: 64, perMo: 220 },
   { emoji: "🚗", name: "New car", pct: 28, perMo: 180 },
-];
-
-const PRIVATE_ROWS = [
-  { label: "Net worth", masked: "$••,•••" },
-  { label: "Chequing", masked: "$•,•••" },
-  { label: "Savings", masked: "$••,•••" },
 ];
 
 /** "Import in seconds" — link a bank with Plaid; accounts sync automatically.
@@ -886,8 +760,8 @@ function ImportGraphic({ theme }: { theme: BulgaTheme }) {
   );
 }
 
-/** "Split every dollar" — the plan splits income Needs/Wants/Savings, and the
-    Savings bucket funds goals by priority. Mirrors the Spending + Goals pages. */
+/** "Split every dollar" — the plan splits income Needs/Wants/Savings against a
+    sample month. Mirrors the Spending page. */
 function SplitGraphic({ theme }: { theme: BulgaTheme }) {
   const sc = splitColors(theme);
   const buckets = (["needs", "wants", "savings"] as const).map((key) => ({
@@ -903,7 +777,7 @@ function SplitGraphic({ theme }: { theme: BulgaTheme }) {
           Every dollar, split
         </span>
         <span className="bk-num text-[14px] font-medium">
-          {fmt(SHOWCASE_INCOME)}
+          {fmtWhole(SHOWCASE_INCOME)}
           <span className="text-[12px] text-[var(--color-bk-muted)]"> / mo</span>
         </span>
       </div>
@@ -918,16 +792,25 @@ function SplitGraphic({ theme }: { theme: BulgaTheme }) {
           <div key={b.key} className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-sm" style={{ background: sc[b.key] }} />
             <span className="text-[11.5px] text-[var(--color-bk-muted)]">{b.label}</span>
-            <span className="bk-num text-[11.5px] font-medium text-[var(--color-bk-ink)]">{fmt(b.amount)}</span>
+            <span className="bk-num text-[11.5px] font-medium text-[var(--color-bk-ink)]">{fmtWhole(b.amount)}</span>
           </div>
         ))}
       </div>
 
-      <div className="mt-5 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-bk-faint)]">
+    </div>
+  );
+}
+
+/** "Watch your goals grow" — the Savings bucket funds goals by priority, and a
+    sample nudge shows the tone of Bulga's insights. Mirrors the Goals page. */
+function GoalsGraphic({ theme }: { theme: BulgaTheme }) {
+  return (
+    <div className="w-full">
+      <div className="mb-3 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--color-bk-faint)]">
         <Target className="h-3.5 w-3.5" style={{ color: theme.accent }} strokeWidth={2.2} />
-        Savings funds your goals
+        Savings, put to work
       </div>
-      <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+      <div className="grid gap-2.5 sm:grid-cols-2">
         {SAVINGS_GOALS.map((g) => (
           <div
             key={g.name}
@@ -947,7 +830,7 @@ function SplitGraphic({ theme }: { theme: BulgaTheme }) {
                 </span>
               </div>
               <div className="bk-num mt-0.5 text-[11.5px] text-[var(--color-bk-muted)]">
-                <span style={{ color: theme.accentDeep }}>+{fmt(g.perMo)}</span>/mo
+                <span style={{ color: theme.accentDeep }}>+{fmtWhole(g.perMo)}</span>/mo
               </div>
             </div>
             <span className="bk-num ml-auto text-[15px] font-medium" style={{ color: theme.accentDeep }}>
@@ -956,207 +839,260 @@ function SplitGraphic({ theme }: { theme: BulgaTheme }) {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-/** "Private by default" — figures sit behind the encryption layer; credentials
-    are handled by Plaid and never touch Bulga. Mirrors <ConnectBankModal> copy. */
-function PrivateGraphic({ theme }: { theme: BulgaTheme }) {
-  return (
-    <div className="grid w-full items-center gap-8 sm:grid-cols-[auto_1fr]">
       <div
-        className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl"
-        style={{ background: theme.accentTint }}
+        className="mt-3 flex items-start gap-2.5 rounded-xl border px-3.5 py-3"
+        style={{ background: theme.accentTint, borderColor: theme.accentTintBorder }}
       >
-        <Lock className="h-10 w-10" style={{ color: theme.accent }} strokeWidth={1.8} />
-      </div>
-
-      <div className="grid max-w-sm gap-2.5">
-        {PRIVATE_ROWS.map((r) => (
-          <div
-            key={r.label}
-            className="flex items-center gap-3 rounded-xl border border-[var(--color-bk-line-soft)] bg-[var(--color-bk-surface)] px-3.5 py-2.5"
-          >
-            <span className="text-[13px] font-medium text-[var(--color-bk-ink)]">{r.label}</span>
-            <span className="bk-num ml-auto text-[15px] tracking-[0.18em] text-[var(--color-bk-muted)]">{r.masked}</span>
-            <Lock className="h-3.5 w-3.5 text-[var(--color-bk-faint)]" strokeWidth={2} />
-          </div>
-        ))}
-        <div className="mt-1 flex items-center gap-1.5 text-[10.5px] font-medium text-[var(--color-bk-faint)]">
-          <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
-          256-bit encryption
-        </div>
-        <p className="text-[12.5px] leading-relaxed text-[var(--color-bk-muted)]">
-          Your credentials are encrypted and handled by Plaid — Bulga never sees or stores them.
+        <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: theme.accentDeep }} strokeWidth={2} />
+        <p className="text-[12.5px] leading-relaxed" style={{ color: theme.accentDeep }}>
+          You&apos;re two months ahead on Vacation. A quiet win worth keeping.
         </p>
       </div>
     </div>
   );
 }
 
-const TRUST_GRAPHICS = [ImportGraphic, SplitGraphic, PrivateGraphic];
+const STEP_GRAPHICS = [ImportGraphic, SplitGraphic, GoalsGraphic];
 
-/** Trust strip whose three claims act as tabs for the graphic panel below. The
-    panel grid-stacks all three graphics in one cell and cross-fades between them,
-    so switching is smooth and the height never jumps. */
-function TrustSection() {
+/** "How it works" — a full-bleed surface band (hairline top and bottom) so the
+    page gets a distinct second act instead of more cards floating on canvas.
+    Three numbered steps act as tabs for the graphic panel; while the band is on
+    screen the steps advance on their own every few seconds until the visitor
+    takes over (hover/click latches auto-advance off). Reduced motion opts out. */
+function HowItWorksSection() {
+  const { ref, inView } = useInView<HTMLElement>(0.25);
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (!inView || paused) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const t = setInterval(() => setActive((i) => (i + 1) % STEPS.length), 4500);
+    return () => clearInterval(t);
+  }, [inView, paused]);
+
+  const pick = (i: number) => {
+    setPaused(true);
+    setActive(i);
+  };
 
   return (
-    <section className="mt-28 sm:mt-40 max-w-[1120px] w-full">
-      <Reveal>
-        {/* First (blue) claim is selected by default; the last one hovered stays. */}
-        <Card className="grid grid-cols-1 divide-y divide-[var(--color-bk-line-soft)] overflow-hidden sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          {TRUST.map((t, i) => {
-            const on = active === i;
-            const note = SCHEMES[i % SCHEMES.length];
-            const noteTheme = deriveTheme(note.value);
-            return (
-              <button
-                key={t.title}
-                type="button"
-                onMouseEnter={() => setActive(i)}
-                onFocus={() => setActive(i)}
-                aria-pressed={on}
-                className={cn(
-                  "group flex items-center gap-4 p-6 text-left transition-colors",
-                  on ? "bg-[var(--color-bk-canvas)]" : "hover:bg-[var(--color-bk-canvas)]"
-                )}
-              >
-                <div
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(.22,.61,.36,1)] group-hover:-translate-y-0.5"
-                  style={{
-                    background: on ? note.value : noteTheme.accentTint,
-                    color: on ? "#ffffff" : note.value,
-                  }}
-                >
-                  <t.icon className="h-5 w-5" strokeWidth={1.9} />
-                </div>
-                <div>
-                  <div className="text-[14px] font-semibold text-[var(--color-bk-ink)]">{t.title}</div>
-                  <div className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--color-bk-muted)]">{t.desc}</div>
-                </div>
-              </button>
-            );
-          })}
-        </Card>
-      </Reveal>
-
-      {/* The graphic that answers whichever claim is hovered — all three sit in
-          a horizontal track that slides to the active one, carousel-style. The
-          track height holds to the tallest graphic so nothing jumps. */}
-      <Reveal className="mt-4">
-        <Card className="relative overflow-hidden">
-          <div
-            className="flex transition-transform duration-[550ms] ease-[cubic-bezier(.32,.72,0,1)] motion-reduce:transition-none"
-            style={{ transform: `translateX(-${active * 100}%)` }}
+    <section
+      id="how-it-works"
+      ref={ref}
+      className="self-stretch -mx-7 mt-24 sm:mt-36 scroll-mt-14 border-y border-[var(--color-bk-line-soft)] bg-[var(--color-bk-surface)] px-7 pt-14 sm:pt-20 pb-28 sm:pb-40"
+    >
+      <div className="mx-auto w-full max-w-[1120px]">
+        <Reveal className="max-w-xl">
+          <CardLabel>How it works</CardLabel>
+          <h2
+            className="mt-3 text-[clamp(26px,3.4vw,38px)] tracking-[-0.02em] leading-tight text-balance"
+            style={{ ...SERIF, fontWeight: 500 }}
           >
-            {TRUST_GRAPHICS.map((Graphic, i) => (
-              <div
-                key={i}
-                aria-hidden={active !== i}
-                className="flex w-full shrink-0 items-center p-6 sm:p-10"
-              >
-                <Graphic theme={deriveTheme(SCHEMES[i % SCHEMES.length].value)} />
-              </div>
-            ))}
+            Three steps.{" "}
+            <em className="text-[var(--color-primary)]" style={{ fontStyle: "italic" }}>
+              That&apos;s the whole system.
+            </em>
+          </h2>
+        </Reveal>
+
+        {/* Guided tour — vertical steps on the left drive the graphic panel on
+            the right (they stack below lg). The active step carries a thin fill
+            that sweeps in time with the auto-advance, so the rotation reads as
+            a tour, not content jumping on its own. Hovering pauses the tour;
+            it picks back up from the current step once the pointer leaves. */}
+        <div
+          className="mt-8 grid grid-cols-[minmax(0,1fr)] items-center gap-4 sm:mt-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] lg:items-stretch lg:gap-12"
+          onMouseLeave={() => setPaused(false)}
+        >
+          {/* Below lg the steps sit in one horizontal row of compact tabs
+              (descriptions fold away — the graphic tells the story); at lg they
+              become the full vertical list beside the panel. */}
+          <div className="grid grid-cols-3 gap-2 lg:flex lg:flex-col lg:justify-between">
+            {STEPS.map((s, i) => {
+              const on = active === i;
+              const note = SCHEMES[i % SCHEMES.length];
+              const noteTheme = deriveTheme(note.value);
+              return (
+                <Reveal key={s.title} delay={i * 90} className="h-full">
+                  <button
+                    type="button"
+                    onMouseEnter={() => pick(i)}
+                    onFocus={() => pick(i)}
+                    onClick={() => pick(i)}
+                    aria-pressed={on}
+                    className={cn(
+                      "group relative flex h-full w-full flex-col items-center gap-2.5 rounded-2xl border p-3 pb-5 text-center transition-colors lg:flex-row lg:items-start lg:gap-4 lg:p-5 lg:pb-6 lg:text-left",
+                      on
+                        ? "border-[var(--color-bk-line)] bg-[var(--color-bk-canvas)]"
+                        : "border-transparent hover:bg-[var(--color-bk-canvas)]/60"
+                    )}
+                  >
+                    <div
+                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl transition-[background-color,color,transform] duration-200 ease-[cubic-bezier(.22,.61,.36,1)] group-hover:-translate-y-0.5"
+                      style={{
+                        background: on ? note.value : noteTheme.accentTint,
+                        color: on ? "#ffffff" : note.value,
+                      }}
+                    >
+                      <s.icon className="h-5 w-5" strokeWidth={1.9} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-bk-faint)] lg:text-[10.5px]">
+                        Step {i + 1}
+                      </div>
+                      <div className="mt-0.5 text-[13px] font-semibold leading-snug text-[var(--color-bk-ink)] lg:mt-1 lg:text-[14.5px]">
+                        {s.title}
+                      </div>
+                      <div className="mt-0.5 hidden text-[12.5px] leading-relaxed text-[var(--color-bk-muted)] lg:block">
+                        {s.desc}
+                      </div>
+                    </div>
+                    {on && inView && !paused && (
+                      <span
+                        aria-hidden
+                        className="bk-step-track absolute inset-x-4 bottom-2 h-[2.5px] overflow-hidden rounded-full bg-[var(--color-bk-line-soft)] lg:inset-x-5 lg:bottom-2.5"
+                      >
+                        <span
+                          key={active}
+                          className="bk-step-fill block h-full rounded-full"
+                          style={{ background: note.value }}
+                        />
+                      </span>
+                    )}
+                  </button>
+                </Reveal>
+              );
+            })}
           </div>
-        </Card>
-      </Reveal>
+
+          {/* The graphic that answers the active step — all three sit in a
+              horizontal track that slides to the active one, carousel-style.
+              The track height holds to the tallest graphic so nothing jumps. */}
+          <Reveal delay={150}>
+            <div className="relative overflow-hidden rounded-[20px] border border-[var(--color-bk-line)] bg-[var(--color-bk-canvas)]">
+              <div
+                className="flex transition-transform duration-[550ms] ease-[cubic-bezier(.32,.72,0,1)] motion-reduce:transition-none"
+                style={{ transform: `translateX(-${active * 100}%)` }}
+              >
+                {STEP_GRAPHICS.map((Graphic, i) => (
+                  <div
+                    key={i}
+                    aria-hidden={active !== i}
+                    className="flex w-full shrink-0 items-center p-6 sm:p-8"
+                  >
+                    <Graphic theme={deriveTheme(SCHEMES[i % SCHEMES.length].value)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+        </div>
+
+        {/* Trust, in one quiet line — the privacy story without a whole section. */}
+        <Reveal className="mt-8">
+          <div className="flex flex-wrap items-center justify-center gap-x-7 gap-y-2 text-[12px] font-medium text-[var(--color-bk-faint)]">
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-3.5 w-3.5" strokeWidth={2} />
+              Bank-grade encryption
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Lock className="h-3.5 w-3.5" strokeWidth={2} />
+              Private by default
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Landmark className="h-3.5 w-3.5" strokeWidth={2} />
+              Bank sync by Plaid
+            </span>
+          </div>
+        </Reveal>
+      </div>
     </section>
   );
 }
 
-/** The closing crescendo — a near-full-height panel whose multi-colour banknote
-    "sea" surges in as you scroll to it (waves rise + intensify, receding on
-    scroll-up), with the palette echoed as a foreground dot row so the coloured
-    field reads as intentional. Freezes full + static under reduced motion. */
+/** The closing finale — the layer the page sheet lifts off of (it's fixed
+    behind the sheet; LandingView owns the curtain structure). The deep
+    evergreen brand panel, oversized and minimal: engraved line-work, palette
+    dots, one huge serif line, one sentence, a light CTA. The footer lives here
+    too, at the bottom of the revealed layer. */
 function ClosingBand() {
-  // One-shot: the sea holds its "out" state until the band is fully in view,
-  // then plays its entrance once (latched, never rewinds). The ref sits on the
-  // sea layer, which is `inset-0` on the Card, so its box == the band's box.
-  const { ref, shown } = useFullyVisible<HTMLDivElement>();
-
   return (
-    <Reveal className="w-full max-w-[1120px] mt-24">
-      <Card className="relative flex min-h-[56vh] flex-col items-center justify-center overflow-hidden px-8 pt-16 pb-10 sm:pt-20 sm:pb-14 text-center">
-        {/* The banknote sea — every line a different hue, gently warped like
-            moving water. Once the band is scrolled into view, two layers play a
-            one-shot entrance: even rows slide in from the left, odd rows from the
-            right, interleaving into one sharp field as the whole thing fades up.
-            Transitions are suppressed under reduced motion. */}
-        <div
-          ref={ref}
-          aria-hidden
-          className="pointer-events-none absolute inset-0 transition-opacity duration-[1800ms] ease-out motion-reduce:transition-none"
-          style={{ opacity: shown ? 1 : 0 }}
-        >
-          {/* even rows enter from the left */}
-          <div
-            className="absolute inset-0 transition-transform duration-[2200ms] ease-[cubic-bezier(.22,.61,.36,1)] motion-reduce:transition-none"
-            style={{ transform: shown ? "translateX(0)" : "translateX(-60%)" }}
-          >
-            <GuillocheFlow
-              accent={BRAND_THEME.accent}
-              accentDeep={BRAND_THEME.accentDeep}
-              palette={SCHEMES.map((s) => s.value)}
-              rows="even"
-              fade="radial"
-              opacity={0.26}
-              warp={4}
-            />
+    <>
+      {/* engraved line-work — the dark panel's signature, same as the plans band */}
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <GuillocheFlow accent={PANEL_LINE} accentDeep={PANEL_LINE_DEEP} opacity={0.12} fade="none" speed={4} />
+      </div>
+
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-7">
+        <section className="w-full max-w-[1120px] text-center">
+          <div className="flex items-center justify-center gap-2.5" aria-hidden>
+            {SCHEMES.map((s) => (
+              <span key={s.name} className="h-2.5 w-2.5 rounded-full" style={{ background: s.value }} />
+            ))}
           </div>
-          {/* odd rows enter from the right — interleave with the even rows into
-              one sharp field (no overlapping duplicates) */}
-          <div
-            className="absolute inset-0 transition-transform duration-[2200ms] ease-[cubic-bezier(.22,.61,.36,1)] motion-reduce:transition-none"
-            style={{ transform: shown ? "translateX(0)" : "translateX(60%)" }}
+          <h2
+            className="mx-auto mt-8 max-w-4xl text-[clamp(40px,6vw,72px)] tracking-[-0.03em] leading-[1.05] text-balance"
+            style={{ ...SERIF, fontWeight: 500, color: PANEL_INK }}
           >
-            <GuillocheFlow
-              accent={BRAND_THEME.accent}
-              accentDeep={BRAND_THEME.accentDeep}
-              palette={SCHEMES.map((s) => s.value)}
-              rows="odd"
-              fade="radial"
-              opacity={0.26}
-              warp={4}
-            />
+            Forget the spreadsheets,{" "}
+            <em style={{ fontStyle: "italic", color: PANEL_ACCENT }}>we&apos;ll handle the setup.</em>
+          </h2>
+          <div className="mt-10 flex justify-center">
+            <Link
+              href="/register"
+              className={cn(
+                CTA_PRIMARY,
+                "h-14 px-8 text-[16px] bg-[oklch(97%_0.014_95)] text-[oklch(26%_0.055_155)]"
+              )}
+            >
+              Start for free <ArrowRight className="bk-lp-arrow w-4 h-4" />
+            </Link>
+          </div>
+          <p className="mt-4 text-[12.5px] font-medium" style={{ color: "oklch(86% 0.03 150 / 0.65)" }}>
+            Free to get started · No credit card required
+          </p>
+        </section>
+      </div>
+
+      <footer className="relative border-t border-[oklch(95%_0.03_150_/_0.16)] py-7">
+        <div className="max-w-[1120px] mx-auto px-7 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2 text-[12px] text-[oklch(86%_0.03_150_/_0.75)]">
+            <LogoMark size={16} />
+            Bulga
+          </div>
+          <nav className="flex items-center gap-5 text-[12px]" aria-label="Footer">
+            {NAV_LINKS.map((l) => (
+              <a
+                key={l.href}
+                href={l.href}
+                onClick={scrollToId}
+                className="text-[oklch(86%_0.03_150_/_0.75)] transition-colors hover:text-[oklch(97%_0.014_95)]"
+              >
+                {l.label}
+              </a>
+            ))}
+            <Link
+              href="/login"
+              className="text-[oklch(86%_0.03_150_/_0.75)] transition-colors hover:text-[oklch(97%_0.014_95)]"
+            >
+              Sign in
+            </Link>
+          </nav>
+          {/* The Canadian banknote palette — the brand's colour through-line. */}
+          <div className="flex items-center gap-2" aria-hidden>
+            {SCHEMES.map((s) => (
+              <span
+                key={s.name}
+                title={s.name}
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ background: s.value }}
+              />
+            ))}
           </div>
         </div>
-        {/* Verified-seal stamp (13/4/4, the kit's verification ✓). The
-            rosette revolves imperceptibly — engine-turned. */}
-        <div className="relative w-[76px] h-[76px] mx-auto mb-7">
-          <GuillocheSeal
-            accent={BRAND_THEME.accent}
-            accentDeep={BRAND_THEME.accentDeep}
-            petals={13}
-            inner={4}
-            pen={4}
-            label="✓"
-            spin
-          />
-        </div>
-        <h2
-          className="relative text-[clamp(28px,4vw,42px)] tracking-[-0.02em] leading-tight text-balance"
-          style={{ ...SERIF, fontWeight: 500 }}
-        >
-          Less spreadsheet,{" "}
-          <em className="text-[var(--color-primary)]" style={{ fontStyle: "italic" }}>
-            more balance.
-          </em>
-        </h2>
-        <p className="relative text-[15px] text-[var(--color-bk-muted)] max-w-sm mx-auto mt-4 mb-8">
-          Connect your accounts, set your plan, and let Bulga track every dollar in the
-          background — you just live your life.
-        </p>
-        <div className="relative flex justify-center">
-          <Link href="/register" className={CTA_PRIMARY}>
-            Start for free <ArrowRight className="bk-lp-arrow w-4 h-4" />
-          </Link>
-        </div>
-      </Card>
-    </Reveal>
+      </footer>
+    </>
   );
 }
 
@@ -1167,6 +1103,10 @@ export function LandingView() {
 
   return (
     <div className="bk-paper min-h-screen flex flex-col bg-[var(--color-bk-canvas)] text-[var(--color-bk-ink)] overflow-x-hidden">
+      {/* The page "sheet" — everything except the finale. The closing layer is
+          fixed behind it (see below); the runway spacer after this sheet gives
+          the scroll distance that lifts the sheet off the finale, curtain-style. */}
+      <div className="relative z-10 flex min-h-screen flex-col bg-[var(--color-bk-canvas)] shadow-[0_36px_72px_-24px_oklch(20%_0.03_80/0.35)]">
       {/* Nav — sticky; gains a hairline + blur once the page scrolls. */}
       <nav
         className={cn(
@@ -1176,20 +1116,44 @@ export function LandingView() {
             : "border-b border-transparent"
         )}
       >
-        <div className="flex items-center justify-between px-7 py-4 max-w-[1120px] mx-auto w-full">
+        <div className="relative flex items-center justify-between px-7 py-4 max-w-[1120px] mx-auto w-full">
           <Link href="/" aria-label="Bulga home" className="inline-flex items-center">
             <LogoMark size={52} />
           </Link>
+          {/* section links — centered independently of the logo/auth widths */}
+          <div className="pointer-events-none absolute inset-x-0 hidden justify-center md:flex" aria-hidden={false}>
+            <div className="pointer-events-auto flex items-center gap-1">
+              {NAV_LINKS.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={scrollToId}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "xs" }),
+                    "px-3.5 text-[13px] font-medium text-[var(--color-bk-muted)] hover:text-[var(--color-bk-ink)]"
+                  )}
+                >
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Link
               href="/login"
-              className="text-[13px] font-semibold text-[var(--color-bk-muted)] px-4 py-2 rounded-full hover:text-[var(--color-bk-ink)] transition-colors"
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-auto px-4 py-2 text-[13px]"
+              )}
             >
               Sign in
             </Link>
             <Link
               href="/register"
-              className="inline-flex items-center text-[13px] font-semibold text-white bg-[var(--color-primary)] px-4 py-2 rounded-full hover:brightness-[1.06] transition-[filter] shadow-[0_1px_2px_oklch(40%_0.1_158/0.3)]"
+              className={cn(
+                buttonVariants({ variant: "default" }),
+                "h-auto px-4 py-2 text-[13px]"
+              )}
             >
               Sign up
             </Link>
@@ -1199,7 +1163,7 @@ export function LandingView() {
 
       <main className="flex-1 flex flex-col items-center px-7 pb-28">
         {/* ── Hero ── */}
-        <section className="relative w-full max-w-[1120px] pt-20 sm:pt-32">
+        <section className="relative w-full max-w-[1120px] pt-12 sm:pt-24">
           {/* Gentle drifting banknote line-work behind the hero — freezes under
               prefers-reduced-motion. */}
           <div className="absolute -inset-x-10 -top-10 bottom-0" aria-hidden>
@@ -1227,17 +1191,26 @@ export function LandingView() {
                 className="bk-enter text-[17px] text-[var(--color-bk-muted)] leading-relaxed max-w-md mx-auto lg:mx-0 mb-8"
                 style={{ animationDelay: "220ms" }}
               >
-                Connect your bank, split every dollar across Needs, Wants, and Savings,
-                and fund your goals — Bulga does the math so you don&apos;t have to.
+                Split every dollar across Needs, Wants, and Savings. Bulga does the
+                math so you don&apos;t have to.
               </p>
               <div
                 className="bk-enter flex flex-wrap items-center justify-center lg:justify-start gap-3"
                 style={{ animationDelay: "300ms" }}
               >
-                <Link href="/login" className={CTA_PRIMARY}>
+                <Link href="/register" className={CTA_PRIMARY}>
                   Start saving <ArrowRight className="bk-lp-arrow w-4 h-4" />
                 </Link>
+                <a href="#how-it-works" onClick={scrollToId} className={CTA_SECONDARY}>
+                  See how it works
+                </a>
               </div>
+              <p
+                className="bk-enter mt-4 text-[12.5px] font-medium text-[var(--color-bk-faint)]"
+                style={{ animationDelay: "360ms" }}
+              >
+                Free to get started · No credit card required
+              </p>
             </div>
 
             {/* live preview */}
@@ -1248,46 +1221,35 @@ export function LandingView() {
 
         </section>
 
-        {/* ── Trust strip — three claims that drive a reactive graphic ── */}
-        <TrustSection />
+        {/* ── How it works — full-bleed band, three steps + reactive graphic ── */}
+        <HowItWorksSection />
 
-        {/* ── Plan showpiece (deep evergreen band) ── */}
-        <section className="w-full max-w-[1120px] mt-24">
-          <Reveal>
-            <PlanShowpiece />
-          </Reveal>
+        {/* ── Plans — the deep evergreen band, with the real plans as tabs.
+            Pulled up over the "How it works" band's bottom edge so the dark
+            panel straddles the section boundary — depth instead of a hard cut. */}
+        <section id="plans" className="relative z-10 w-full max-w-[1120px] -mt-14 sm:-mt-24 scroll-mt-24">
+          {/* No <Reveal> here — the settle-on-scroll entrance owns this band. */}
+          <PlanShowpiece />
         </section>
 
         {/* ── Features — banknote feature plates + reactive headline ── */}
         <FeaturesSection />
 
-        {/* ── Budget plans (real product data) ── */}
-        <PlanSection />
-
-        {/* ── Closing band — the final crescendo (see <ClosingBand>) ── */}
-        <ClosingBand />
       </main>
+      </div>
 
-      {/* Footer */}
-      <footer className="border-t border-[var(--color-bk-line-soft)] py-7">
-        <div className="max-w-[1120px] mx-auto px-7 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-[12px] text-[var(--color-bk-faint)]">
-            <LogoMark size={16} />
-            Bulga — personal budgeting, in balance.
-          </div>
-          {/* The Canadian banknote palette — the brand's colour through-line. */}
-          <div className="flex items-center gap-2" aria-hidden>
-            {SCHEMES.map((s) => (
-              <span
-                key={s.name}
-                title={s.name}
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ background: s.value }}
-              />
-            ))}
-          </div>
-        </div>
-      </footer>
+      {/* Scroll runway — same height as the fixed finale below, so the last
+          stretch of scroll lifts the page sheet off the closing layer. */}
+      <div aria-hidden className="h-[85svh] min-h-[560px]" />
+
+      {/* ── Closing finale — pinned behind the sheet, revealed by scroll. The
+          deep evergreen brand panel: the page lifts to end on Bulga's colour. ── */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-0 flex h-[85svh] min-h-[560px] flex-col overflow-hidden"
+        style={{ background: PANEL_BG }}
+      >
+        <ClosingBand />
+      </div>
     </div>
   );
 }

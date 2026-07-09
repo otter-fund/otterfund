@@ -71,6 +71,7 @@ function LoginForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             autoComplete="email"
+            autoFocus
             required
           />
         </Field>
@@ -101,7 +102,7 @@ function LoginForm() {
         <Button
           type="submit"
           disabled={loading}
-          className="h-11 w-full rounded-full text-sm font-semibold"
+          className="w-full font-semibold"
         >
           {loading ? "Signing in…" : "Sign in"}
         </Button>

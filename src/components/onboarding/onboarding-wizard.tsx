@@ -88,7 +88,7 @@ const MODE_OPTIONS: { mode: Mode; icon: LucideIcon; title: string; desc: string;
     mode: "auto",
     icon: Upload,
     title: "Upload statements",
-    desc: "Add PDF or CSV statements — AI extracts your accounts and expenses.",
+    desc: "Add PDF or CSV statements. AI extracts your accounts and expenses.",
   },
   {
     mode: "manual",
@@ -367,7 +367,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="bk-enter">
                 <h2 className={HEADING_CLASS}>How would you like to start?</h2>
                 <p className="mb-7 text-sm text-[var(--color-bk-muted)]">
-                  Pick a path — you can switch anytime.
+                  Pick a path. You can switch anytime.
                 </p>
                 <div className="flex flex-col gap-3">
                   {MODE_OPTIONS.map((o) => (
@@ -541,7 +541,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
               <div className="space-y-6 sm:space-y-7" key="connect-setup">
                 <div>
                   <h2 className={HEADING_CLASS}>A few basics</h2>
-                  <p className="text-sm text-[var(--color-bk-muted)]">Choose a budget plan and your currency — we&apos;ll read your income straight from your bank.</p>
+                  <p className="text-sm text-[var(--color-bk-muted)]">Choose a budget plan and your currency. We&apos;ll read your income straight from your bank.</p>
                 </div>
                 <div>
                   <label className={LABEL_CLASS}>Budget plan</label>
@@ -568,14 +568,14 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                   <>
                     <div className="flex items-center gap-3 p-4 rounded-2xl border border-[var(--color-bk-line)] bg-[var(--accent)]">
                       <Check className="w-5 h-5 text-[var(--color-primary)]" />
-                      <div className="text-sm font-semibold text-[var(--color-bk-ink)]">Bank connected — your accounts are importing.</div>
+                      <div className="text-sm font-semibold text-[var(--color-bk-ink)]">Bank connected. Your accounts are importing.</div>
                     </div>
                     <div>
                       <label className={LABEL_CLASS}>Detected monthly income</label>
                       <TextInput type="number" value={monthlyIncome} onChange={(e) => setMonthlyIncome(e.target.value)} placeholder="0" min="0" step="100" />
                       <p className="text-xs text-[var(--color-bk-muted)] mt-1.5">
                         {Number(monthlyIncome) > 0
-                          ? "Estimated from the deposits we just imported — edit it if it looks off."
+                          ? "Estimated from the deposits we just imported. Edit it if it looks off."
                           : incomeDetected
                             ? "We couldn't detect income from your deposits yet. Enter it here, or adjust later in Settings."
                             : "Reading your deposits…"}
@@ -603,8 +603,8 @@ export function OnboardingWizard({ userName }: { userName: string }) {
 
                 <p className="text-xs text-[var(--color-bk-muted)]">
                   {bankConnected
-                    ? "You're all set — click Get Started to finish."
-                    : "Not ready? Skip for now — you can connect anytime from Settings → Connections."}
+                    ? "You're all set. Click Get Started to finish."
+                    : "Not ready? Skip for now. You can connect anytime from Settings → Connections."}
                 </p>
               </div>
             )}
@@ -620,7 +620,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                 <div>
                   <h2 className={HEADING_CLASS}>Upload Statements</h2>
                   <p className="text-sm text-[var(--color-bk-muted)]">
-                    Drop your bank statements (CSV or PDF). Upload as many as you like — AI will extract accounts, recurring expenses, and categorize transactions.
+                    Drop your bank statements (CSV or PDF). Upload as many as you like, and AI will extract accounts, recurring expenses, and categorize transactions.
                   </p>
                 </div>
 
@@ -639,7 +639,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                 >
                   <Upload className="w-8 h-8 mx-auto text-[var(--color-bk-muted)] mb-3" />
                   <p className="text-sm font-semibold text-[var(--color-bk-ink)]">Drop CSV or PDF files here</p>
-                  <p className="text-xs text-[var(--color-bk-muted)] mt-1">or click to browse — upload multiple files</p>
+                  <p className="text-xs text-[var(--color-bk-muted)] mt-1">or click to browse (multiple files supported)</p>
                   <input
                     id="auto-file-input"
                     type="file"

@@ -19,7 +19,7 @@ const hanken = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Bulga — Your money, in balance",
+  title: "Bulga · Your money, in balance",
   description: "Calm, confident budgeting that does the math so you don't have to.",
 };
 

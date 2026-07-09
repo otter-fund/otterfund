@@ -485,7 +485,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                   <label className={fieldLabelCls}>Budget plan</label>
                   <BudgetPlanPicker value={planId} onChange={changePlan} accent={accent} />
                   <p className="mt-2 text-[12px] text-[var(--color-bk-muted)]">
-                    Splits your income across needs, wants, and savings — powers the Spending page. Switching recomputes this month&apos;s category budgets.
+                    Splits your income across needs, wants, and savings, and powers the Spending page. Switching recomputes this month&apos;s category budgets.
                   </p>
                 </div>
               </section>
@@ -683,7 +683,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                   </span>
                 )}
                 {saveStatus === "error" && (
-                  <span className="text-[var(--color-bk-clay)]">Couldn’t save — check your connection.</span>
+                  <span className="text-[var(--color-bk-clay)]">Couldn’t save. Check your connection.</span>
                 )}
               </div>
             )}
