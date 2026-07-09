@@ -47,3 +47,6 @@ next-env.d.ts
 # supabase CLI local state
 supabase/.temp
 supabase/.branches
+
+# email templates + assets (pasted into Supabase / uploaded to Storage; not app code)
+/emails
