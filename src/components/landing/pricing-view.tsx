@@ -15,6 +15,7 @@ import { ArrowRight, Check, Minus } from "lucide-react";
 import { CardLabel } from "@/components/otterfund/card";
 import { GuillocheFlow } from "@/components/otterfund/guilloche-flow";
 import { LogoMark } from "@/components/otterfund/logo";
+import { Wordmark } from "@/components/otterfund/wordmark";
 import { BRAND_THEME, SCHEMES } from "@/components/otterfund/theme";
 import { PANEL_ACCENT, PANEL_BG, PANEL_INK, PANEL_LINE, PANEL_LINE_DEEP } from "@/components/otterfund/brand-panel";
 import { buttonVariants } from "@/components/ui/button";
@@ -84,7 +85,7 @@ const TIERS: Tier[] = [
   {
     id: "pro",
     name: "Pro",
-    tagline: "The full picture — investments and all.",
+    tagline: "The full picture, investments and all.",
     monthly: 20,
     yearly: 150,
     cta: "Choose Pro",
@@ -138,7 +139,7 @@ function PriceBlock({ tier, period }: { tier: Tier; period: BillingPeriod }) {
           </span>
         ) : (
           <span className="text-[var(--color-of-faint)]">
-            or {money(tier.yearly)}/yr — save {savingsPct(tier)}%
+            or {money(tier.yearly)}/yr, save {savingsPct(tier)}%
           </span>
         )}
       </div>
@@ -339,7 +340,7 @@ export function PricingView() {
         <div className="mx-auto flex max-w-[1120px] flex-col items-center justify-between gap-4 px-7 sm:flex-row">
           <div className="flex items-center gap-2 text-[12px] text-[var(--color-of-muted)]">
             <LogoMark size={16} />
-            otterfund
+            <Wordmark />
           </div>
           <nav className="flex items-center gap-5 text-[12px]" aria-label="Footer">
             <Link href="/" className="text-[var(--color-of-muted)] transition-colors hover:text-[var(--color-of-ink)]">

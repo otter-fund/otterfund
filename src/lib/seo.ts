@@ -126,7 +126,7 @@ export interface FaqItem {
 export const FAQ_ITEMS: FaqItem[] = [
   {
     q: "What is otterfund?",
-    a: "otterfund is a free budgeting app that gives you one calm, confident picture of your money. It splits every dollar of income across Needs, Wants, and Savings, sorts your spending into clean categories automatically, and funds your savings goals by priority — with an AI advisor that turns your own numbers into plain-language insights.",
+    a: "otterfund is a free budgeting app that gives you one calm, confident picture of your money. It splits every dollar of income across Needs, Wants, and Savings, sorts your spending into clean categories automatically, and funds your savings goals by priority, with an AI advisor that turns your own numbers into plain-language insights.",
   },
   {
     q: "How do I start budgeting with otterfund?",
@@ -134,7 +134,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "How do I save money every month?",
-    a: "otterfund routes a set share of every paycheck into your Savings bucket, then splits it across your goals by priority — an emergency fund, a trip, a down payment. Because saving happens automatically before you spend, you save consistently each month without having to think about it.",
+    a: "otterfund routes a set share of every paycheck into your Savings bucket, then splits it across your goals by priority: an emergency fund, a trip, a down payment. Because saving happens automatically before you spend, you save consistently each month without having to think about it.",
   },
   {
     q: "How do I allocate my money across needs, wants, and savings?",
@@ -142,11 +142,11 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "Is otterfund free?",
-    a: "Yes. otterfund is free to get started with no credit card required — unlimited manual accounts and the full Needs / Wants / Savings budget. Paid plans add automatic bank sync, the AI financial advisor, and investment tracking when you want them.",
+    a: "Yes. otterfund is free to get started with no credit card required: unlimited manual accounts and the full Needs / Wants / Savings budget. Paid plans add automatic bank sync, the AI financial advisor, and investment tracking when you want them.",
   },
   {
     q: "Does otterfund use AI?",
-    a: "Yes. otterfund's AI advisor reads your own spending and savings patterns and offers quiet, plain-language nudges — never lectures. It helps you see where your money goes, spot wins worth keeping, and stay on track toward your goals.",
+    a: "Yes. otterfund's AI advisor reads your own spending and savings patterns and offers quiet, plain-language nudges, never lectures. It helps you see where your money goes, spot wins worth keeping, and stay on track toward your goals.",
   },
   {
     q: "Is my financial data secure?",
@@ -154,7 +154,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   },
   {
     q: "What budgeting methods does otterfund support?",
-    a: "otterfund supports popular budgeting frameworks including the 50/30/20 rule, 70/20/10, 60/20/20, and an aggressive saver split — all built on the Needs, Wants, and Savings model so you can find the plan that fits your income.",
+    a: "otterfund supports popular budgeting frameworks including the 50/30/20 rule, 70/20/10, 60/20/20, and an aggressive saver split, all built on the Needs, Wants, and Savings model so you can find the plan that fits your income.",
   },
 ];
 
@@ -226,7 +226,7 @@ export function pricingOffersLd() {
   return [
     { "@type": "Offer", name: "Free", price: "0", priceCurrency: "USD", description: "Everything you need to start budgeting." },
     { "@type": "Offer", name: "Standard", price: "15", priceCurrency: "USD", description: "Automatic bank sync and an AI advisor." },
-    { "@type": "Offer", name: "Pro", price: "20", priceCurrency: "USD", description: "The full picture — investments and all." },
+    { "@type": "Offer", name: "Pro", price: "20", priceCurrency: "USD", description: "The full picture: investments and all." },
   ];
 }
 

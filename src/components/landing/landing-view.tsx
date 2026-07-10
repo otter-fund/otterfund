@@ -12,7 +12,7 @@
 // to a calm static layout under prefers-reduced-motion (CSS in globals.css,
 // sections "of-enter" / "Landing").
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -36,7 +36,9 @@ import { GuillocheFlow } from "@/components/otterfund/guilloche-flow";
 import { DonutChart } from "@/components/otterfund/donut-chart";
 import { ProgressRing } from "@/components/otterfund/progress";
 import { LogoMark, OtterFace } from "@/components/otterfund/logo";
+import { Wordmark } from "@/components/otterfund/wordmark";
 import { BRAND_THEME, SCHEMES, deriveTheme, hueOf, type OtterfundTheme } from "@/components/otterfund/theme";
+import { LEGAL } from "@/lib/legal";
 import {
   PANEL_ACCENT,
   PANEL_BG,
@@ -205,18 +207,6 @@ function useSettleOnScroll<T extends HTMLElement>(radius = 28, radiusFrom = 12) 
     };
   }, [radius, radiusFrom]);
   return ref;
-}
-
-/** True once the page has scrolled past `y` — drives the nav's blur/hairline. */
-function useScrolled(y = 8) {
-  const [scrolled, setScrolled] = useState(false);
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > y);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, [y]);
-  return scrolled;
 }
 
 /** Eased tween that animates from its *previous* value to `target` whenever the
@@ -733,7 +723,7 @@ function PlanShowpiece() {
             className="text-[15px] leading-relaxed"
             style={{ color: note.muted, transition: "color .6s ease" }}
           >
-            Pick a proven rule. otterfund tracks how each month lands against it.
+            Pick a proven rule. <Wordmark />{" "}tracks how each month lands against it.
           </p>
 
           {/* plan tabs — each wears its banknote colour; hovering (or the 10s
@@ -884,7 +874,7 @@ function FeaturesSection() {
   return (
     <section id="features" ref={ref} className="mt-24 sm:mt-32 max-w-[1120px] w-full scroll-mt-24">
       <Reveal className="max-w-2xl">
-        <CardLabel>Why otterfund</CardLabel>
+        <CardLabel>Why <Wordmark /></CardLabel>
         <h2
           className="text-[clamp(26px,3.4vw,38px)] tracking-[-0.02em] leading-tight text-balance mt-3"
           style={{ ...SERIF, fontWeight: 500 }}
@@ -899,7 +889,7 @@ function FeaturesSection() {
           </em>
         </h2>
         <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-of-muted)]">
-          Everything otterfund does adds up to one confident picture of your money.
+          Everything <Wordmark />{" "}does adds up to one confident picture of your money.
         </p>
       </Reveal>
 
@@ -1325,6 +1315,27 @@ function HowItWorksSection() {
     Needs/Wants/Savings, is it free, does it use AI, is it secure. Native
     <details> accordions (accessible, JS-free, fully crawlable) so the content is
     indexed as-is; it mirrors the FAQPage JSON-LD emitted on the home route. */
+/** FAQ copy lives in FAQ_ITEMS as plain strings because those same strings
+    are emitted as FAQPage JSON-LD (faqLd), which must stay raw text for search
+    engines. Here we render the brand name as a <Wordmark> for the VISIBLE
+    accordion only — split on the literal, drop a <Wordmark> between the pieces.
+    Surrounding spaces live inside the string segments, so no bare-JSX-space
+    trimming to worry about. */
+function withWordmark(text: string) {
+  // Split on the whole word only (\b guards against "otterfunds" firing
+  // mid-word) and case-insensitively (a sentence-leading "Otterfund" still
+  // becomes the wordmark, which always renders lowercase). <Wordmark> supplies
+  // its own text, so the matched token is dropped; surrounding spaces live in
+  // the string segments, so spacing is preserved.
+  const parts = text.split(/\botterfund\b/i);
+  return parts.map((part, i) => (
+    <Fragment key={i}>
+      {part}
+      {i < parts.length - 1 && <Wordmark />}
+    </Fragment>
+  ));
+}
+
 function FaqSection() {
   return (
     <section id="faq" className="mt-24 sm:mt-32 w-full max-w-[820px] scroll-mt-24">
@@ -1341,26 +1352,32 @@ function FaqSection() {
         </h2>
         <p className="mt-4 text-[15px] leading-relaxed text-[var(--color-of-muted)]">
           How to start budgeting, save money every month, and allocate your income
-          across Needs, Wants, and Savings — with otterfund doing the math.
+          across Needs, Wants, and Savings, with <Wordmark />{" "}doing the math.
         </p>
       </Reveal>
 
-      <div className="mt-8 grid gap-2.5 sm:mt-10">
+      <div className="mt-8 grid gap-2 sm:mt-10 sm:gap-3">
         {FAQ_ITEMS.map((item, i) => (
           <Reveal key={item.q} delay={i * 60}>
-            <details className="group rounded-[20px] border border-[var(--color-of-line)] bg-[var(--color-of-surface)] px-5 py-4 sm:px-6 sm:py-5">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
-                <h3 className="text-[15px] font-semibold text-[var(--color-of-ink)] sm:text-[16px]">
-                  {item.q}
+            {/* shared name → native single-open accordion: opening one closes
+                the rest (no JS), the standard FAQ pattern. */}
+            <details name="faq" className="of-faq group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden sm:gap-4 sm:px-6 sm:py-5">
+                <h3 className="text-[14.5px] font-semibold text-[var(--color-of-ink)] transition-colors duration-200 group-hover:text-[var(--color-primary)] group-open:text-[var(--color-primary)] sm:text-[16px]">
+                  {withWordmark(item.q)}
                 </h3>
-                <ChevronDown
-                  className="h-4 w-4 shrink-0 text-[var(--color-of-faint)] transition-transform duration-200 group-open:rotate-180"
-                  strokeWidth={2}
+                <span
+                  className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-[var(--color-of-canvas)] text-[var(--color-of-muted)] transition-all duration-200 group-open:bg-[var(--color-primary)] group-open:text-[var(--primary-foreground)] sm:h-7 sm:w-7"
                   aria-hidden
-                />
+                >
+                  <ChevronDown
+                    className="h-[14px] w-[14px] transition-transform duration-300 group-open:rotate-180 sm:h-[15px] sm:w-[15px]"
+                    strokeWidth={2.25}
+                  />
+                </span>
               </summary>
-              <p className="mt-3 text-[14px] leading-relaxed text-[var(--color-of-muted)]">
-                {item.a}
+              <p className="px-4 pb-4 pr-12 text-[13.5px] leading-relaxed text-[var(--color-of-muted)] sm:px-6 sm:pb-6 sm:pr-16 sm:text-[14px]">
+                {withWordmark(item.a)}
               </p>
             </details>
           </Reveal>
@@ -1418,25 +1435,9 @@ function ClosingBand() {
         <div className="max-w-[1120px] mx-auto px-7 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-[12px] text-[oklch(86%_0.03_150_/_0.75)]">
             <LogoMark size={16} />
-            otterfund
+            <Wordmark />
           </div>
           <nav className="flex items-center gap-5 text-[12px]" aria-label="Footer">
-            {NAV_LINKS.map((l) => (
-              <a
-                key={l.href}
-                href={l.href}
-                onClick={scrollToId}
-                className="text-[oklch(86%_0.03_150_/_0.75)] transition-colors hover:text-[oklch(97%_0.014_95)]"
-              >
-                {l.label}
-              </a>
-            ))}
-            <Link
-              href="/login"
-              className="text-[oklch(86%_0.03_150_/_0.75)] transition-colors hover:text-[oklch(97%_0.014_95)]"
-            >
-              Sign in
-            </Link>
             <Link
               href="/privacy"
               className="text-[oklch(86%_0.03_150_/_0.75)] transition-colors hover:text-[oklch(97%_0.014_95)]"
@@ -1449,18 +1450,13 @@ function ClosingBand() {
             >
               Terms
             </Link>
+            <a
+              href={`mailto:${LEGAL.supportEmail}`}
+              className="text-[oklch(86%_0.03_150_/_0.75)] transition-colors hover:text-[oklch(97%_0.014_95)]"
+            >
+              Contact us
+            </a>
           </nav>
-          {/* The Canadian banknote palette — the brand's colour through-line. */}
-          <div className="flex items-center gap-2" aria-hidden>
-            {SCHEMES.map((s) => (
-              <span
-                key={s.name}
-                title={s.name}
-                className="w-2.5 h-2.5 rounded-full"
-                style={{ background: s.value }}
-              />
-            ))}
-          </div>
         </div>
       </footer>
     </>
@@ -1469,24 +1465,86 @@ function ClosingBand() {
 
 // ── the page ────────────────────────────────────────────────────────────────
 
+/** Tracks whether the hero has been scrolled past. A sentinel sits at the
+    hero/first-section boundary; once it leaves the top of the viewport we are
+    "in the content" (slim header drops in), and it retracts when the hero comes
+    back. IntersectionObserver, so there is no per-frame scroll work. */
+function usePastHero() {
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [past, setPast] = useState(false);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) =>
+        setPast(!entry.isIntersecting && entry.boundingClientRect.top < 0),
+      { threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+  return { sentinelRef, past };
+}
+
 export function LandingView() {
-  const scrolled = useScrolled();
+  const { sentinelRef, past } = usePastHero();
 
   return (
-    <div className="of-paper min-h-screen flex flex-col bg-[var(--color-of-canvas)] text-[var(--color-of-ink)] overflow-x-hidden">
+    <div className="of-paper min-h-screen flex flex-col bg-[var(--color-of-canvas)] text-[var(--color-of-ink)] overflow-x-clip">
+      {/* Slim header — slides down once the hero is scrolled past, retracts when
+          the hero is back in view. Fixed above the page on every size; off-screen
+          and non-interactive until `past`. */}
+      <div
+        aria-hidden={!past}
+        className={cn(
+          "fixed inset-x-0 top-0 z-[60] transform-gpu border-b border-[var(--color-of-line-soft)] bg-[var(--color-of-canvas)]/85 backdrop-blur-md transition-transform duration-300 ease-[cubic-bezier(0.22,0.61,0.36,1)] motion-reduce:transition-none",
+          past ? "translate-y-0" : "-translate-y-full pointer-events-none",
+        )}
+      >
+        <div className="relative flex items-center justify-between px-5 sm:px-7 py-2.5 max-w-[1120px] mx-auto w-full">
+          <Link href="/" aria-label="otterfund home" className="inline-flex items-center">
+            <LogoMark size={30} />
+          </Link>
+          <div className="pointer-events-none absolute inset-x-0 hidden justify-center md:flex">
+            <div className="pointer-events-auto flex items-center gap-1">
+              {NAV_LINKS.map((l) => (
+                <a
+                  key={l.href}
+                  href={l.href}
+                  onClick={scrollToId}
+                  className={cn(
+                    buttonVariants({ variant: "ghost", size: "xs" }),
+                    "px-3 text-[13px] font-medium text-[var(--color-of-muted)] hover:text-[var(--color-of-ink)]",
+                  )}
+                >
+                  {l.label}
+                </a>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Link
+              href="/login"
+              className={cn(buttonVariants({ variant: "outline", size: "xs" }), "px-3.5")}
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/register"
+              className={cn(buttonVariants({ variant: "default", size: "xs" }), "px-3.5")}
+            >
+              Sign up
+            </Link>
+          </div>
+        </div>
+      </div>
+
       {/* The page "sheet" — everything except the finale. The closing layer is
           fixed behind it (see below); the runway spacer after this sheet gives
           the scroll distance that lifts the sheet off the finale, curtain-style. */}
       <div className="relative z-10 flex min-h-screen flex-col bg-[var(--color-of-canvas)] shadow-[0_36px_72px_-24px_oklch(20%_0.03_80/0.35)]">
-      {/* Nav — sticky; gains a hairline + blur once the page scrolls. */}
-      <nav
-        className={cn(
-          "sticky top-0 z-50 transition-colors duration-300",
-          scrolled
-            ? "border-b border-[var(--color-of-line-soft)] bg-[var(--color-of-canvas)]/80 backdrop-blur-md"
-            : "border-b border-transparent"
-        )}
-      >
+      {/* Nav — a plain header at the top of the page; scrolls away with content. */}
+      <nav className="relative z-50">
         <div className="relative flex items-center justify-between px-7 py-4 max-w-[1120px] mx-auto w-full">
           <Link href="/" aria-label="otterfund home" className="inline-flex items-center">
             <LogoMark size={52} />
@@ -1569,8 +1627,8 @@ export function LandingView() {
               className="of-enter text-[17px] text-[var(--color-of-muted)] leading-relaxed max-w-md mb-8"
               style={{ animationDelay: "220ms" }}
             >
-              Split every dollar across Needs, Wants, and Savings. otterfund does the
-              math so you don&apos;t have to.
+              Split every dollar across Needs, Wants, and Savings. <Wordmark />{" "}
+              does the math so you don&apos;t have to.
             </p>
             <div
               className="of-enter flex flex-wrap items-center justify-center gap-3"
@@ -1598,6 +1656,9 @@ export function LandingView() {
           </div>
 
         </section>
+
+        {/* Trigger for the slim header — the hero / first-section boundary. */}
+        <div ref={sentinelRef} aria-hidden className="h-px w-full" />
 
         {/* ── How it works — full-bleed band, three steps + reactive graphic ── */}
         <HowItWorksSection />

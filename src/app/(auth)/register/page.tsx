@@ -12,6 +12,7 @@ import {
 } from "@/components/otterfund/form";
 import { Button } from "@/components/ui/button";
 import { GoogleAuthButton } from "@/components/auth/google-button";
+import { Wordmark } from "@/components/otterfund/wordmark";
 
 type FieldErrors = { name?: string; password?: string; confirm?: string };
 
@@ -102,7 +103,7 @@ export default function RegisterPage() {
           Create your account
         </h1>
         <p className="mt-2 text-[14px] leading-relaxed text-[var(--color-of-muted)]">
-          Start budgeting with otterfund. It only takes a minute.
+          Start budgeting with <Wordmark />. It only takes a minute.
         </p>
       </header>
 
@@ -185,7 +186,7 @@ export default function RegisterPage() {
               className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer rounded accent-[var(--color-primary)]"
             />
             <span className="text-[13px] leading-relaxed text-[var(--color-of-muted)]">
-              I agree to otterfund&rsquo;s{" "}
+              I agree to <Wordmark />&rsquo;s{" "}
               <Link href="/terms" target="_blank" className="font-medium text-[var(--color-primary)] hover:underline">
                 Terms of Service
               </Link>{" "}

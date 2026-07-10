@@ -8,12 +8,12 @@ import { SITE_DESCRIPTION, SITE_NAME, faqLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
   title: {
-    absolute: `${SITE_NAME} — Free AI Budgeting App`,
+    absolute: `${SITE_NAME}: Free AI Budgeting App`,
   },
   description: SITE_DESCRIPTION,
   alternates: { canonical: "/" },
   openGraph: {
-    title: `${SITE_NAME} — Free AI Budgeting App`,
+    title: `${SITE_NAME}: Free AI Budgeting App`,
     description: SITE_DESCRIPTION,
     url: "/",
   },

@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import type { LucideProps } from "lucide-react";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { LogoMark } from "@/components/otterfund/logo";
+import { Wordmark } from "@/components/otterfund/wordmark";
 import { braid } from "@/components/otterfund/guilloche";
 import type { OtterfundTheme } from "@/components/otterfund/theme";
 
@@ -192,9 +193,7 @@ export function MobileNav({
             <span className="of-sheet-handle" aria-hidden="true" />
             <div className="flex items-center gap-2 px-5 pb-3">
               <LogoMark size={30} />
-              <span className="of-num text-[19px] font-medium tracking-[-0.01em] text-[var(--color-of-ink)]">
-                otterfund
-              </span>
+              <Wordmark className="text-[19px] text-[var(--color-of-ink)]" />
             </div>
             <svg viewBox="0 0 400 12" preserveAspectRatio="none" className="block w-full" style={{ height: 8 }} aria-hidden="true">
               <path d={braid(400, 6, 3, 15, 0)} fill="none" stroke={theme.accentDeep} strokeWidth={0.9} opacity={0.4} />

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LogoMark } from "@/components/otterfund/logo";
+import { Wordmark } from "@/components/otterfund/wordmark";
 import { AuthBrandPanel } from "@/components/auth/auth-brand-panel";
 
 // Auth screens are thin, personal, and duplicative — keep them out of the index
@@ -32,7 +33,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         </div>
 
         <footer className="flex items-center justify-center gap-4 text-[12px] text-[var(--color-of-faint)]">
-          <span>© {new Date().getFullYear()} otterfund</span>
+          <span>© {new Date().getFullYear()} <Wordmark /></span>
           <span aria-hidden>·</span>
           <Link href="/privacy" className="transition-colors hover:text-[var(--color-of-muted)]">
             Privacy

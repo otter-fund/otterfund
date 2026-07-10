@@ -182,7 +182,7 @@ export function OtterfundInvestments({
         value: remainder,
       });
     }
-    if (linked.length === 0) allocNote = "Not itemized into holdings — the full balance is shown here.";
+    if (linked.length === 0) allocNote = "Not itemized into holdings, so the full balance is shown here.";
   }
   rawSlices.sort((x, y) => y.value - x.value);
 

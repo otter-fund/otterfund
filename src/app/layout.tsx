@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Newsreader, Hanken_Grotesk } from "next/font/google";
+import { Newsreader, Hanken_Grotesk, Space_Grotesk } from "next/font/google";
 import { Providers } from "@/components/providers";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
@@ -14,8 +14,9 @@ import {
 } from "@/lib/seo";
 import "./globals.css";
 
-// otterfund design system — the only two typefaces:
-//   Newsreader (display + figures), Hanken Grotesk (interface + data)
+// otterfund design system typefaces:
+//   Newsreader (display + figures), Hanken Grotesk (interface + data),
+//   Space Grotesk (the brand wordmark, via <Wordmark>)
 const newsreader = Newsreader({
   variable: "--font-num",
   subsets: ["latin"],
@@ -29,13 +30,21 @@ const hanken = Hanken_Grotesk({
   weight: ["400", "500", "600", "700"],
 });
 
+// Space Grotesk is reserved for the otterfund name itself: a signature face
+// set apart from the body so the brand reads as a wordmark wherever it appears.
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-brand",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   // Brand always leads the title (visible first in the tab and search result);
   // the descriptor follows. Home renders an absolute title; every other page
   // slots into the template after the brand.
   title: {
-    default: `${SITE_NAME} — AI Budgeting App`,
+    default: `${SITE_NAME} · AI Budgeting App`,
     template: `${SITE_NAME} · %s`,
   },
   description: SITE_DESCRIPTION,
@@ -91,7 +100,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${newsreader.variable} ${hanken.variable} h-full antialiased`}
+      className={`${newsreader.variable} ${hanken.variable} ${spaceGrotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         {/* Site-wide structured data — identifies the brand, the site, and the

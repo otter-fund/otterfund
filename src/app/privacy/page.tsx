@@ -5,7 +5,7 @@ import { LEGAL, SUBPROCESSORS } from "@/lib/legal";
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description:
-    "How otterfund collects, uses, protects, and shares your personal and financial information — including bank connections via Plaid, AI processing, payments, your rights, and how to contact us.",
+    "How otterfund collects, uses, protects, and shares your personal and financial information, including bank connections via Plaid, AI processing, payments, your rights, and how to contact us.",
   alternates: { canonical: "/privacy" },
   openGraph: {
     title: "Privacy Policy · otterfund",
@@ -77,8 +77,8 @@ export default function PrivacyPage() {
       <p>
         If you choose to connect a bank or financial account, we use{" "}
         <strong>Plaid Inc.</strong> to establish the connection. You enter your
-        bank credentials directly with Plaid&rsquo;s secure interface —{" "}
-        <strong>we never see or store your bank login credentials.</strong>{" "}
+        bank credentials directly with Plaid&rsquo;s secure interface.{" "}
+        <strong>We never see or store your bank login credentials.</strong>{" "}
         Through Plaid, and only with your authorization, we receive account
         information such as account names and types, balances, the last few
         digits of account numbers, institution names, and transaction history.
@@ -158,15 +158,15 @@ export default function PrivacyPage() {
         Several features rely on artificial intelligence provided by{" "}
         <strong>Anthropic</strong> (the maker of Claude). To power the AI advisor,
         parse uploaded statements, categorize transactions, detect recurring
-        charges, and generate insights, we send the relevant data — which may
+        charges, and generate insights, we send the relevant data (which may
         include transaction descriptions and amounts, account and budget details,
         the contents of statements you upload, and the messages you send to the
-        advisor — to Anthropic&rsquo;s API for processing.
+        advisor) to Anthropic&rsquo;s API for processing.
       </p>
       <ul>
         <li>
           We send only the data needed to produce the requested result, and we
-          use AI to provide features to you — not to make automated decisions
+          use AI to provide features to you, not to make automated decisions
           that produce legal or similarly significant effects about you.
         </li>
         <li>

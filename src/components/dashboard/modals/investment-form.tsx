@@ -357,7 +357,7 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
         <div className="relative">
           <Field
             label="Search for a stock, ETF or crypto"
-            hint="By name or ticker — e.g. Apple, VFV, Bitcoin."
+            hint="By name or ticker, e.g. Apple, VFV, Bitcoin."
             htmlFor={`${idPrefix}-search`}
           >
             <div className="relative">
@@ -524,7 +524,7 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
               previewValue != null
                 ? undefined
                 : hasPrice
-                  ? "How many shares you own — we’ll value it at today’s price."
+                  ? "How many shares you own. We’ll value it at today’s price."
                   : "Units or shares you hold."
             }
             htmlFor={`${idPrefix}-qty`}
@@ -636,7 +636,7 @@ export function InvestmentForm({ values, errors, onChange, open, idPrefix }: Inv
             label="Cost basis"
             optional
             error={errors.costBasis}
-            hint="Total you paid — enables gain/loss."
+            hint="Total you paid, enables gain/loss."
             htmlFor={`${idPrefix}-cost`}
           >
             <TextInput

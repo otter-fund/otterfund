@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Wordmark } from "@/components/otterfund/wordmark";
 import { Landmark, Loader2, ShieldCheck, RefreshCw, CheckCircle2 } from "lucide-react";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
 
@@ -165,7 +166,13 @@ export function ConnectBankModal({
                 ? "All set. Your accounts are syncing."
                 : isUpdate
                   ? "Re-authenticate with your bank to resume automatic syncing."
-                  : "Securely link your bank so balances and transactions sync automatically. Your credentials are encrypted and handled by Plaid. otterfund never sees or stores them."}
+                  : (
+                      <>
+                        Securely link your bank so balances and transactions sync
+                        automatically. Your credentials are encrypted and handled by
+                        Plaid. <Wordmark />{" "}never sees or stores them.
+                      </>
+                    )}
           </p>
 
           {message && (

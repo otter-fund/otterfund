@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { LegalShell } from "@/components/legal/legal-shell";
 import { LEGAL } from "@/lib/legal";
+import { Wordmark } from "@/components/otterfund/wordmark";
 
 export const metadata: Metadata = {
   title: "Terms of Service",
   description:
-    "The terms governing your use of otterfund — eligibility, accounts, bank connections, AI features, subscriptions and billing, disclaimers, and your rights and responsibilities.",
+    "The terms governing your use of otterfund: eligibility, accounts, bank connections, AI features, subscriptions and billing, disclaimers, and your rights and responsibilities.",
   alternates: { canonical: "/terms" },
   openGraph: {
     title: "Terms of Service · otterfund",
@@ -201,8 +202,9 @@ export default function TermsPage() {
 
       <h2 id="ip">10. Intellectual Property</h2>
       <p>
-        The Service, including its software, design, branding, the otterfund name
-        and logo, and all related content (excluding Your Content), is owned by{" "}
+        The Service, including its software, design, branding, the <Wordmark />{" "}
+        name and logo, and all related content (excluding Your Content), is owned
+        by{" "}
         {LEGAL.entity} or its licensors and is protected by intellectual-property
         laws. We grant you a limited, non-exclusive, non-transferable, revocable
         license to use the Service for your personal, non-commercial use in

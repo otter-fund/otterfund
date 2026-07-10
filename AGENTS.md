@@ -57,9 +57,12 @@ One cohesive language. Build new UI from these primitives so everything stays on
 - **Accent is hue-derived.** `theme.ts` exports `deriveTheme(accent)` → `{ accent, accentDeep, accentTint, accentTintBorder, clay, clayTint, ink, muted }`. The whole palette (deep tones, fills, badges, chart, progress) follows ONE accent hue. The Brand-kit page lets the user switch among `SCHEMES` (8 accents); the shell holds accent state and exposes it as `--of-accent` on its root, passing `accent` + `theme` down to every page. New tinted UI should derive from the active theme, not pick a fixed color.
 - `tintFor(category)` → `[bg, ink]` for transaction/account avatar tiles.
 
-**Type** — two faces only (loaded in `layout.tsx`):
+**Type** — three faces (loaded in `layout.tsx`):
 - `var(--font-num)` = **Newsreader** (serif) — money figures + display headings. Apply the `.of-num` class on any number/currency (tabular, lining).
 - `var(--font-ui)` = **Hanken Grotesk** — everything else (the body default).
+- `var(--font-brand)` = **Space Grotesk** — reserved for the brand name only, via `<Wordmark>` (see below).
+
+**Brand name** — the word "otterfund" is a wordmark. NEVER write it as plain visible text; always render it with `<Wordmark />` from `@/components/otterfund/wordmark` (it sets the name in Space Grotesk via the `.of-wordmark` class, inheriting size + color). This covers standalone logotype and inline-in-a-sentence mentions alike. Leave the literal string "otterfund" only where a component can't go or shouldn't be styled: `<title>`/metadata + SEO strings, `aria-label`s, emails, URLs, code identifiers/import paths, and AI system prompts. **Spacing gotcha:** put an explicit `{" "}` on any side of `<Wordmark />` that abuts a word (`<Wordmark />{" "}does`, `Everything{" "}<Wordmark />`) — a bare JSX space next to the element is dropped by whitespace trimming when the element is at a line start or the line wraps. Keep it tight against punctuation (`<Wordmark />.`, `<Wordmark />&rsquo;s`).
 
 **Shape & motion**: cards `rounded-[20px]`, buttons are **pills** (`rounded-full`), inputs `rounded-xl`. Calm — `.of-enter` (fade-up on page mount), spring on press, ease on reveal. `.of-scroll` for slim scrollbars. Respect `prefers-reduced-motion`.
 

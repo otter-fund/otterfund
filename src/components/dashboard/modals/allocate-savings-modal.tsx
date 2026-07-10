@@ -172,7 +172,7 @@ export function AllocateSavingsModal({
                     <div className="px-4 pb-4">
                       {room ? (
                         <p className="rounded-xl bg-[var(--color-of-canvas)] px-3 py-2.5 text-[13px] text-[var(--color-of-muted)]">
-                          This goal is fully funded — nothing more to allocate here.
+                          This goal is fully funded. Nothing more to allocate here.
                         </p>
                       ) : (
                         <>
@@ -205,7 +205,7 @@ export function AllocateSavingsModal({
                             </Button>
                           </div>
                           <p className="mt-2 text-[12px] text-[var(--color-of-muted)]">
-                            Up to {fmt0(Math.min(assignable, g.remaining))} — capped by your surplus and what this goal still needs.
+                            Up to {fmt0(Math.min(assignable, g.remaining))}, capped by your surplus and what this goal still needs.
                           </p>
                           {error && (
                             <p className="mt-2 text-[13px] font-medium text-[var(--color-of-clay)]">{error}</p>

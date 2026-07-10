@@ -6,7 +6,7 @@ import { SITE_NAME, SITE_TAGLINE } from "@/lib/seo";
 // (Satori doesn't parse oklch) — a deep-evergreen approximation of the brand
 // banknote panel with the otterfund wordmark, tagline, and pitch.
 
-export const alt = "otterfund — the calm, AI-powered budgeting app";
+export const alt = "otterfund: the calm, AI-powered budgeting app";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -67,7 +67,7 @@ export default function OpengraphImage() {
             }}
           >
             The free AI budgeting app that splits every dollar across Needs,
-            Wants, and Savings — and helps you save.
+            Wants, and Savings, and helps you save.
           </div>
         </div>
 

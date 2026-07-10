@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, type TabItem } from "@/components/otterfund/tabs";
+import { Wordmark } from "@/components/otterfund/wordmark";
 import { Menu, MenuTrigger, MenuContent, MenuRadioGroup, MenuRadioItem } from "@/components/ui/menu";
 import { SchemePicker } from "@/components/otterfund/scheme-picker";
 import { braid } from "@/components/otterfund/guilloche";
@@ -104,7 +105,7 @@ function SectionHead({
 }: {
   icon: typeof User;
   title: string;
-  desc: string;
+  desc: React.ReactNode;
   tone?: "accent" | "clay";
 }) {
   const tint = tone === "clay" ? "var(--color-of-clay-tint)" : "var(--accent)";
@@ -416,7 +417,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
           <div className="of-scroll flex-1 overflow-y-auto px-8 py-7">
             {tab === "profile" && (
               <section className="of-enter">
-                <SectionHead icon={User} title="Profile" desc="How you show up across otterfund." />
+                <SectionHead icon={User} title="Profile" desc={<>How you show up across <Wordmark />.</>} />
                 <div className="flex max-w-[420px] flex-col gap-5">
                   <div>
                     <label className={fieldLabelCls}>Name</label>

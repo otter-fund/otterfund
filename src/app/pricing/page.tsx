@@ -4,7 +4,7 @@ import { JsonLd } from "@/components/seo/json-ld";
 import { KEYWORDS, SITE_NAME, absoluteUrl, pricingOffersLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Pricing — Free & Paid Budgeting Plans",
+  title: "Pricing: Free & Paid Budgeting Plans",
   description:
     "Simple, honest pricing for every stage. Start budgeting free with no credit card, then upgrade for automatic bank sync, an AI financial advisor, and investment tracking.",
   keywords: [
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
 const productLd = {
   "@context": "https://schema.org",
   "@type": "Product",
-  name: `${SITE_NAME} — AI Budgeting App`,
+  name: `${SITE_NAME} · AI Budgeting App`,
   description:
     "otterfund is a budgeting app that splits your income across Needs, Wants, and Savings, syncs your bank automatically, and funds your savings goals with AI-powered insights.",
   brand: { "@type": "Brand", name: SITE_NAME },

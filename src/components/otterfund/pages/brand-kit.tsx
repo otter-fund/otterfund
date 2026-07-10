@@ -10,6 +10,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 
 import { LogoMark } from "@/components/otterfund/logo";
+import { Wordmark } from "@/components/otterfund/wordmark";
 import { BANKNOTE_SCHEMES, LOGO_GREEN, deriveTheme, themeVars, type OtterfundTheme } from "@/components/otterfund/theme";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -104,17 +105,14 @@ export function OtterfundBrandKit({ accent, theme, onAccentChange }: OtterfundBr
               pink, so the whole identity moves as one. */}
           <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
             <LogoMark size={44} bg={accent} fg="#fff" />
-            <span
+            <Wordmark
               style={{
-                fontFamily: "var(--font-ui), system-ui, sans-serif",
                 fontSize: 38,
                 fontWeight: 700,
                 letterSpacing: "-0.035em",
                 color: "#fff",
               }}
-            >
-              otterfund
-            </span>
+            />
           </div>
           <p
             style={{

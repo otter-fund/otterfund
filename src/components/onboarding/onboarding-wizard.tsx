@@ -25,6 +25,7 @@ import {
 import { ACCOUNT_TYPES, CURRENCIES, getBudgetPlan, DEFAULT_BUDGET_PLAN_ID } from "@/lib/constants";
 import { BudgetPlanPicker } from "@/components/otterfund/budget-plan-picker";
 import { OnboardingBrandPanel, type PanelStep } from "@/components/onboarding/onboarding-brand-panel";
+import { Wordmark } from "@/components/otterfund/wordmark";
 import { ConnectBankModal } from "@/components/dashboard/modals/connect-bank-modal";
 import { gqlClient, gqlUpload, errMessage } from "@/lib/graphql/client";
 
@@ -595,7 +596,7 @@ export function OnboardingWizard({ userName }: { userName: string }) {
                     <div>
                       <div className="text-[14px] font-semibold text-[var(--color-of-ink)]">Link your bank securely</div>
                       <div className="mt-0.5 text-[12.5px] leading-relaxed text-[var(--color-of-muted)]">
-                        otterfund imports your accounts and recent transactions through Plaid and keeps them in sync. Your credentials are encrypted and never seen by otterfund.
+                        <Wordmark />{" "}imports your accounts and recent transactions through Plaid and keeps them in sync. Your credentials are encrypted and never seen by <Wordmark />.
                       </div>
                     </div>
                   </div>

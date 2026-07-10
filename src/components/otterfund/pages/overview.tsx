@@ -15,6 +15,7 @@ import { ProgressBar } from "@/components/otterfund/progress";
 import { GuillochePattern } from "@/components/otterfund/guilloche";
 import { StatPill } from "@/components/otterfund/stat-pill";
 import { OtterFace } from "@/components/otterfund/logo";
+import { Wordmark } from "@/components/otterfund/wordmark";
 
 interface OtterfundOverviewProps {
   overview: DashboardOverview;
@@ -486,7 +487,7 @@ export function OtterfundOverview({ overview, theme, onNavigate }: OtterfundOver
             }}
           >
             <OtterFace size={15} strokeWidth={1.9} />
-            otterfund insight
+            <Wordmark style={{ fontWeight: 700, letterSpacing: "0.08em" }} />{" "}insight
           </div>
           <p
             style={{
