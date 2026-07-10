@@ -57,6 +57,14 @@ export function AllocateSavingsModal({
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
 
+  // Extra cash on hand that our prediction didn't see (a side gig, a gift, cash
+  // in the account we don't track). The user can top up what's allocatable so
+  // they can put it to work now; the server still clamps each allocation.
+  const [extraOpen, setExtraOpen] = useState(false);
+  const [extraInput, setExtraInput] = useState("");
+  const extra = Math.max(0, Number(extraInput) || 0);
+  const effectiveAssignable = assignable + extra;
+
   const fmt0 = (n: number) =>
     new Intl.NumberFormat(currency === "USD" ? "en-US" : "en-CA", {
       style: "currency",
@@ -76,8 +84,8 @@ export function AllocateSavingsModal({
       setError("Enter an amount to allocate.");
       return;
     }
-    if (value > assignable) {
-      setError(`Only ${fmt0(assignable)} is available to allocate.`);
+    if (value > effectiveAssignable) {
+      setError(`Only ${fmt0(effectiveAssignable)} is available to allocate.`);
       return;
     }
     setError("");
@@ -106,18 +114,74 @@ export function AllocateSavingsModal({
 
         {/* available banner */}
         <div
-          className="mt-1 flex items-baseline justify-between rounded-2xl px-4 py-3"
+          className="mt-1 rounded-2xl px-4 py-3"
           style={{ background: theme.accentTint, border: `1px solid ${theme.accentTintBorder}` }}
         >
-          <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: theme.accentDeep }}>
-            Available to allocate
-          </span>
-          <span className="of-num text-[20px] font-medium" style={{ color: theme.accentDeep }}>
-            {fmt0(assignable)}
-          </span>
+          <div className="flex items-baseline justify-between">
+            <span className="text-[12px] font-semibold uppercase tracking-[0.07em]" style={{ color: theme.accentDeep }}>
+              Available to allocate
+            </span>
+            <span className="of-num text-[20px] font-medium" style={{ color: theme.accentDeep }}>
+              {fmt0(effectiveAssignable)}
+            </span>
+          </div>
+          {extra > 0 && (
+            <p className="mt-1 text-[11.5px]" style={{ color: theme.accentDeep, opacity: 0.75 }}>
+              Includes {fmt0(extra)} you added on top of this month’s surplus.
+            </p>
+          )}
         </div>
 
-        {assignable <= 0 ? (
+        {/* top-up note: more came in than we predicted */}
+        {extraOpen ? (
+          <div
+            className="mt-2 rounded-2xl border px-4 py-3"
+            style={{ borderColor: "var(--color-of-line)", background: "var(--color-of-surface)" }}
+          >
+            <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.09em] text-[var(--color-of-faint)]">
+              Extra cash to allocate
+            </label>
+            <div className="flex items-end gap-2">
+              <input
+                type="number"
+                inputMode="decimal"
+                value={extraInput}
+                autoFocus
+                onChange={(e) => {
+                  setExtraInput(e.target.value);
+                  if (error) setError("");
+                }}
+                placeholder="0"
+                className="of-field flex-1"
+              />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="h-[44px]"
+                onClick={() => {
+                  setExtraInput("");
+                  setExtraOpen(false);
+                }}
+              >
+                {extra > 0 ? "Done" : "Cancel"}
+              </Button>
+            </div>
+            <p className="mt-2 text-[12px] text-[var(--color-of-muted)]">
+              Add money that landed outside our forecast — a side gig, a gift, cash sitting in your account.
+            </p>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setExtraOpen(true)}
+            className="mt-2 text-left text-[12px] font-medium text-[var(--color-of-muted)] underline decoration-[var(--color-of-line)] underline-offset-2 transition-colors hover:text-[var(--color-of-ink)]"
+          >
+            Got more than we predicted? Add extra cash to allocate.
+          </button>
+        )}
+
+        {effectiveAssignable <= 0 ? (
           <p className="mt-4 text-[13px] text-[var(--color-of-muted)]">
             You’ve allocated all of this month’s surplus. More becomes available as income comes in.
           </p>
@@ -175,6 +239,9 @@ export function AllocateSavingsModal({
                           This goal is fully funded. Nothing more to allocate here.
                         </p>
                       ) : (
+                        (() => {
+                          const cap = Math.min(effectiveAssignable, g.remaining);
+                          return (
                         <>
                           <div className="flex items-end gap-2">
                             <div className="flex-1">
@@ -187,8 +254,17 @@ export function AllocateSavingsModal({
                                 value={amount}
                                 autoFocus
                                 onChange={(e) => {
-                                  setAmount(e.target.value);
-                                  if (error) setError("");
+                                  const raw = e.target.value;
+                                  const n = Number(raw);
+                                  // Clamp over-the-cap entries down to the max and flag it,
+                                  // but leave partial/empty input ("", "1.") untouched so typing works.
+                                  if (raw !== "" && Number.isFinite(n) && n > cap) {
+                                    setAmount(String(cap));
+                                    setError(`Capped at ${fmt0(cap)} — the most this goal can take right now.`);
+                                  } else {
+                                    setAmount(raw);
+                                    if (error) setError("");
+                                  }
                                 }}
                                 placeholder="0"
                                 className="of-field"
@@ -199,13 +275,16 @@ export function AllocateSavingsModal({
                               variant="secondary"
                               size="sm"
                               className="h-[44px]"
-                              onClick={() => setAmount(String(Math.min(assignable, g.remaining)))}
+                              onClick={() => {
+                                setAmount(String(cap));
+                                if (error) setError("");
+                              }}
                             >
                               Max
                             </Button>
                           </div>
                           <p className="mt-2 text-[12px] text-[var(--color-of-muted)]">
-                            Up to {fmt0(Math.min(assignable, g.remaining))}, capped by your surplus and what this goal still needs.
+                            Up to {fmt0(cap)}, capped by your surplus and what this goal still needs.
                           </p>
                           {error && (
                             <p className="mt-2 text-[13px] font-medium text-[var(--color-of-clay)]">{error}</p>
@@ -219,6 +298,8 @@ export function AllocateSavingsModal({
                             {isPending ? "Allocating…" : `Allocate to ${g.name}`}
                           </Button>
                         </>
+                          );
+                        })()
                       )}
                     </div>
                   )}

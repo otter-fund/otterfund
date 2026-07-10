@@ -684,6 +684,13 @@
 .of-hero-word {
   display: inline-block;
   animation: ofWordIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+  /* The italic serif "f" (focus) has a deep descender that overhangs the tight
+     line box. During the translateY entrance the element is composited and
+     clipped to its own box, which would cut that descender off until the
+     animation ends. Bottom padding extends the box (and thus the layer bounds)
+     below the baseline so the whole glyph paints from the first frame. */
+  padding-bottom: 0.25em;
+  overflow: visible;
 }
 
 /* The floating goal chip drifts a few pixels on a slow loop, so the hero reads
@@ -724,6 +731,11 @@
   from { background-position-x: 0%; }
   to { background-position-x: 120%; }
 }
+
+/* The blinking otter (insights + advisor empty states) is driven by the
+   BlinkingOtter component, which swaps a single element's mask between the
+   eyes-open / eyes-closed frames — see components/otterfund/blinking-otter.tsx.
+   No CSS animation here: one element means the two frames can never both paint. */
 
 @media (prefers-reduced-motion: reduce) {
   .of-reveal { opacity: 1; transform: none; transition: none; }

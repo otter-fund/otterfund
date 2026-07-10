@@ -28,8 +28,8 @@ import type {
   AdvisorSource,
 } from "@/lib/types";
 import { type OtterfundTheme } from "@/components/otterfund/theme";
+import { BlinkingOtter } from "@/components/otterfund/blinking-otter";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
-import { GuillocheSeal } from "@/components/otterfund/guilloche";
 import { GuillocheLoader } from "@/components/otterfund/guilloche-loader";
 import { AdvisorMarkdown, TypingMarkdown } from "@/components/otterfund/pages/advisor-markdown";
 
@@ -532,9 +532,9 @@ export function AdvisorChat({
                 padding: "20px 8px",
               }}
             >
-              <div style={{ width: 66, height: 66 }} aria-hidden>
-                <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="?" />
-              </div>
+              {/* Blinking coral otter — single element that swaps between
+                  eyes-open / eyes-closed frames (see BlinkingOtter). */}
+              <BlinkingOtter width={104} height={58} />
               <div>
                 <p style={{ margin: 0, fontFamily: "var(--font-num), serif", fontSize: 22, letterSpacing: "-0.01em", color: "var(--color-of-ink)" }}>
                   Ask your advisor

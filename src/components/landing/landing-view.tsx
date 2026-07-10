@@ -20,15 +20,11 @@ import {
   ChevronDown,
   Home,
   Landmark,
-  ListChecks,
   Lock,
   type LucideIcon,
-  PieChart,
   ShieldCheck,
   Target,
   TrendingUp,
-  Upload,
-  Wallet,
 } from "lucide-react";
 
 import { Card, CardLabel } from "@/components/otterfund/card";
@@ -242,7 +238,7 @@ function useTween(target: number, run: boolean, duration = 1100) {
 // The trailing noun of the hero headline cycles so "Your money, in ___." reads
 // as a loop of the outcomes otterfund delivers. Static first word under reduced
 // motion (RotatingWord holds on index 0 when the interval never starts).
-const HERO_WORDS = ["balance.", "focus.", "order.", "reach."];
+const HERO_WORDS = ["balance.", "view.", "order.", "reach."];
 
 /** Swaps the trailing headline noun on a loop, each new word rising in via
     `of-hero-word` (remounted by `key`). The slot is sized to the *active*
@@ -293,7 +289,7 @@ function RotatingWord({ words, interval = 3600 }: { words: string[]; interval?: 
           {w}
         </span>
       ))}
-      <span key={words[i]} className="of-hero-word absolute inset-0">
+      <span key={words[i]} className="of-hero-word absolute left-0 top-0">
         {words[i]}
       </span>
     </span>
@@ -384,19 +380,40 @@ function MiniSpark({
 // `word` fills the "Built to make money feel ___." headline while the card is
 // hovered — each feature names the feeling it delivers ("quiet." is the resting
 // word). See <FeaturesSection>.
-const FEATURES = [
-  { icon: Wallet, title: "Every account, one net worth", desc: "Chequing, savings, credit, and investments add up to a single live balance.", word: "whole." },
-  { icon: ListChecks, title: "Spending, made plain", desc: "Every transaction sorted into clean categories, so you see where it all goes.", word: "clear." },
-  { icon: Target, title: "Goals that fund themselves", desc: "Your monthly savings split across goals by priority, each with a finish date.", word: "intentional." },
-  { icon: OtterFace, title: "Insights, not lectures", desc: "Quiet nudges drawn from your own numbers, written in plain language.", word: "understood." },
+// Each feature wears a hand-drawn sketch icon (white line art, tintable) shown
+// in a solid note-coloured badge that pokes out the card's top-right corner.
+// `nudgeX` shifts the corner icon left by N px (the wider wallet/graph sketches
+// sit better pulled slightly inward from the edge). `sizeClass`/`topPx` override
+// the default corner-icon size/vertical offset per feature (the otter reads
+// better a little bigger and dropped down).
+const FEATURES: {
+  img: string;
+  nudgeX: number;
+  wPx?: number;
+  hPx?: number;
+  topPx?: number;
+  maskPos?: string;
+  maskSize?: string;
+  title: string;
+  desc: string;
+  word: string;
+}[] = [
+  { img: "/feature-wallet.png", nudgeX: 12, title: "Every account, one net worth", desc: "Chequing, savings, credit, and investments add up to a single live balance.", word: "whole." },
+  { img: "/feature-chart.png", nudgeX: 12, title: "Spending, made plain", desc: "Every transaction sorted into clean categories, so you see where it all goes.", word: "clear." },
+  { img: "/feature-target.png", nudgeX: 0, topPx: 0, title: "Goals that fund themselves", desc: "Your monthly savings split across goals by priority, each with a finish date.", word: "intentional." },
+  // The otter drawing is wide, so it gets an explicit wide box (px, set inline so
+  // the sizing can't be purged). It fills the box (maskSize 100%) so it can be
+  // made taller (lengthwise) without widening; topPx keeps its visual midpoint
+  // on the same line as the three square icons (box centre = 26px below card top).
+  { img: "/feature-otter-v3.png", nudgeX: 3, wPx: 92, hPx: 72, topPx: -4, maskSize: "100% 100%", title: "Insights, not lectures", desc: "Quiet nudges drawn from your own numbers, written in plain language.", word: "understood." },
 ];
 
 // The three steps of the "How it works" band. Each doubles as a tab for the
 // graphic panel below it, which shows the real product surface it names.
 const STEPS = [
-  { icon: Upload, title: "Connect your accounts", desc: "Link your bank through Plaid, or drop in a statement." },
-  { icon: PieChart, title: "Split every dollar", desc: "Needs, Wants, and Savings. A plan you can adjust anytime." },
-  { icon: Target, title: "Watch your goals grow", desc: "Whatever you save flows to your goals, by priority." },
+  { img: "/step-upload-v2.png", title: "Connect your accounts", desc: "Link your bank through Plaid, or drop in a statement." },
+  { img: "/step-pie-v2.png", title: "Split every dollar", desc: "Needs, Wants, and Savings. A plan you can adjust anytime." },
+  { img: "/step-target-v2.png", title: "Watch your goals grow", desc: "Whatever you save flows to your goals, by priority." },
 ];
 
 // ── budget-plan showpiece figures ───────────────────────────────────────────
@@ -446,6 +463,74 @@ function DeckHeader({ Icon, label, t, align = "left" }: { Icon: LucideIcon; labe
         <Icon className="w-[18px] h-[18px]" strokeWidth={2} />
       </span>
       <CardLabel>{label}</CardLabel>
+    </div>
+  );
+}
+
+/** A small glassy stat chip that floats in the hero's side gutters. Purely
+    decorative — it borrows the app's category/savings vocabulary to bring a
+    little colour and life to the otherwise empty margins. Shown on lg+ only,
+    where the whitespace it fills actually exists. */
+function HeroChip({
+  dot,
+  label,
+  value,
+  valueColor,
+  floatDelay,
+  pos,
+}: {
+  dot: string;
+  label: string;
+  value: string;
+  valueColor: string;
+  floatDelay: string;
+  pos: React.CSSProperties;
+}) {
+  return (
+    <div className="pointer-events-none absolute hidden lg:block" style={pos}>
+      <div
+        className="of-hero-float flex items-center gap-2.5 rounded-2xl border px-3.5 py-2.5 backdrop-blur-md"
+        style={{
+          animationDelay: floatDelay,
+          background: "oklch(99% 0.004 95 / 0.72)",
+          borderColor: "oklch(100% 0 0 / 0.6)",
+          boxShadow: "0 16px 40px oklch(20% 0.04 80 / 0.13)",
+        }}
+      >
+        <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: dot }} />
+        <div className="text-left leading-tight">
+          <div className="text-[10.5px] font-medium text-[var(--color-of-muted)]">{label}</div>
+          <div className="of-num text-[13px] font-semibold" style={{ color: valueColor }}>
+            {value}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Hero accent layer — two soft banknote-tinted glows plus a few floating stat
+    chips in the side gutters. Fades in after the headline (of-enter) and rides
+    behind the card deck; lg+ only. Inert under reduced motion (float stops, the
+    layer simply rests). */
+function HeroAccents() {
+  const green = BRAND_THEME;
+  const blue = deriveTheme(SCHEMES[0].value);
+  const purple = deriveTheme(SCHEMES[1].value);
+  const clay = deriveTheme(SCHEMES[3].value);
+  return (
+    <div
+      aria-hidden
+      className="of-enter pointer-events-none absolute inset-0 hidden lg:block"
+      style={{ animationDelay: "520ms" }}
+    >
+      {/* floating stat chips — the app's language. Income + Auto-save sit on the
+          upper-middle of the two fanned side cards; Needs + Emergency fund rest
+          lower in the gutters. */}
+      <HeroChip pos={{ left: "14%", top: "37%" }} floatDelay="-0.4s" dot={green.accent} label="Income" value="+$3,200" valueColor={green.accentDeep} />
+      <HeroChip pos={{ right: "17%", top: "37%" }} floatDelay="-2.1s" dot={purple.accent} label="Auto-save" value="20%" valueColor={purple.accentDeep} />
+      <HeroChip pos={{ left: "3%", top: "72%" }} floatDelay="-3.3s" dot={blue.accent} label="Needs" value="$1,610" valueColor={blue.accentDeep} />
+      <HeroChip pos={{ right: "1%", top: "74%" }} floatDelay="-1.2s" dot={clay.accent} label="Emergency fund" value="68%" valueColor={clay.accentDeep} />
     </div>
   );
 }
@@ -753,7 +838,9 @@ function PlanShowpiece() {
                     // the serif digits truly centred (an inherited line-height
                     // floated them high), and nothing moves on select — the
                     // dark fill is the whole affordance.
-                    "of-num inline-flex h-8 items-center justify-center rounded-full px-3.5 text-[13px] font-semibold leading-none tracking-[-0.01em]",
+                    // Sans (not the of-num serif) so the ratios read casual/
+                    // friendly rather than formal.
+                    "inline-flex h-8 items-center justify-center rounded-full px-3.5 text-[13px] font-semibold leading-none tracking-normal",
                     "transition-[background-color,color] duration-300 ease-[cubic-bezier(.22,.61,.36,1)]"
                   )}
                   style={
@@ -896,7 +983,7 @@ function FeaturesSection() {
       {/* First (blue) card is lit by default; hovering takes over, and the
           auto-cycle picks back up from there once the pointer leaves. */}
       <div
-        className="mt-8 grid grid-cols-1 gap-2.5 sm:mt-12 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4"
+        className="mt-8 grid grid-cols-1 gap-4 sm:mt-12 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4 lg:gap-6"
         onMouseLeave={() => setPaused(false)}
       >
         {FEATURES.map((f, i) => {
@@ -907,24 +994,22 @@ function FeaturesSection() {
           const on = active === i;
           return (
             <Reveal key={f.title} delay={i * 80} className="h-full">
+              {/* The card is NOT clipped (so the badge can poke past its
+                  top-right edge); only the wave wash below clips to the card
+                  radius. */}
               <Card
                 hover
                 data-wash={on ? "on" : undefined}
-                className="group relative flex h-full flex-row items-start gap-4 overflow-hidden p-4 text-left sm:min-h-[208px] sm:flex-col sm:gap-0 sm:p-6"
-                style={
-                  {
-                    "--card-note": note.value,
-                    "--card-tint": noteTheme.accentTint,
-                  } as React.CSSProperties
-                }
+                className="group relative flex h-full flex-col p-4 text-left sm:p-6"
                 onMouseEnter={() => pick(i)}
                 onFocus={() => pick(i)}
               >
                 {/* Wave wash — an engraved guilloché field with straight
                     (horizontal) waves that washes in along a 45° diagonal while
                     the card is lit (see .of-wave-wash in globals.css). The
-                    field's dashes drift, so it reads as live water. */}
-                <div className="of-wave-wash pointer-events-none absolute inset-0">
+                    field's dashes drift, so it reads as live water. Clips to the
+                    card radius here so the card itself can stay un-clipped. */}
+                <div className="of-wave-wash pointer-events-none absolute inset-0 overflow-hidden rounded-[20px]">
                   <GuillocheFlow
                     accent={note.value}
                     accentDeep={noteTheme.accentDeep}
@@ -937,23 +1022,38 @@ function FeaturesSection() {
                   />
                 </div>
 
-                {/* Icon plate — soft note tint at rest, filled solid while lit. */}
+                {/* Hand-drawn sketch icon rendered in the note colour itself
+                    (no badge/background) — the PNG is used as an alpha mask so
+                    the drawing takes the note hue. Pinned to the card's
+                    top-right corner (insets set inline so they can't be dropped
+                    by class purging); lifts while the card is lit. */}
                 <div
+                  aria-hidden
                   className={cn(
-                    "relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-[background-color,color,translate,rotate,scale] duration-300 ease-[cubic-bezier(.22,.61,.36,1)] sm:h-12 sm:w-12 sm:rounded-2xl",
-                    on && "-translate-y-0.5 -rotate-2 scale-[1.05]"
+                    "pointer-events-none absolute z-10 transition-transform duration-300 ease-[cubic-bezier(.22,.61,.36,1)]",
+                    !f.wPx && "h-14 w-14 sm:h-16 sm:w-16"
                   )}
                   style={{
-                    background: on ? "var(--card-note)" : "var(--card-tint)",
-                    color: on ? "#ffffff" : "var(--card-note)",
+                    ...(f.wPx ? { width: `${f.wPx}px`, height: `${f.hPx}px` } : {}),
+                    top: `${f.topPx ?? -6}px`,
+                    right: `${-6 + f.nudgeX}px`,
+                    background: note.value,
+                    transform: on ? "translateY(-2px) rotate(3deg) scale(1.08)" : undefined,
+                    WebkitMaskImage: `url(${f.img})`,
+                    maskImage: `url(${f.img})`,
+                    WebkitMaskRepeat: "no-repeat",
+                    maskRepeat: "no-repeat",
+                    WebkitMaskPosition: f.maskPos ?? "center",
+                    maskPosition: f.maskPos ?? "center",
+                    WebkitMaskSize: f.maskSize ?? "contain",
+                    maskSize: f.maskSize ?? "contain",
                   }}
-                >
-                  <f.icon className="h-5 w-5" strokeWidth={1.9} />
-                </div>
+                />
 
-                {/* Top-anchored (not mt-auto) so titles line up across the row
-                    regardless of how many lines each description wraps to. */}
-                <div className="relative min-w-0 sm:pt-10">
+                {/* Top-anchored so titles line up across the row regardless of
+                    how many lines each description wraps to; right padding keeps
+                    copy clear of the corner badge. */}
+                <div className="relative min-w-0 pr-10 sm:pt-1 sm:pr-12">
                   <div className="text-[14px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)] sm:text-[15px]">{f.title}</div>
                   <div className="mt-1 text-[12.5px] leading-relaxed text-[var(--color-of-muted)] sm:mt-1.5">{f.desc}</div>
                 </div>
@@ -1234,7 +1334,21 @@ function HowItWorksSection() {
                         color: on ? "#ffffff" : note.value,
                       }}
                     >
-                      <s.icon className="h-5 w-5" strokeWidth={1.9} />
+                      <span
+                        aria-hidden
+                        className="h-9 w-9"
+                        style={{
+                          background: "currentColor",
+                          WebkitMaskImage: `url(${s.img})`,
+                          maskImage: `url(${s.img})`,
+                          WebkitMaskRepeat: "no-repeat",
+                          maskRepeat: "no-repeat",
+                          WebkitMaskPosition: "center",
+                          maskPosition: "center",
+                          WebkitMaskSize: "contain",
+                          maskSize: "contain",
+                        }}
+                      />
                     </div>
                     <div className="min-w-0">
                       <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--color-of-faint)] lg:text-[10.5px]">
@@ -1598,13 +1712,21 @@ export function LandingView() {
               float-up instead of a dash segment marching into view seconds later
               (which read as a "tail" randomly spawning). Slow drift so it never
               visibly regenerates that segment. Freezes under reduced motion. */}
-          <div className="of-lp-guilloche absolute -inset-x-10 -top-10 bottom-0" aria-hidden>
+          <div
+            className="of-lp-guilloche absolute -inset-x-10 -top-10 bottom-0"
+            style={{
+              WebkitMaskImage: "linear-gradient(to right, transparent, #000 18%, #000 82%, transparent)",
+              maskImage: "linear-gradient(to right, transparent, #000 18%, #000 82%, transparent)",
+            }}
+            aria-hidden
+          >
             <GuillocheFlow
               accent={BRAND_THEME.accent}
               accentDeep={BRAND_THEME.accentDeep}
-              fade="radial"
-              opacity={0.06}
+              fade="bottom"
+              opacity={0.16}
               speed={2}
+              strokeWidth={1.8}
             />
           </div>
 
@@ -1613,6 +1735,7 @@ export function LandingView() {
               their own full-width stage (instead of a side column) is what
               keeps them clear of the headline at every viewport. */}
           <div className="relative flex flex-col items-center text-center">
+            <HeroAccents />
             {/* pitch */}
             <h1
               className="of-enter text-[clamp(30px,5vw,64px)] tracking-[-0.03em] leading-[1.03] sm:whitespace-nowrap mb-5"

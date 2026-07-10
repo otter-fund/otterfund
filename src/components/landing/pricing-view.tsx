@@ -8,7 +8,7 @@
 // per-month equivalent + the amount billed once a year, with the saving). Pro
 // is the featured tier — accent ring, "Most popular" pill, filled CTA.
 
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Check, Minus } from "lucide-react";
 
@@ -17,6 +17,9 @@ import { GuillocheFlow } from "@/components/otterfund/guilloche-flow";
 import { LogoMark } from "@/components/otterfund/logo";
 import { Wordmark } from "@/components/otterfund/wordmark";
 import { BRAND_THEME, SCHEMES } from "@/components/otterfund/theme";
+// The otter poking over the top of the featured card — pre-tinted coral to
+// match the brand mark (see otter-poking.png).
+import otterPoking from "@/components/otterfund/otter-poking.png";
 import { PANEL_ACCENT, PANEL_BG, PANEL_INK, PANEL_LINE, PANEL_LINE_DEEP } from "@/components/otterfund/brand-panel";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -77,7 +80,7 @@ const TIERS: Tier[] = [
     features: [
       { text: "Everything in Free", included: true, lead: true },
       { text: "Connect up to 3 bank accounts", included: true },
-      { text: "150 AI advisor chats / month", included: true },
+      { text: "AI chats & insights included", included: true },
       { text: "Automatic transaction categorization", included: true },
       { text: "Investments tab", included: false },
     ],
@@ -87,14 +90,14 @@ const TIERS: Tier[] = [
     name: "Pro",
     tagline: "The full picture, investments and all.",
     monthly: 20,
-    yearly: 150,
+    yearly: 144,
     cta: "Choose Pro",
     href: "/register?plan=pro",
     featured: true,
     features: [
       { text: "Everything in Standard", included: true, lead: true },
       { text: "Connect up to 10 bank accounts", included: true },
-      { text: "600 AI advisor chats / month", included: true },
+      { text: "More AI insights included", included: true },
       { text: "Investments tab", included: true },
       { text: "Priority support", included: true },
     ],
@@ -112,6 +115,118 @@ function savingsPct(t: Tier): number {
   return Math.round((1 - t.yearly / (t.monthly * 12)) * 100);
 }
 
+// How fast the count runs and how much the digits smear while they spin.
+const ROLL_DUR = 520; // ms — quick, slot-machine snappy
+const ROLL_MAX_BLUR = 2; // px of vertical smear right after a digit flips
+const ROLL_BLUR_TAIL = 90; // ms a digit keeps smearing after it last flipped
+
+/** The price figure as an animated count. When Monthly/Yearly toggles, the number
+    tweens from its previous value to the new one with an eased ramp — the same
+    count-up used on the auth panel's net-worth figure — while each digit smears
+    vertically as it flips, so it reads like a slot-machine reel spinning to a
+    stop. The blur is per-digit and driven by how recently that digit last
+    changed: a fast-cycling digit (the units) stays smeared until it lands, while
+    a digit that flips just once (the tens "2"→"1" in 20 → 12) gets a single quick
+    smear rather than blurring the whole roll. The "$" never smears. Whole-dollar
+    prices count in whole dollars. Honors prefers-reduced-motion (instant swap). */
+function RollingPrice({
+  amount,
+  className,
+  style,
+}: {
+  amount: number;
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const whole = Number.isInteger(amount);
+  const fmt = (v: number) => money(whole ? Math.round(v) : Math.round(v * 100) / 100);
+
+  const [display, setDisplay] = useState(amount);
+  // Per-character blur in px, aligned to the formatted string.
+  const [blurs, setBlurs] = useState<number[]>([]);
+  const target = useRef(amount);
+  const cur = useRef(amount);
+  const raf = useRef(0);
+  const prevChars = useRef<string[]>([]);
+  const lastFlip = useRef<number[]>([]); // timestamp each position last changed
+  // Unique, selector-safe id so each card's reels get their own blur filters.
+  const filterId = "of-roll-" + useId().replace(/[^a-zA-Z0-9]/g, "");
+
+  useEffect(() => {
+    if (amount === target.current) return;
+    target.current = amount;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      cur.current = amount;
+      setDisplay(amount);
+      setBlurs([]);
+      return;
+    }
+    const start = cur.current;
+    const end = amount;
+    prevChars.current = fmt(start).split("");
+    lastFlip.current = prevChars.current.map(() => -Infinity);
+    const t0 = performance.now();
+    cancelAnimationFrame(raf.current);
+    const tick = (t: number) => {
+      const p = Math.min(1, (t - t0) / ROLL_DUR);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const v = start + (end - start) * eased;
+      cur.current = v;
+      setDisplay(v);
+      if (p >= 1) {
+        setBlurs([]); // land crisp
+        return;
+      }
+      // A digit smears for ROLL_BLUR_TAIL ms after it last flipped, fading out —
+      // so a reel that keeps ticking stays blurred and one that flips once pulses
+      // briefly. The "$" (and any non-digit) never smears.
+      const s = fmt(v).split("");
+      const nb = s.map((ch, i) => {
+        if (ch !== prevChars.current[i]) lastFlip.current[i] = t;
+        if (ch < "0" || ch > "9") return 0;
+        const since = t - (lastFlip.current[i] ?? -Infinity);
+        return since >= ROLL_BLUR_TAIL ? 0 : ROLL_MAX_BLUR * (1 - since / ROLL_BLUR_TAIL);
+      });
+      prevChars.current = s;
+      setBlurs(nb);
+      raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf.current);
+    // Only react to an incoming `amount`; `fmt` is derived from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [amount]);
+
+  const chars = fmt(display).split("");
+  return (
+    <span className={className} style={style}>
+      <svg width="0" height="0" aria-hidden className="absolute">
+        {/* One vertical-only blur filter per character, driven by that digit's
+            current smear. The reel spins up/down; horizontal stays sharp. */}
+        {chars.map((_, i) => (
+          <filter key={i} id={`${filterId}-${i}`} x="-20%" y="-70%" width="140%" height="240%" colorInterpolationFilters="sRGB">
+            <feGaussianBlur stdDeviation={`0 ${(blurs[i] ?? 0).toFixed(2)}`} />
+          </filter>
+        ))}
+      </svg>
+      {chars.map((ch, i) => {
+        const doBlur = (blurs[i] ?? 0) > 0.05;
+        return (
+          <span
+            key={i}
+            style={{
+              filter: doBlur ? `url(#${filterId}-${i})` : undefined,
+              willChange: doBlur ? "filter" : undefined,
+            }}
+          >
+            {ch}
+          </span>
+        );
+      })}
+    </span>
+  );
+}
+
 function PriceBlock({ tier, period }: { tier: Tier; period: BillingPeriod }) {
   // Free is always $0. Paid tiers show the per-month figure; yearly divides the
   // annual price by 12 so both periods read as "/month".
@@ -120,9 +235,11 @@ function PriceBlock({ tier, period }: { tier: Tier; period: BillingPeriod }) {
   return (
     <div>
       <div className="flex items-end gap-1.5">
-        <span className="of-num text-[44px] leading-none tracking-[-0.03em]" style={{ fontWeight: 500 }}>
-          {money(perMonth)}
-        </span>
+        <RollingPrice
+          amount={perMonth}
+          className="of-num text-[44px] leading-none tracking-[-0.03em]"
+          style={{ fontWeight: 500 }}
+        />
         <span className="mb-1.5 text-[14px] font-medium text-[var(--color-of-muted)]">
           {tier.monthly === 0 ? "forever" : "/ month"}
         </span>
@@ -134,12 +251,12 @@ function PriceBlock({ tier, period }: { tier: Tier; period: BillingPeriod }) {
           <span className="text-[var(--color-of-faint)]">No credit card required</span>
         ) : period === "yearly" ? (
           <span className="text-[var(--color-of-muted)]">
-            {money(tier.yearly)} billed yearly ·{" "}
+              {money(perMonth)}/month billed yearly ·{" "}
             <span style={{ color: T.accentDeep }}>save {savingsPct(tier)}%</span>
           </span>
         ) : (
           <span className="text-[var(--color-of-faint)]">
-            or {money(tier.yearly)}/yr, save {savingsPct(tier)}%
+                Switch to yearly to save {savingsPct(tier)}%
           </span>
         )}
       </div>
@@ -147,25 +264,95 @@ function PriceBlock({ tier, period }: { tier: Tier; period: BillingPeriod }) {
   );
 }
 
+// "Money stroke" hues for the corner etch — the Canadian banknote palette:
+// Free = $5 blue, Standard = $20 green (the brand hue), Pro = coral (the mark).
+// Hex (not oklch) so they embed cleanly in the SVG hatch tile. The two shades
+// tint the two diagonals of the cross-hatch.
+const TIER_STROKES: Record<string, [string, string]> = {
+  free: ["#1f74bf", "#0059a7"],
+  standard: ["#007e4b", "#006130"],
+  pro: ["#e55647", "#c44134"],
+};
+
+// Reveal the etch only around the border — denser blocks in the four corners,
+// joined by a fine line along each edge — so the middle stays white, like the
+// engraved frame of a banknote. Multiple mask layers union (mask-composite: add).
+const ETCH_MASK = [
+  "radial-gradient(130px 110px at 0% 0%, #000, transparent 66%)",
+  "radial-gradient(130px 110px at 100% 0%, #000, transparent 66%)",
+  "radial-gradient(130px 110px at 0% 100%, #000, transparent 66%)",
+  "radial-gradient(130px 110px at 100% 100%, #000, transparent 66%)",
+  "linear-gradient(to bottom, #000, transparent 7%)",
+  "linear-gradient(to top, #000, transparent 7%)",
+  "linear-gradient(to right, #000, transparent 5%)",
+  "linear-gradient(to left, #000, transparent 5%)",
+].join(", ");
+
 function TierCard({ tier, period }: { tier: Tier; period: BillingPeriod }) {
   const featured = !!tier.featured;
+  const [strokeLine, strokeDeep] = TIER_STROKES[tier.id] ?? TIER_STROKES.standard;
+  // A tiny tile of two dashed diagonals → a cross-hatch of short strokes (not
+  // long continuous lines) when tiled. The dash pattern keeps each mark tiny.
+  const etchTile = `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12'><g stroke-width='0.7' stroke-linecap='round'><line x1='0' y1='0' x2='12' y2='12' stroke='${strokeLine}' stroke-dasharray='1.6 2.8'/><line x1='12' y1='0' x2='0' y2='12' stroke='${strokeDeep}' stroke-dasharray='1.6 2.8'/></g></svg>`,
+  )}`;
   return (
     <div
-      className="relative flex flex-col rounded-[24px] p-7 sm:p-8"
+      className="group relative flex flex-col rounded-[24px] p-7 sm:p-8"
       style={{
-        background: "var(--color-of-surface)",
+        // Layered surface for depth: a soft top sheen over the paper, plus (on the
+        // featured tier) a faint accent glow bleeding in from the top-right corner.
+        background: featured
+          ? `radial-gradient(135% 90% at 88% -14%, ${T.accentTint} 0%, transparent 52%), linear-gradient(180deg, oklch(100% 0 0 / 0.55), oklch(100% 0 0 / 0) 42%), var(--color-of-surface)`
+          : "linear-gradient(180deg, oklch(100% 0 0 / 0.5), oklch(100% 0 0 / 0) 40%), var(--color-of-surface)",
         border: featured ? `1.5px solid ${T.accent}` : "1px solid var(--color-of-line)",
-        boxShadow: featured ? "0 24px 60px oklch(20% 0.04 160 / 0.16)" : "0 8px 24px oklch(20% 0.02 80 / 0.05)",
+        // Inset top highlight (a lit top edge) + a crisp near shadow + a soft far
+        // shadow: the card reads as a raised sheet rather than a flat rectangle.
+        boxShadow: featured
+          ? "inset 0 1px 0 oklch(100% 0 0 / 0.9), 0 0 0 1px oklch(66% 0.17 29 / 0.12), 0 6px 34px oklch(66% 0.17 29 / 0.16), 0 30px 70px oklch(20% 0.04 160 / 0.16)"
+          : "inset 0 1px 0 oklch(100% 0 0 / 0.8), 0 1px 3px oklch(20% 0.02 80 / 0.05), 0 14px 34px oklch(20% 0.02 80 / 0.07)",
       }}
     >
+      {/* "Money strokes" — a fine engraved cross-hatch (like a banknote's etched
+          border) worked into the corners and joined by a hairline along each
+          edge, tinted per tier (Free blue, Standard green, Pro coral). The middle
+          stays white. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[inherit] opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-30"
+        style={{
+          maskImage: ETCH_MASK,
+          WebkitMaskImage: ETCH_MASK,
+          backgroundImage: `url("${etchTile}")`,
+          backgroundSize: "9px 9px",
+          backgroundRepeat: "repeat",
+        }}
+      />
+
       {featured && (
-        <span
-          className="of-num absolute -top-3 left-7 rounded-full px-3 py-1 text-[11px] font-semibold tracking-[0.02em]"
-          style={{ background: T.accent, color: "#fff" }}
-        >
-          Most popular
-        </span>
+        <>
+          {/* The otter pokes over the top edge, both paws gripping the card. Sits
+              on top (z-10) so nothing clips it; purely decorative. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={otterPoking.src}
+            alt=""
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-0 z-10 w-[210px] max-w-none -translate-x-1/2 -translate-y-[80%]"
+            style={{ filter: "drop-shadow(0 8px 10px oklch(20% 0.04 160 / 0.14))" }}
+          />
+          {/* "Most popular" — tucked into the top-right, just under the corner and
+              clear of the otter's paw. */}
+          <span
+            className="absolute right-4 top-4 z-20 rounded-full px-2.5 py-[5px] text-[10px] font-semibold uppercase tracking-[0.07em]"
+            style={{ background: T.accent, color: "#fff", boxShadow: "0 3px 8px oklch(20% 0.04 160 / 0.2)" }}
+          >
+            Most popular
+          </span>
+        </>
       )}
+
+      <div className="relative z-[1] flex flex-col">
 
       <div className="text-[18px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)]">{tier.name}</div>
       <p className="mt-1 min-h-[40px] max-w-[240px] text-[13px] leading-relaxed text-[var(--color-of-muted)]">
@@ -212,6 +399,7 @@ function TierCard({ tier, period }: { tier: Tier; period: BillingPeriod }) {
           </li>
         ))}
       </ul>
+      </div>
     </div>
   );
 }
@@ -279,7 +467,7 @@ export function PricingView() {
                           className="ml-1.5 rounded-full px-1.5 py-0.5 text-[10.5px] font-semibold"
                           style={on ? { background: "oklch(100% 0 0 / 0.22)", color: "#fff" } : { background: T.accentTint, color: T.accentDeep }}
                         >
-                          Save up to 38%
+                          Save up to 40%
                         </span>
                       )}
                     </button>
@@ -291,10 +479,23 @@ export function PricingView() {
         </section>
 
         {/* ── Tier cards ── */}
-        <section className="mt-10 grid w-full max-w-[1000px] gap-5 md:grid-cols-3 md:items-start">
-          {TIERS.map((tier) => (
-            <TierCard key={tier.id} tier={tier} period={period} />
-          ))}
+        <section className="relative mt-10 flex w-full justify-center">
+          {/* Backdrop that fills the plain canvas around the cards: a faint, wide
+              guilloché field in the side gutters, fading before it reaches the
+              cards (which sit opaque on top). */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[150%] w-screen max-w-none -translate-x-1/2 -translate-y-1/2"
+          >
+            <GuillocheFlow accent={T.accent} accentDeep={T.accentDeep} opacity={0.07} fade="left" speed={2} gap={20} amp={10} />
+            <GuillocheFlow accent={T.accent} accentDeep={T.accentDeep} opacity={0.07} fade="right" speed={2} gap={20} amp={10} />
+          </div>
+
+          <div className="relative grid w-full max-w-[1000px] gap-5 md:grid-cols-3 md:items-start">
+            {TIERS.map((tier) => (
+              <TierCard key={tier.id} tier={tier} period={period} />
+            ))}
+          </div>
         </section>
 
         {/* ── Trust line ── */}

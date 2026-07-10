@@ -89,11 +89,26 @@ export async function proxy(request: NextRequest) {
       : response;
   }
 
-  // Everything else is protected.
-  if (!isLoggedIn) {
-    return redirectKeepingCookies(request, response, "/login");
+  // The protected app surface. Only these prefixes require a session — keep in
+  // sync with the real route tree under app/(app), app/onboarding, and the
+  // protected /reset-password screen (auth group, but gated so the recovery
+  // session from /auth/callback is what grants access).
+  const isProtectedPage =
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/dev") ||
+    pathname.startsWith("/onboarding") ||
+    pathname.startsWith("/reset-password");
+
+  if (isProtectedPage) {
+    return isLoggedIn
+      ? response
+      : redirectKeepingCookies(request, response, "/login");
   }
 
+  // Anything else is an unknown route. Let it through so Next.js renders the
+  // 404 page (app/not-found.tsx) — regardless of auth state. Middleware runs
+  // before routing and can't tell a real page from a typo, so bouncing unknown
+  // paths to /login here would hide every 404 behind a login redirect.
   return response;
 }
 

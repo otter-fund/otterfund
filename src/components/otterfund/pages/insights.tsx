@@ -21,11 +21,11 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { ChevronRight, Loader2, PanelLeft, Plus, Sparkles, X } from "lucide-react";
 import type { InsightView, InsightDetail } from "@/lib/types";
 import { type OtterfundTheme } from "@/components/otterfund/theme";
+import { BlinkingOtter } from "@/components/otterfund/blinking-otter";
 import { gqlClient } from "@/lib/graphql/client";
 import { fmt } from "@/lib/format";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { Button } from "@/components/ui/button";
-import { GuillocheSeal } from "@/components/otterfund/guilloche";
 import { AdvisorChat } from "@/components/otterfund/pages/advisor-chat";
 
 const GENERATE_INSIGHTS = /* GraphQL */ `
@@ -433,9 +433,9 @@ export function OtterfundInsights({ insights: initial, accent, theme, currency }
                     padding: "24px 16px",
                   }}
                 >
-                  <div style={{ width: 68, height: 68 }} aria-hidden>
-                    <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
-                  </div>
+                  {/* Blinking coral otter — single element that swaps between
+                      eyes-open / eyes-closed frames (see BlinkingOtter). */}
+                  <BlinkingOtter width={104} height={58} />
                   <p style={{ margin: 0, fontSize: 14, color: "var(--color-of-muted)", maxWidth: 340, lineHeight: 1.55 }}>
                     No insights yet. Hit <strong style={{ color: "var(--color-of-ink)" }}>Find insights</strong> for an AI read on your
                     spending, savings, and trends.
