@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import type { LucideProps } from "lucide-react";
 import { useMediaQuery } from "@/lib/use-media-query";
 import { LogoMark } from "@/components/otterfund/logo";
+import { PlanBadgeIcon } from "@/components/otterfund/plan-badge-icon";
 import { Wordmark } from "@/components/otterfund/wordmark";
 import { braid } from "@/components/otterfund/guilloche";
 import type { OtterfundTheme } from "@/components/otterfund/theme";
@@ -60,6 +61,7 @@ export function MobileNav({
   userName,
   initials,
   planLabel,
+  plan,
   onOpenSettings,
   onSignOut,
 }: {
@@ -72,6 +74,7 @@ export function MobileNav({
   userName: string | null;
   initials: string | null;
   planLabel: string;
+  plan: string;
   onOpenSettings: () => void;
   onSignOut: () => void;
 }) {
@@ -225,12 +228,16 @@ export function MobileNav({
                       </div>
                     </div>
                   ))}
-                  <div className="mt-1">
-                    <SheetLabel>More</SheetLabel>
-                  </div>
-                  <div className="flex flex-col gap-1 pb-2">
-                    {secondary.map((item) => row(item, stagger++))}
-                  </div>
+                  {secondary.length > 0 && (
+                    <>
+                      <div className="mt-1">
+                        <SheetLabel>More</SheetLabel>
+                      </div>
+                      <div className="flex flex-col gap-1 pb-2">
+                        {secondary.map((item) => row(item, stagger++))}
+                      </div>
+                    </>
+                  )}
                 </>
               );
             })()}
@@ -252,7 +259,10 @@ export function MobileNav({
                   <div className="truncate text-[14px] font-semibold text-[var(--color-of-ink)]">
                     {userName ?? "Your account"}
                   </div>
-                  <div className="text-[11.5px] text-[var(--color-of-faint)]">{planLabel}</div>
+                  <div className="inline-flex items-center gap-1 text-[11.5px] text-[var(--color-of-faint)]">
+                    {planLabel}
+                    <PlanBadgeIcon plan={plan} />
+                  </div>
                 </div>
               </div>
               <div className="mt-1.5 flex gap-2">

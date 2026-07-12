@@ -18,8 +18,8 @@
 // composer stays put and only the thread scrolls (a real chat-app feel).
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { useRouter } from "next/navigation";
-import { ArrowUpRight, ChevronRight, Loader2, PanelLeft, Plus, Sparkles, X } from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ArrowUpRight, ChevronRight, Loader2, PanelLeft, Plus, RefreshCw, Sparkles, X } from "lucide-react";
 import type { InsightView, InsightDetail } from "@/lib/types";
 import { type OtterfundTheme } from "@/components/otterfund/theme";
 import { BlinkingOtter } from "@/components/otterfund/blinking-otter";
@@ -44,7 +44,8 @@ const INSIGHT_DETAIL = /* GraphQL */ `
 type View = "chat" | "insights";
 const SEG_W = 124; // segmented-control button width (desktop)
 const SEG_W_MOBILE = 92; // …tighter on phones, where the row shares space with two icon buttons
-const SIDEBAR_W = 248; // matches AdvisorChat's sidebar — keeps the divider continuous
+const SIDEBAR_W = 288; // matches AdvisorChat's SIDEBAR_DEFAULT — keeps the divider continuous
+const SIDEBAR_W_KEY = "otterfund.insights.sidebarW"; // persisted resized width
 
 // Surface the cards that prompt action first: things to fix, then things to
 // gain, then context. Unknown tags sort last.
@@ -59,13 +60,54 @@ interface OtterfundInsightsProps {
 
 export function OtterfundInsights({ insights: initial, accent, theme, currency }: OtterfundInsightsProps) {
   const mobile = useMediaQuery("(max-width: 768px)");
-  const [view, setView] = useState<View>("chat");
-  const [showChats, setShowChats] = useState(true);
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // The Chat / Insights view is URL-driven so each is directly linkable:
+  //   /dashboard/insights            → Chat
+  //   /dashboard/insights?view=insights → Insights feed (e.g. "See more insights"
+  //   from the Overview lands here). Toggling replaces the URL rather than
+  //   pushing, so the back button leaves the page instead of unwinding tabs.
+  const view: View = searchParams.get("view") === "insights" ? "insights" : "chat";
+  const setView = (v: View) => {
+    // Native History API — Next syncs useSearchParams off this WITHOUT a server
+    // round-trip, so toggling tabs doesn't refetch insights or reset chat state.
+    window.history.replaceState(null, "", v === "insights" ? `${pathname}?view=insights` : pathname);
+  };
+
+  // Sidebar visibility is tracked PER breakpoint so the two layouts don't clobber
+  // each other on resize: the desktop rail is open by default, the mobile overlay
+  // closed. Deriving `showChats` from the active breakpoint means collapsing the
+  // desktop rail and then resizing down→up no longer re-pops it open.
+  const [desktopOpen, setDesktopOpen] = useState(true);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const showChats = mobile ? mobileOpen : desktopOpen;
+  const toggleChats = () => (mobile ? setMobileOpen((v) => !v) : setDesktopOpen((v) => !v));
+  const closeChats = () => (mobile ? setMobileOpen(false) : setDesktopOpen(false));
   // Sidebar width is shared: the top-bar rail and the drawer both use it so
   // their divider stays aligned. `resizing` suspends the open/close transition
-  // while the handle is dragged, so the panel tracks the cursor 1:1.
+  // while the handle is dragged, so the panel tracks the cursor 1:1. The width
+  // persists in localStorage across reloads. It's read in a mount effect rather
+  // than a lazy initializer so SSR and first client render agree on the default
+  // (no hydration mismatch); `hydrated` gates the save effect so we don't write
+  // the default back over the stored value before that read lands.
   const [sidebarW, setSidebarW] = useState(SIDEBAR_W);
   const [resizing, setResizing] = useState(false);
+  const hydrated = useRef(false);
+  useEffect(() => {
+    const saved = Number(window.localStorage.getItem(SIDEBAR_W_KEY));
+    if (Number.isFinite(saved) && saved > 0) setSidebarW(Math.max(220, Math.min(460, saved)));
+    hydrated.current = true;
+  }, []);
+  // Save once the drag ends (not on every mousemove) to avoid thrashing storage.
+  useEffect(() => {
+    if (resizing || !hydrated.current) return;
+    try {
+      window.localStorage.setItem(SIDEBAR_W_KEY, String(sidebarW));
+    } catch {
+      /* storage may be unavailable (private mode / quota) — width just won't persist */
+    }
+  }, [resizing, sidebarW]);
   const [newChatSignal, setNewChatSignal] = useState(0);
   const [insights, setInsights] = useState<InsightView[]>(initial);
   const [generating, setGenerating] = useState(false);
@@ -94,13 +136,6 @@ export function OtterfundInsights({ insights: initial, accent, theme, currency }
   const closeDetail = () => setOpenInsight(null);
 
   const segW = mobile ? SEG_W_MOBILE : SEG_W;
-
-  // The conversation drawer is open by default on desktop and closed on phones
-  // (where it's an overlay). Driving it off the breakpoint keeps it honest
-  // across resize/orientation — `mobile` is false on SSR, so no hydration gap.
-  useEffect(() => {
-    setShowChats(!mobile);
-  }, [mobile]);
 
   // Phones document-scroll the shell, so of-fullbleed can't resolve a height
   // from its parent. Measure where the page actually starts (flush under the
@@ -148,7 +183,7 @@ export function OtterfundInsights({ insights: initial, accent, theme, currency }
   // Fresh thread. On phones the overlay drawer closes so the new chat is visible.
   const startNewChat = () => {
     setNewChatSignal((s) => s + 1);
-    if (mobile) setShowChats(false);
+    if (mobile) setMobileOpen(false);
   };
 
   const hasInsights = insights.length > 0;
@@ -189,7 +224,7 @@ export function OtterfundInsights({ insights: initial, accent, theme, currency }
                   variant="ghost"
                   size="icon"
                   aria-label={showChats ? "Hide chats" : "Show chats"}
-                  onClick={() => setShowChats((v) => !v)}
+                  onClick={toggleChats}
                 >
                   <PanelLeft size={16} />
                 </Button>
@@ -212,7 +247,13 @@ export function OtterfundInsights({ insights: initial, accent, theme, currency }
                   disabled={generating}
                   aria-label={generating ? "Finding insights" : hasInsights ? "Refresh insights" : "Find insights"}
                 >
-                  {generating ? <Loader2 size={16} className="of-spin" /> : <Sparkles size={16} />}
+                  {generating ? (
+                    <Loader2 size={16} className="of-spin" />
+                  ) : hasInsights ? (
+                    <RefreshCw size={16} />
+                  ) : (
+                    <Sparkles size={16} />
+                  )}
                 </Button>
               )}
             </div>
@@ -239,7 +280,7 @@ export function OtterfundInsights({ insights: initial, accent, theme, currency }
                   variant="ghost"
                   size="icon"
                   aria-label={showChats ? "Hide chats" : "Show chats"}
-                  onClick={() => setShowChats((v) => !v)}
+                  onClick={toggleChats}
                 >
                   <PanelLeft size={16} />
                 </Button>
@@ -338,7 +379,7 @@ export function OtterfundInsights({ insights: initial, accent, theme, currency }
               resizing={resizing}
               onResizingChange={setResizing}
               mobile={mobile}
-              onCloseSidebar={() => setShowChats(false)}
+              onCloseSidebar={closeChats}
             />
           </div>
 
@@ -842,7 +883,6 @@ function ViewToggle({ view, setView, theme, segW }: { view: View; setView: (v: V
         borderRadius: 999,
         background: "var(--color-of-surface)",
         border: "1px solid var(--color-of-line)",
-        boxShadow: "0 8px 24px oklch(20% 0.02 80 / 0.07)",
       }}
     >
       <span

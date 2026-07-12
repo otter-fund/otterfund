@@ -4,6 +4,7 @@ import { MutationResultRef } from "../types/results";
 import { prisma } from "@/lib/db/prisma";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { okString, okMoney, okEnum, LIMITS } from "@/lib/validate";
+import { isPremiumAccent } from "@/components/otterfund/theme";
 import { CURRENCIES, getBudgetPlan } from "@/lib/constants";
 import { budgetAmountsForPlan } from "@/lib/db/seed-categories";
 import { logSecurityEvent } from "@/lib/log";
@@ -27,6 +28,12 @@ builder.mutationField("updateSettings", (t) =>
       const userId = requireUser(ctx);
       if (!okString(input.name, LIMITS.NAME)) badRequest("Name is too long.");
       if (!okString(input.accent, 80)) badRequest("Invalid accent.");
+      // Premium accents are a paid perk (Standard + Pro) — the picker hides them
+      // from Free, but a mutation is a public endpoint, so re-check before saving.
+      if (input.accent != null && isPremiumAccent(input.accent)) {
+        const u = await prisma.user.findUnique({ where: { id: userId }, select: { plan: true } });
+        if (u?.plan === "free") badRequest("That accent is available on a paid plan.");
+      }
       if (!okEnum(input.currency, CURRENCIES)) badRequest("Unsupported currency.");
       if (!okMoney(input.monthlyIncome) || (input.monthlyIncome != null && input.monthlyIncome < 0)) {
         badRequest("Monthly income is out of range.");

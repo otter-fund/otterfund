@@ -8,12 +8,12 @@
 // active route from usePathname, so deep links, back/forward and code-splitting
 // all work. Shared client state is published through OtterfundChromeContext.
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
-import { Home, List, CreditCard, Target, Sparkles, Bell, Plus, Settings, LogOut, PieChart, Landmark, TrendingUp, Gauge, type LucideProps } from "lucide-react";
+import { Home, List, CreditCard, Target, Sparkles, Bell, Plus, Settings, LogOut, PieChart, Landmark, TrendingUp, Gauge, SlidersHorizontal, type LucideProps } from "lucide-react";
 import { AddTransactionModal } from "@/components/dashboard/modals/add-transaction-modal";
 import { ImportModal } from "@/components/dashboard/modals/import-modal";
 import { EditTransactionModal } from "@/components/dashboard/modals/edit-transaction-modal";
@@ -31,6 +31,7 @@ import { SettingsModal } from "@/components/dashboard/modals/settings-modal";
 import type { TransactionView, GoalView, AccountView, SubscriptionView, InvestmentView, SpendCategory, BillView } from "@/lib/types";
 import { DEFAULT_ACCENT, deriveTheme, themeVars } from "@/components/otterfund/theme";
 import { LogoMark, OtterFace } from "@/components/otterfund/logo";
+import { PlanBadgeIcon } from "@/components/otterfund/plan-badge-icon";
 import { Button } from "@/components/ui/button";
 import { Menu, MenuTrigger, MenuContent, MenuItem } from "@/components/ui/menu";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -57,6 +58,10 @@ const CREATE_PORTAL = /* GraphQL */ `
 // pages that DON'T carry it in the URL (Accounts, Goals, …). sessionStorage —
 // so it persists page-to-page within a visit but resets on a fresh tab/visit.
 const PERIOD_KEY = "otterfund:period";
+
+// Valid Settings tabs (mirror SettingsModal's SettingsTab) — used to validate the
+// ?settings=<tab> URL param before opening the modal on it.
+const SETTINGS_TABS = ["profile", "plan", "money", "connections", "appearance", "data"];
 
 interface NavItem {
   href: string;
@@ -95,9 +100,12 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+// Internal staff tools — rendered only for isAdmin users (see the guard on each
+// /dev route). Non-admins never see these rail entries.
 const SECONDARY_NAV: NavItem[] = [
   { href: "/dev/brand-kit", label: "Brand kit", Icon: Sparkles },
   { href: "/dev/usage", label: "AI usage", Icon: Gauge },
+  { href: "/dev/customize", label: "Customize", Icon: SlidersHorizontal },
 ];
 
 /**
@@ -121,6 +129,7 @@ const TITLES: Record<string, RouteMeta> = {
   "/dashboard/insights": { title: "Insights", sub: () => "Ask your advisor" },
   "/dev/brand-kit": { title: "Brand kit", sub: () => "The otterfund design system" },
   "/dev/usage": { title: "AI usage", sub: () => "Chat & insights cost per user" },
+  "/dev/customize": { title: "Customize", sub: () => "Dev tools & previews" },
 };
 
 /** Icon-rail nav link with a tooltip that flies out to the right of the dark rail. */
@@ -158,6 +167,8 @@ export interface ChromeUser {
   budgetPlan: string;
   /** Billing tier (free | standard | pro) — drives paywalls + the plan label. */
   plan: string;
+  /** otterfund staff — unlocks the internal /dev tools in the rail. */
+  isAdmin: boolean;
 }
 
 /** Notification inputs — read from the overview on the server. */
@@ -194,7 +205,44 @@ export function OtterfundChrome({
   const [accent, setAccentState] = useState<string>(initialAccent ?? DEFAULT_ACCENT);
   const [showAdd, setShowAdd] = useState(false);
   const [showImport, setShowImport] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
+  // Settings is a modal whose open state + active tab live in the URL (?settings=<tab>)
+  // so it's deep-linkable and survives a round-trip to /pricing ("Change plan" →
+  // pricing → "Back to Settings" reopens the same tab). Driven via the History API
+  // (like the Insights view) so open/close/tab-switch never trigger a server refetch.
+  const rawSettings = searchParams.get("settings");
+  const showSettings = rawSettings != null;
+  const settingsTab = SETTINGS_TABS.includes(rawSettings ?? "") ? (rawSettings as string) : "profile";
+  // Remember the last-viewed tab so reopening the modal returns there (it used to
+  // persist via the always-mounted modal's local state; the URL-driven version
+  // resets on close, so we track it here). Kept current whenever the modal's open.
+  const lastSettingsTab = useRef("profile");
+  useEffect(() => {
+    if (rawSettings != null) lastSettingsTab.current = settingsTab;
+  }, [rawSettings, settingsTab]);
+  const settingsUrl = useCallback(
+    (tab: string | null) => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (tab == null) params.delete("settings");
+      else params.set("settings", tab);
+      const qs = params.toString();
+      return qs ? `${pathname}?${qs}` : pathname;
+    },
+    [pathname, searchParams],
+  );
+  // Open adds a history entry (so Back closes it); tab-switch + close replace it.
+  // With no explicit tab, reopen on the last-viewed one.
+  const openSettings = useCallback(
+    (tab?: string) => window.history.pushState(null, "", settingsUrl(tab ?? lastSettingsTab.current)),
+    [settingsUrl],
+  );
+  const setSettingsTab = useCallback(
+    (tab: string) => window.history.replaceState(null, "", settingsUrl(tab)),
+    [settingsUrl],
+  );
+  const closeSettings = useCallback(
+    () => window.history.replaceState(null, "", settingsUrl(null)),
+    [settingsUrl],
+  );
   const [showAddGoal, setShowAddGoal] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
   const [showAddSubscription, setShowAddSubscription] = useState(false);
@@ -270,8 +318,15 @@ export function OtterfundChrome({
   const plan: PlanTier = toPlanTier(user.plan);
 
   // Prompt an upgrade for a locked feature — send the user straight to the
-  // pricing page (no interstitial modal).
-  const promptUpgrade = useCallback(() => router.push("/pricing"), [router]);
+  // pricing page (no interstitial modal). Carry the origin route as `?from=` so
+  // pricing can offer a "Back to <page>" return link instead of a generic one.
+  const pricingHref = useCallback(() => {
+    // Preserve an open Settings tab in the origin so pricing can return there
+    // (e.g. Settings → Plan → Change plan → "Back to Settings" reopens Plan).
+    const origin = rawSettings != null ? `${pathname}?settings=${settingsTab}` : pathname;
+    return `/pricing?from=${encodeURIComponent(origin)}`;
+  }, [pathname, rawSettings, settingsTab]);
+  const promptUpgrade = useCallback(() => router.push(pricingHref()), [router, pricingHref]);
 
   // Gate an action: returns true (proceed) when the plan includes the feature,
   // otherwise sends the user to pricing and returns false. Callers do
@@ -279,10 +334,10 @@ export function OtterfundChrome({
   const requireFeature = useCallback(
     (feature: Feature) => {
       if (canUse(plan, feature)) return true;
-      router.push("/pricing");
+      router.push(pricingHref());
       return false;
     },
-    [plan, router],
+    [plan, router, pricingHref],
   );
 
   // Send the user to Stripe's hosted portal to manage/cancel their plan.
@@ -536,13 +591,17 @@ export function OtterfundChrome({
               ))}
             </nav>
 
-            <div style={{ height: 1, width: 24, background: "var(--color-of-sidebar-line)", margin: "14px 0" }} />
+            {user.isAdmin && (
+              <>
+                <div style={{ height: 1, width: 24, background: "var(--color-of-sidebar-line)", margin: "14px 0" }} />
 
-            <nav aria-label="Brand" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-              {SECONDARY_NAV.map((item) => (
-                <RailLink key={item.href} item={item} href={hrefFor(item.href)} active={pathname === item.href} accent={accent} />
-              ))}
-            </nav>
+                <nav aria-label="Dev tools" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {SECONDARY_NAV.map((item) => (
+                    <RailLink key={item.href} item={item} href={hrefFor(item.href)} active={pathname === item.href} accent={accent} />
+                  ))}
+                </nav>
+              </>
+            )}
 
             <div style={{ flex: 1 }} />
 
@@ -574,14 +633,17 @@ export function OtterfundChrome({
                   <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-of-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {userName ?? "Your account"}
                   </div>
-                  <div style={{ fontSize: 11.5, color: "var(--color-of-faint)" }}>{PLAN_META[plan].label}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--color-of-faint)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+                    {PLAN_META[plan].label}
+                    <PlanBadgeIcon plan={plan} />
+                  </div>
                 </div>
                 <div style={{ height: 1, background: "var(--color-of-line-soft)", margin: "2px 0 4px" }} />
-                <MenuItem onClick={() => setShowSettings(true)}>
+                <MenuItem onClick={() => openSettings()}>
                   <Settings size={15} strokeWidth={2} aria-hidden="true" />
                   <span>Settings</span>
                 </MenuItem>
-                <MenuItem onClick={() => handleSignOut()}>
+                <MenuItem onClick={() => handleSignOut()} className="text-[var(--color-of-clay)]">
                   <LogOut size={15} strokeWidth={2} aria-hidden="true" />
                   <span>Log out</span>
                 </MenuItem>
@@ -604,7 +666,7 @@ export function OtterfundChrome({
             <div className="of-topbar-lead" style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
               <MobileNav
                 sections={NAV_SECTIONS}
-                secondary={SECONDARY_NAV}
+                secondary={user.isAdmin ? SECONDARY_NAV : []}
                 pathname={pathname}
                 hrefFor={hrefFor}
                 accent={accent}
@@ -612,7 +674,8 @@ export function OtterfundChrome({
                 userName={userName}
                 initials={initials}
                 planLabel={PLAN_META[plan].label}
-                onOpenSettings={() => setShowSettings(true)}
+                plan={plan}
+                onOpenSettings={() => openSettings()}
                 onSignOut={handleSignOut}
               />
               <div className="of-topbar-title" style={{ minWidth: 0 }}>
@@ -701,7 +764,9 @@ export function OtterfundChrome({
         <ConnectBankModal open={showConnectBank} updateItemId={connectUpdateItemId ?? undefined} onClose={() => setShowConnectBank(false)} onLinked={() => { refresh(); }} />
         <SettingsModal
           open={showSettings}
-          onClose={() => setShowSettings(false)}
+          onClose={closeSettings}
+          initialTab={settingsTab}
+          onTabChange={setSettingsTab}
           accent={accent}
           onAccentChange={setAccent}
           user={user}

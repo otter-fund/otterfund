@@ -172,7 +172,16 @@ export function OtterfundAccounts({ accounts, netWorth, netWorthTrend = [], netW
         {/* Clip only the backdrop, not the section — so the sparkline tooltip
             can overflow past the hero edges instead of getting cut off. */}
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-          <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.16} />
+          <GuillochePattern
+            accent={theme.accent}
+            accentDeep={theme.accentDeep}
+            fade="left"
+            opacity={0.1}
+            style={{
+              maskImage: "linear-gradient(to right, #000 2%, transparent 52%)",
+              WebkitMaskImage: "linear-gradient(to right, #000 2%, transparent 52%)",
+            }}
+          />
         </div>
         <div
           className="of-hero-row"
@@ -324,25 +333,15 @@ export function OtterfundAccounts({ accounts, netWorth, netWorthTrend = [], netW
                 {/* Investments open their full portfolio (allocation + holdings)
                     as a drill-in — Accounts is the one home for balances. */}
                 {grp.key === "invest" && onViewInvestments && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="link"
+                    size="xs"
                     onClick={() => onViewInvestments()}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 3,
-                      border: "none",
-                      background: "none",
-                      padding: 0,
-                      cursor: "pointer",
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: theme.accentDeep,
-                    }}
+                    className="text-[12px]"
                   >
-                    <TrendingUp size={13} strokeWidth={2.2} aria-hidden="true" />
+                    <TrendingUp strokeWidth={2.2} aria-hidden="true" />
                     View portfolio →
-                  </button>
+                  </Button>
                 )}
               </div>
               <span className="of-num" style={{ fontSize: 14, color: "oklch(48% 0.012 80)" }}>

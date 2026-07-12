@@ -35,6 +35,17 @@ export const requireUser = cache(async () => {
   return profile;
 });
 
+/**
+ * Guard for the internal /dev tools. Builds on requireUser (so login +
+ * onboarding are already enforced), then sends non-staff to the dashboard —
+ * the routes simply don't exist for them. Use in every /dev page.
+ */
+export const requireAdmin = cache(async () => {
+  const user = await requireUser();
+  if (!user.isAdmin) redirect("/dashboard");
+  return user;
+});
+
 /** Today's real calendar month/year — computed once per request. */
 export const currentPeriod = cache(() => {
   const now = new Date();

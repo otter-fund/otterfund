@@ -22,6 +22,8 @@ import { NetWorthSparkline } from "@/components/otterfund/net-worth-sparkline";
 import { MerchantAvatar } from "@/components/otterfund/merchant-avatar";
 import { OtterFace } from "@/components/otterfund/logo";
 import { Wordmark } from "@/components/otterfund/wordmark";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface OtterfundOverviewProps {
   overview: DashboardOverview;
@@ -176,8 +178,11 @@ function NavCard({
 
 /** The coloured "View all →" affordance shown in a preview's header. */
 function ViewLink({ color, label = "View all" }: { color: string; label?: string }) {
+  // Decorative affordance inside a clickable NavCard — must stay a span (no
+  // nested interactive element), but adopts the `link` button styling so it
+  // matches the design system. Section color overrides the variant's default.
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 12.5, fontWeight: 600, color }}>
+    <span className={cn(buttonVariants({ variant: "link" }), "text-[12.5px]")} style={{ color }}>
       {label} <span aria-hidden="true">→</span>
     </span>
   );
@@ -367,19 +372,8 @@ export function OtterfundOverview({ overview, name, theme, onNavigate }: Otterfu
                 e.stopPropagation();
                 onNavigate?.("accounts");
               }}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 3,
-                background: "none",
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
-                font: "inherit",
-                letterSpacing: "inherit",
-                textTransform: "none",
-                color: NOTES.accounts.accent,
-              }}
+              className={cn(buttonVariants({ variant: "link" }), "text-[12.5px] normal-case tracking-normal")}
+              style={{ color: NOTES.accounts.accent }}
             >
               View accounts <span aria-hidden="true">→</span>
             </button>
@@ -618,17 +612,15 @@ export function OtterfundOverview({ overview, name, theme, onNavigate }: Otterfu
             {insight}
           </p>
           <div style={{ flex: 1 }} />
+          {/* Decorative CTA inside the clickable insight card — stays a span (no
+              nested interactive element). Adopts the button base for pill shape,
+              size, and press spring; cream-on-brown fill is hue-derived to read
+              on the dark surface, so it overrides the variant's default colors. */}
           <span
+            className={cn(buttonVariants({ size: "sm" }), "relative mt-5 self-start")}
             style={{
-              position: "relative",
-              alignSelf: "flex-start",
-              marginTop: 20,
-              padding: "9px 16px",
-              borderRadius: 9999,
               background: band.ink,
               color: `oklch(26% 0.05 ${hue})`,
-              fontSize: 13.5,
-              fontWeight: 600,
             }}
           >
             See more insights →

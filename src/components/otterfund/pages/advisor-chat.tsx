@@ -137,6 +137,7 @@ interface AdvisorChatProps {
 
 const SIDEBAR_MIN = 220;
 const SIDEBAR_MAX = 460;
+const SIDEBAR_DEFAULT = 288; // matches the page's SIDEBAR_W — double-click the handle resets here
 
 export function AdvisorChat({
   theme,
@@ -160,20 +161,32 @@ export function AdvisorChat({
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const firstSignal = useRef(true);
 
-  const fetchConversations = async () => {
+  const fetchConversations = async (): Promise<AdvisorConversationSummary[]> => {
     try {
       const { advisorConversations } = await gqlClient.request<{
         advisorConversations: AdvisorConversationSummary[];
       }>(LIST_CONVERSATIONS);
-      setConversations(advisorConversations ?? []);
+      const list = advisorConversations ?? [];
+      setConversations(list);
+      return list;
     } catch {
       /* sidebar is non-critical — leave whatever we have */
+      return [];
     }
   };
 
-  // Load the sidebar on mount.
+  // Load the sidebar on mount, then open the most recent chat so returning to
+  // Insights resumes where you left off (rather than the blank composer). The
+  // list is ordered most-recent-first, so [0] is newest. Guarded to the first
+  // load only — a later refetch (after sending) must not yank you off the thread.
+  const didAutoOpen = useRef(false);
   useEffect(() => {
-    fetchConversations();
+    fetchConversations().then((list) => {
+      if (didAutoOpen.current) return;
+      didAutoOpen.current = true;
+      if (list.length > 0) openConversation(list[0].id);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // The page's "New chat" button bumps newChatSignal — reset to a fresh thread
@@ -258,8 +271,16 @@ export function AdvisorChat({
   };
 
   const removeConversation = async (id: string) => {
+    // If the active chat is deleted, jump to a neighbor (the one that slides into
+    // its place, else the previous) so the thread stays populated; fall back to a
+    // fresh composer only when the last chat is gone.
+    if (id === activeId) {
+      const idx = conversations.findIndex((c) => c.id === id);
+      const next = conversations[idx + 1] ?? conversations[idx - 1] ?? null;
+      if (next) openConversation(next.id);
+      else newChat();
+    }
     setConversations((prev) => prev.filter((c) => c.id !== id));
-    if (id === activeId) newChat();
     try {
       await gqlClient.request(DELETE_CONVERSATION, { id });
     } catch {
@@ -386,9 +407,21 @@ export function AdvisorChat({
                 }
           }
         >
-          <div className="of-scroll" style={{ flex: 1, overflowY: "auto", padding: "12px 8px" }}>
+          <div className="of-scroll" style={{ flex: 1, overflowY: "auto", padding: "12px 10px" }}>
+            <div
+              style={{
+                padding: "2px 8px 8px",
+                fontSize: 10.5,
+                fontWeight: 700,
+                letterSpacing: "0.09em",
+                textTransform: "uppercase",
+                color: "var(--color-of-faint)",
+              }}
+            >
+              Recent chats
+            </div>
             {conversations.length === 0 ? (
-              <p style={{ margin: "8px 8px", fontSize: 12.5, color: "var(--color-of-faint)", lineHeight: 1.5 }}>
+              <p style={{ margin: "4px 8px", fontSize: 12.5, color: "var(--color-of-faint)", lineHeight: 1.5 }}>
                 No saved chats yet. Ask a question to start one.
               </p>
             ) : (
@@ -478,6 +511,8 @@ export function AdvisorChat({
             aria-orientation="vertical"
             aria-label="Resize chat list"
             onMouseDown={startResize}
+            onDoubleClick={() => onSidebarWidth(SIDEBAR_DEFAULT)}
+            title="Drag to resize · double-click to reset"
             className="group"
             style={{
               position: "absolute",
@@ -637,7 +672,10 @@ export function AdvisorChat({
             <div
               style={{
                 display: "flex",
-                alignItems: "flex-end",
+                // center for a single line (the common case) so the text aligns
+                // with the send button; a growing textarea pushes the row taller
+                // symmetrically rather than dropping below the button.
+                alignItems: "center",
                 gap: 8,
                 background: "oklch(98% 0.004 90)",
                 border: "1px solid var(--color-of-line)",

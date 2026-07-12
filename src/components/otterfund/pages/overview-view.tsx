@@ -8,7 +8,7 @@ import type { DashboardOverview } from "@/lib/types";
 const ROUTE_FOR: Record<string, string> = {
   goals: "/dashboard/goals",
   transactions: "/dashboard/transactions",
-  insights: "/dashboard/insights",
+  insights: "/dashboard/insights?view=insights",
   spending: "/dashboard/spending",
   accounts: "/dashboard/accounts",
 };

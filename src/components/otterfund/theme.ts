@@ -37,6 +37,27 @@ export const SCHEMES: { name: string; value: string }[] = [
 ];
 
 /**
+ * Premium accents — a paid perk shown only to Standard and Pro. They are
+ * completely hidden from Free (not shown, not advertised) in the picker, and
+ * updateSettings (server) rejects them for Free too. Gold reads as the classic
+ * luxe cue; Obsidian is a near-black, faintly cool graphite for a sleek
+ * monochrome look. Their hues don't collide with any SCHEMES hue, so hue-based
+ * matching stays unambiguous. Add/restyle here and it flows everywhere via
+ * `isPremiumAccent`.
+ */
+export const PREMIUM_SCHEMES: { name: string; value: string }[] = [
+  { name: "Gold", value: "oklch(70% 0.125 88)" },
+  { name: "Obsidian", value: "oklch(27% 0.02 280)" },
+];
+
+/** Is `accent` one of the premium (paid-only) schemes? Compared by hue (the
+ *  picker's active check keys on hue too), so tint variants still match. */
+export function isPremiumAccent(accent: string): boolean {
+  const h = hueOf(accent);
+  return PREMIUM_SCHEMES.some((s) => hueOf(s.value) === h);
+}
+
+/**
  * A Canadian banknote *scheme* — one cohesive palette that uses ALL five note
  * colours at once ($5 blue, $10 purple, $20 green, $50 red, $100 brown). Unlike
  * the single-accent SCHEMES above, these are meant to be used together: charts,

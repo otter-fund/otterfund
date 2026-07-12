@@ -46,17 +46,23 @@ const productLd = {
   },
 };
 
-export default async function PricingPage() {
+export default async function PricingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
   // Public page — but if the visitor is signed in, the CTAs become live billing
   // actions (Checkout / current-plan / manage) instead of "sign up" links.
   const authUser = await getApiUser().catch(() => null);
   const row = authUser ? await getUserRow(authUser.id).catch(() => null) : null;
   const currentPlan = toPlanTier(row?.plan);
+  // Origin route (set by the in-app upgrade prompts) → a "Back to <page>" link.
+  const { from } = await searchParams;
 
   return (
     <>
       <JsonLd data={productLd} />
-      <PricingView authed={!!authUser} currentPlan={currentPlan} />
+      <PricingView authed={!!authUser} currentPlan={currentPlan} from={from} />
     </>
   );
 }

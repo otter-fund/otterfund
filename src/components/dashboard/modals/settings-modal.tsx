@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Tabs, type TabItem } from "@/components/otterfund/tabs";
 import { Wordmark } from "@/components/otterfund/wordmark";
+import { PlanBadgeIcon } from "@/components/otterfund/plan-badge-icon";
 import { Menu, MenuTrigger, MenuContent, MenuRadioGroup, MenuRadioItem } from "@/components/ui/menu";
 import { SchemePicker } from "@/components/otterfund/scheme-picker";
 import { braid } from "@/components/otterfund/guilloche";
@@ -20,7 +21,7 @@ import { useOtterfundChrome } from "@/components/otterfund/chrome-context";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
 import { BudgetPlanPicker } from "@/components/otterfund/budget-plan-picker";
-import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus, CreditCard, Sparkles } from "lucide-react";
+import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus, CreditCard, ArrowLeftRight } from "lucide-react";
 import { CURRENCIES, getBudgetPlan } from "@/lib/constants";
 import { PLAN_META } from "@/lib/plans";
 
@@ -94,6 +95,10 @@ interface SettingsModalProps {
   accent: string;
   onAccentChange: (accent: string) => void;
   onSaved?: () => void;
+  /** Tab to open on (from the ?settings=<tab> URL param). Defaults to profile. */
+  initialTab?: string;
+  /** Called when the active tab changes so the parent can reflect it in the URL. */
+  onTabChange?: (tab: string) => void;
 }
 
 const fieldLabelCls =
@@ -130,11 +135,16 @@ function SectionHead({
   );
 }
 
-export function SettingsModal({ open, onClose, user, accent, onAccentChange, onSaved }: SettingsModalProps) {
+export function SettingsModal({ open, onClose, user, accent, onAccentChange, onSaved, initialTab, onTabChange }: SettingsModalProps) {
   const router = useRouter();
   const { connectBank, plan, promptUpgrade, openBillingPortal } = useOtterfundChrome();
   const theme = deriveTheme(accent);
-  const [tab, setTab] = useState<SettingsTab>("profile");
+  const [tab, setTab] = useState<SettingsTab>((initialTab as SettingsTab) ?? "profile");
+  // Sync to the URL-driven tab whenever the modal opens (or the param changes),
+  // so deep links + the "Back to Settings" return from pricing land on the right tab.
+  useEffect(() => {
+    if (open && initialTab) setTab(initialTab as SettingsTab);
+  }, [open, initialTab]);
 
   // ── Connections (linked banks) ──
   const [connections, setConnections] = useState<PlaidConnection[] | null>(null);
@@ -367,6 +377,7 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
               const onValueChange = (v: string) => {
                 disarmDelete();
                 setTab(v as SettingsTab);
+                onTabChange?.(v);
               };
               const active = TABS.find((t) => t.value === tab) ?? TABS[0];
               const ActiveIcon = active.icon;
@@ -448,27 +459,20 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                   className="max-w-[440px] rounded-2xl p-6"
                   style={{ background: "var(--color-of-surface)", border: "1px solid var(--color-of-line)" }}
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <div className={fieldLabelCls}>Current plan</div>
-                      <div className="text-[19px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)]">
-                        {PLAN_META[plan].name}
-                      </div>
+                  <div>
+                    <div className={fieldLabelCls}>Current plan</div>
+                    <div className="flex items-center gap-2 text-[19px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)]">
+                      {PLAN_META[plan].name}
+                      <PlanBadgeIcon plan={plan} size={18} />
                     </div>
-                    <span
-                      className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
-                      style={{ background: "var(--accent)", color: "var(--color-primary)" }}
-                    >
-                      {PLAN_META[plan].label}
-                    </span>
                   </div>
 
                   <div className="mt-5 flex flex-wrap gap-2.5">
-                    {plan !== "pro" && (
-                      <Button size="sm" onClick={() => { onClose(); promptUpgrade(); }}>
-                        <Sparkles data-icon="inline-start" className="w-4 h-4" /> Upgrade plan
-                      </Button>
-                    )}
+                    {/* Change plan is available on every tier (upgrade or switch);
+                        only Manage billing is hidden on free (no subscription yet). */}
+                    <Button size="sm" onClick={() => { onClose(); promptUpgrade(); }}>
+                      <ArrowLeftRight data-icon="inline-start" className="w-4 h-4" /> Change plan
+                    </Button>
                     {plan !== "free" && (
                       <Button variant="outline" size="sm" onClick={() => { onClose(); openBillingPortal(); }}>
                         <CreditCard data-icon="inline-start" className="w-4 h-4" /> Manage billing
@@ -630,7 +634,11 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
             {tab === "appearance" && (
               <section className="of-enter">
                 <SectionHead icon={Palette} title="Appearance" desc="Choose an accent color." />
-                <SchemePicker accent={accent} onAccentChange={onAccentChange} />
+                <SchemePicker
+                  accent={accent}
+                  onAccentChange={onAccentChange}
+                  canUsePremium={plan !== "free"}
+                />
               </section>
             )}
 

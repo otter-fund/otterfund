@@ -345,14 +345,19 @@ function TierCta({
     // current plan links into the Stripe portal to manage or cancel.
     if (tier.id === "free") {
       return (
-        <button type="button" disabled className={cn(cls("outline"), "cursor-default opacity-70")}>
+        <button
+          type="button"
+          disabled
+          className={cn(cls("outline"), "cursor-default")}
+          style={{ background: T.accentTint, borderColor: T.accentTintBorder, color: T.accentDeep }}
+        >
           <Check className="h-4 w-4" strokeWidth={2.6} />
           Current plan
         </button>
       );
     }
     return (
-      <button type="button" onClick={onPortal} disabled={busy} className={cls("outline")}>
+      <button type="button" onClick={onPortal} disabled={busy} className={cls(featured ? "default" : "outline")}>
         {busy ? "Opening…" : "Manage plan"}
       </button>
     );
@@ -403,6 +408,9 @@ function TierCard({
   onPortal: () => void;
 }) {
   const featured = !!tier.featured;
+  // The signed-in user's own tier — highlighted with a ring + badge so it's
+  // unmistakable which plan they're on.
+  const current = authed && currentPlan === tier.id;
   const [strokeLine, strokeDeep] = TIER_STROKES[tier.id] ?? TIER_STROKES.standard;
   // A tiny tile of two dashed diagonals → a cross-hatch of short strokes (not
   // long continuous lines) when tiled. The dash pattern keeps each mark tiny.
@@ -422,12 +430,18 @@ function TierCard({
         background: featured
           ? `radial-gradient(135% 90% at 88% -14%, ${T.accentTint} 0%, transparent 52%), linear-gradient(180deg, oklch(100% 0 0 / 0.55), oklch(100% 0 0 / 0) 42%), var(--color-of-surface)`
           : "linear-gradient(180deg, oklch(100% 0 0 / 0.5), oklch(100% 0 0 / 0) 40%), var(--color-of-surface)",
-        border: featured ? `1.5px solid ${T.accent}` : "1px solid var(--color-of-line)",
+        border: featured
+          ? `1.5px solid ${T.accent}`
+          : current
+            ? `1.5px solid ${T.accentBorder}`
+            : "1px solid var(--color-of-line)",
         // Inset top highlight (a lit top edge) + a crisp near shadow + a soft far
         // shadow: the card reads as a raised sheet rather than a flat rectangle.
         boxShadow: featured
           ? "inset 0 1px 0 oklch(100% 0 0 / 0.9), 0 0 0 1px oklch(66% 0.17 29 / 0.12), 0 6px 34px oklch(66% 0.17 29 / 0.16), 0 30px 70px oklch(20% 0.04 160 / 0.16)"
-          : "inset 0 1px 0 oklch(100% 0 0 / 0.8), 0 1px 3px oklch(20% 0.02 80 / 0.05), 0 14px 34px oklch(20% 0.02 80 / 0.07)",
+          : current
+            ? `inset 0 1px 0 oklch(100% 0 0 / 0.8), 0 0 0 3px ${T.accentTint}, 0 14px 34px oklch(20% 0.02 80 / 0.07)`
+            : "inset 0 1px 0 oklch(100% 0 0 / 0.8), 0 1px 3px oklch(20% 0.02 80 / 0.05), 0 14px 34px oklch(20% 0.02 80 / 0.07)",
       }}
     >
       {/* "Money strokes" — a fine engraved cross-hatch (like a banknote's etched
@@ -446,28 +460,36 @@ function TierCard({
         }}
       />
 
+      {/* The otter pokes over the top edge of the featured card, both paws
+          gripping it. Sits on top (z-10) so nothing clips it; purely decorative. */}
       {featured && (
-        <>
-          {/* The otter pokes over the top edge, both paws gripping the card. Sits
-              on top (z-10) so nothing clips it; purely decorative. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={otterPoking.src}
-            alt=""
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-0 z-10 w-[210px] max-w-none -translate-x-1/2 -translate-y-[80%]"
-            style={{ filter: "drop-shadow(0 8px 10px oklch(20% 0.04 160 / 0.14))" }}
-          />
-          {/* "Most popular" — tucked into the top-right, just under the corner and
-              clear of the otter's paw. */}
-          <span
-            className="absolute right-4 top-4 z-20 rounded-full px-2.5 py-[5px] text-[10px] font-semibold uppercase tracking-[0.07em]"
-            style={{ background: T.accent, color: "#fff", boxShadow: "0 3px 8px oklch(20% 0.04 160 / 0.2)" }}
-          >
-            Most popular
-          </span>
-        </>
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={otterPoking.src}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-0 z-10 w-[210px] max-w-none -translate-x-1/2 -translate-y-[80%]"
+          style={{ filter: "drop-shadow(0 8px 10px oklch(20% 0.04 160 / 0.14))" }}
+        />
       )}
+      {/* Top-right badge. The signed-in user's current plan takes precedence over
+          the "Most popular" marketing tag — it's the more useful signal to them. */}
+      {current ? (
+        <span
+          className="absolute right-4 top-4 z-20 inline-flex items-center gap-1 rounded-full px-2.5 py-[5px] text-[10px] font-semibold uppercase tracking-[0.07em]"
+          style={{ background: T.accentTint, color: T.accentDeep, boxShadow: `inset 0 0 0 1px ${T.accentTintBorder}` }}
+        >
+          <Check className="h-3 w-3" strokeWidth={2.8} />
+          Current plan
+        </span>
+      ) : featured ? (
+        <span
+          className="absolute right-4 top-4 z-20 rounded-full px-2.5 py-[5px] text-[10px] font-semibold uppercase tracking-[0.07em]"
+          style={{ background: T.accent, color: "#fff", boxShadow: "0 3px 8px oklch(20% 0.04 160 / 0.2)" }}
+        >
+          Most popular
+        </span>
+      ) : null}
 
       <div className="relative z-[1] flex flex-col">
 
@@ -521,13 +543,45 @@ function TierCard({
   );
 }
 
+// Known in-app origins → the label shown on the "Back to <page>" return link.
+// Only routes in this map get a tailored back link; anything else (or absent)
+// falls back to the generic dashboard link, which also guards against an
+// attacker-supplied `from` becoming an open redirect.
+const BACK_LABELS: Record<string, string> = {
+  "/dashboard": "dashboard",
+  "/dashboard/transactions": "Transactions",
+  "/dashboard/spending": "Spending",
+  "/dashboard/accounts": "Accounts",
+  "/dashboard/investments": "Investments",
+  "/dashboard/goals": "Goals",
+  "/dashboard/insights": "Insights",
+};
+
 export function PricingView({
   authed = false,
   currentPlan = "free",
+  from,
 }: {
   authed?: boolean;
   currentPlan?: PlanTier;
+  /** Origin route (from `?from=`) so the nav offers a "Back to <page>" link. */
+  from?: string;
 } = {}) {
+  const back = ((): { href: string; label: string } => {
+    // `from` may carry a query (e.g. "/dashboard?settings=plan"). Only honor it
+    // when the PATH is a known in-app route — never trust it for the label OR the
+    // href. (A bare `!startsWith("//")` check isn't enough: the URL parser turns a
+    // backslash into a slash, so `/\evil.com` would resolve off-site — hence the
+    // allow-list on the path is the real guard against an open redirect.)
+    if (from && from.startsWith("/")) {
+      const [path, query = ""] = from.split("?");
+      if (BACK_LABELS[path]) {
+        const label = new URLSearchParams(query).has("settings") ? "Settings" : BACK_LABELS[path];
+        return { href: from, label: `Back to ${label}` };
+      }
+    }
+    return { href: "/dashboard", label: "Go to dashboard" };
+  })();
   const [period, setPeriod] = useState<BillingPeriod>("monthly");
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState("");
@@ -571,8 +625,8 @@ export function PricingView({
           </Link>
           <div className="flex items-center gap-1.5 sm:gap-2">
             {authed ? (
-              <Link href="/dashboard" className={cn(buttonVariants({ variant: "default" }), "h-auto px-4 py-2 text-[13px]")}>
-                Go to dashboard
+              <Link href={back.href} className={cn(buttonVariants({ variant: "default" }), "h-auto px-4 py-2 text-[13px]")}>
+                {back.label}
               </Link>
             ) : (
               <>
