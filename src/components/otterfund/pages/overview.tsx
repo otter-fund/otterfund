@@ -12,9 +12,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownLeft, ArrowUpRight, Wallet } from "lucide-react";
 import type { DashboardOverview } from "@/lib/types";
-import { type OtterfundTheme, accentFamilyTint, hueOf } from "@/components/otterfund/theme";
+import { type OtterfundTheme, accentFamilyTint, deriveTheme } from "@/components/otterfund/theme";
 import { fmt } from "@/lib/format";
-import { Button } from "@/components/ui/button";
 import { ProgressBar, ProgressRing } from "@/components/otterfund/progress";
 import { GuillocheFlow } from "@/components/otterfund/guilloche-flow";
 import { GuillocheSeal } from "@/components/otterfund/guilloche";
@@ -70,6 +69,120 @@ function useTween(target: number, run: boolean, duration = 1200) {
   return value;
 }
 
+// Hand-drawn category glyphs (public/categories/*.png) are white+alpha masks,
+// so filling the box with a colour tints the sketch to the active accent —
+// the same engraved-icon treatment the landing uses on its feature cards.
+const CATEGORY_GLYPHS = new Set([
+  "bills", "dining_out", "entertainment", "groceries",
+  "health", "housing", "other", "subscriptions", "transport",
+]);
+
+function glyphFor(category: string): string {
+  const key = category.trim().toLowerCase().replace(/\s+/g, "_");
+  return `/categories/${CATEGORY_GLYPHS.has(key) ? key : "other"}.png`;
+}
+
+/** A category's sketch glyph, tinted to `color` via CSS mask (landing-style). */
+function CategoryGlyph({ category, color, size = 26 }: { category: string; color: string; size?: number }) {
+  const src = glyphFor(category);
+  return (
+    <span
+      aria-hidden
+      style={{
+        display: "inline-block",
+        width: size,
+        height: size,
+        flexShrink: 0,
+        background: color,
+        WebkitMaskImage: `url(${src})`,
+        maskImage: `url(${src})`,
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+      }}
+    />
+  );
+}
+
+// The five Canadian-banknote note colours from the landing, one per page the
+// overview previews. Each preview wears its note's accent (bars / rings / links /
+// hover border) so the five surfaces read as five distinct places.
+interface Note {
+  hue: string;
+  accent: string;
+  deep: string;
+  tint: string;
+  tintBorder: string;
+}
+const NOTES: Record<"transactions" | "spending" | "accounts" | "goals" | "insights", Note> = {
+  transactions: { hue: "250", accent: "oklch(52% 0.11 250)", deep: "oklch(40% 0.09 250)", tint: "oklch(95.5% 0.03 250)", tintBorder: "oklch(90% 0.045 250)" },
+  spending: { hue: "25", accent: "oklch(53% 0.16 25)", deep: "oklch(43% 0.13 25)", tint: "oklch(95.5% 0.04 25)", tintBorder: "oklch(90% 0.055 25)" },
+  accounts: { hue: "158", accent: "oklch(48% 0.115 158)", deep: "oklch(38% 0.092 158)", tint: "oklch(95.5% 0.03 158)", tintBorder: "oklch(90% 0.045 158)" },
+  goals: { hue: "312", accent: "oklch(50% 0.13 312)", deep: "oklch(40% 0.1 312)", tint: "oklch(95.5% 0.035 312)", tintBorder: "oklch(90% 0.05 312)" },
+  insights: { hue: "68", accent: "oklch(52% 0.075 68)", deep: "oklch(40% 0.06 68)", tint: "oklch(95.5% 0.025 68)", tintBorder: "oklch(90% 0.04 68)" },
+};
+
+/** A surface card that navigates on click — the whole preview is the target. */
+function NavCard({
+  note,
+  onClick,
+  ariaLabel,
+  style,
+  children,
+}: {
+  note: Note;
+  onClick: () => void;
+  ariaLabel: string;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={ariaLabel}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = note.accent;
+        e.currentTarget.style.transform = "translateY(-2px)";
+        e.currentTarget.style.boxShadow = "0 12px 30px oklch(20% 0.02 80 / 0.09)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = "var(--color-of-line)";
+        e.currentTarget.style.transform = "none";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+      style={{
+        ...CARD,
+        cursor: "pointer",
+        outline: "none",
+        transition: "transform .2s cubic-bezier(.22,.61,.36,1), box-shadow .2s, border-color .2s",
+        ...style,
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The coloured "View all →" affordance shown in a preview's header. */
+function ViewLink({ color, label = "View all" }: { color: string; label?: string }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 12.5, fontWeight: 600, color }}>
+      {label} <span aria-hidden="true">→</span>
+    </span>
+  );
+}
+
 /** Small tinted icon tile that gives each stat card its own identity. */
 function StatTile({ children, bg, ink }: { children: React.ReactNode; bg: string; ink: string }) {
   return (
@@ -78,8 +191,8 @@ function StatTile({ children, bg, ink }: { children: React.ReactNode; bg: string
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        width: 30,
-        height: 30,
+        width: 28,
+        height: 28,
         borderRadius: 9,
         background: bg,
         color: ink,
@@ -91,7 +204,7 @@ function StatTile({ children, bg, ink }: { children: React.ReactNode; bg: string
   );
 }
 
-export function OtterfundOverview({ overview, name, accent, theme, onNavigate }: OtterfundOverviewProps) {
+export function OtterfundOverview({ overview, name, theme, onNavigate }: OtterfundOverviewProps) {
   const cur = overview.currency;
   const money = (n: number) => fmt(n, cur);
   const signed = (n: number) => `${n < 0 ? "−" : "+"}${money(n)}`;
@@ -137,10 +250,15 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
         ? `${topCat.name} is your largest category at ${money(topCat.amount)}, about ${Math.round(topCat.pct)}% of this month's spending.`
         : `You've spent ${money(overview.monthlySpend)} so far this month against ${money(overview.monthlyIncome)} of income.`;
 
-  // ── deep evergreen insight band, re-derived from the active accent hue so it
-  //    stays on-brand whatever scheme the user picked (the landing's PANEL_BG,
-  //    hue-shifted). ──
-  const hue = hueOf(theme.accent);
+  // Per-note themes for the five previews (banknote colours from the landing),
+  // so each preview reads as its own place regardless of the app accent.
+  const tAccounts = deriveTheme(NOTES.accounts.accent);
+  const tSpending = deriveTheme(NOTES.spending.accent);
+  const tGoals = deriveTheme(NOTES.goals.accent);
+  const tTx = deriveTheme(NOTES.transactions.accent);
+
+  // Insights preview: the deep banknote band, in the $100 brown note.
+  const hue = NOTES.insights.hue;
   const band = {
     bg: `linear-gradient(158deg, oklch(34% 0.064 ${hue}) 0%, oklch(25% 0.052 ${hue}) 52%, oklch(20% 0.044 ${hue}) 100%)`,
     ink: `oklch(97% 0.014 ${hue})`,
@@ -177,9 +295,10 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
         </p>
       </div>
 
-      {/* ── net worth hero ── */}
+      {/* ── net worth hero · Accounts preview (green $20 note) ── */}
       <section
         className="of-nw-hero"
+        onClick={() => onNavigate?.("accounts")}
         style={{
           position: "relative",
           display: "grid",
@@ -187,18 +306,20 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
           gap: 28,
           alignItems: "end",
           padding: "0 4px 36px",
+          cursor: "pointer",
         }}
       >
         {/* Clip only the backdrop, not the section — so the sparkline tooltip
             can overflow past the hero edges instead of getting cut off. */}
         <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none", borderRadius: 20 }}>
-          <GuillocheFlow accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.14} speed={5} />
+          <GuillocheFlow accent={tAccounts.accent} accentDeep={tAccounts.accentDeep} fade="left" opacity={0.14} speed={5} />
         </div>
         <div style={{ position: "relative" }}>
           <div
             style={{
               display: "flex",
               alignItems: "center",
+              justifyContent: "space-between",
               gap: 8,
               fontSize: 12,
               fontWeight: 600,
@@ -206,34 +327,62 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
               textTransform: "uppercase",
             }}
           >
-            {(
-              [
-                ["networth", "Net worth"],
-                ["cash", "Cash flow"],
-              ] as const
-            ).map(([key, label], i) => (
-              <span key={key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {i > 0 && <span style={{ color: "var(--color-of-faint)" }} aria-hidden="true">/</span>}
-                <button
-                  type="button"
-                  onClick={() => setHeroView(key)}
-                  aria-pressed={heroView === key}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    cursor: "pointer",
-                    font: "inherit",
-                    letterSpacing: "inherit",
-                    textTransform: "inherit",
-                    transition: "color 140ms ease",
-                    color: heroView === key ? theme.accentDeep : "var(--color-of-faint)",
-                  }}
-                >
-                  {label}
-                </button>
-              </span>
-            ))}
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {(
+                [
+                  ["networth", "Net worth"],
+                  ["cash", "Cash flow"],
+                ] as const
+              ).map(([key, label], i) => (
+                <span key={key} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {i > 0 && <span style={{ color: "var(--color-of-faint)" }} aria-hidden="true">/</span>}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setHeroView(key);
+                    }}
+                    aria-pressed={heroView === key}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      cursor: "pointer",
+                      font: "inherit",
+                      letterSpacing: "inherit",
+                      textTransform: "inherit",
+                      transition: "color 140ms ease",
+                      color: heroView === key ? tAccounts.accentDeep : "var(--color-of-faint)",
+                    }}
+                  >
+                    {label}
+                  </button>
+                </span>
+              ))}
+            </div>
+            {/* keyboard-accessible nav target (the whole hero is clickable too) */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onNavigate?.("accounts");
+              }}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 3,
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                font: "inherit",
+                letterSpacing: "inherit",
+                textTransform: "none",
+                color: NOTES.accounts.accent,
+              }}
+            >
+              View accounts <span aria-hidden="true">→</span>
+            </button>
           </div>
           <div
             className="of-num"
@@ -254,7 +403,7 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
               </div>
             ) : (
               <StatPill
-                theme={theme}
+                theme={tAccounts}
                 figure={signed(nwChangeTween)}
                 label="this month"
                 icon={
@@ -267,7 +416,7 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
           </div>
         </div>
         {!showingCash && (
-          <NetWorthSparkline trend={overview.netWorthTrend} theme={theme} money={money} signed={signed} />
+          <NetWorthSparkline trend={overview.netWorthTrend} theme={tAccounts} money={money} signed={signed} currency={cur} />
         )}
       </section>
 
@@ -278,73 +427,75 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
           gap: 16,
+          marginTop: 20,
           marginBottom: 16,
         }}
       >
-        <div style={{ ...CARD, padding: "22px 24px" }}>
+        <div style={{ ...CARD, padding: "12px 20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <StatTile bg={theme.accentTint} ink={theme.accentDeep}>
               <ArrowDownLeft size={16} strokeWidth={2.2} aria-hidden="true" />
             </StatTile>
             <span style={{ fontSize: 12.5, color: "var(--color-of-muted)", fontWeight: 500 }}>Income</span>
           </div>
-          <div className="of-num" style={{ fontSize: 30, letterSpacing: "-0.02em", marginTop: 12, color: theme.accentDeep }}>
+          <div className="of-num" style={{ fontSize: 23, letterSpacing: "-0.02em", marginTop: 6, color: theme.accentDeep }}>
             {money(incomeTween)}
           </div>
         </div>
-        <div style={{ ...CARD, padding: "22px 24px" }}>
+        <div style={{ ...CARD, padding: "12px 20px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <StatTile bg="var(--color-of-line-soft)" ink="var(--color-of-muted)">
               <ArrowUpRight size={16} strokeWidth={2.2} aria-hidden="true" />
             </StatTile>
             <span style={{ fontSize: 12.5, color: "var(--color-of-muted)", fontWeight: 500 }}>Spending</span>
           </div>
-          <div className="of-num" style={{ fontSize: 30, letterSpacing: "-0.02em", marginTop: 12 }}>
+          <div className="of-num" style={{ fontSize: 23, letterSpacing: "-0.02em", marginTop: 6 }}>
             {money(spendTween)}
           </div>
         </div>
-        <div style={{ background: theme.accent, borderRadius: 20, padding: "22px 24px", color: "#fff" }}>
+        <div style={{ background: theme.accent, borderRadius: 20, padding: "12px 20px", color: "#fff" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <StatTile bg="rgba(255,255,255,0.22)" ink="#fff">
               <Wallet size={16} strokeWidth={2.2} aria-hidden="true" />
             </StatTile>
             <span style={{ fontSize: 12.5, opacity: 0.9, fontWeight: 500 }}>{surplusDown ? "Overspent" : "Left over"}</span>
           </div>
-          <div className="of-num" style={{ fontSize: 30, letterSpacing: "-0.02em", marginTop: 12 }}>
+          <div className="of-num" style={{ fontSize: 23, letterSpacing: "-0.02em", marginTop: 6 }}>
             {signed(surplusTween)}
           </div>
           <div style={{ fontSize: 12, opacity: 0.85, marginTop: 4 }}>{savingsRate}% savings rate</div>
         </div>
       </section>
 
-      {/* ── two-up: spending + goals ── */}
+      {/* ── two-up: Spending (red) + Goals (purple) previews ── */}
       <section className="of-grid-2up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
-        <div style={CARD}>
+        <NavCard note={NOTES.spending} onClick={() => onNavigate?.("spending")} ariaLabel="View spending">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Where it went</h3>
-            <span style={{ fontSize: 12.5, color: "var(--color-of-faint)" }}>Top categories</span>
+            <ViewLink color={NOTES.spending.accent} />
           </div>
           {cats.length > 0 ? (
             cats.map((c) => (
-              <div key={c.categoryId} style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 7 }}>
-                  <span style={{ fontWeight: 500 }}>{c.name}</span>
-                  <span className="of-num" style={{ color: "var(--color-of-muted)" }}>{money(c.amount)}</span>
+              <div key={c.categoryId} style={{ display: "flex", alignItems: "center", gap: 13, marginBottom: 16 }}>
+                <CategoryGlyph category={c.name} color={NOTES.spending.accent} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 7 }}>
+                    <span style={{ fontWeight: 500 }}>{c.name}</span>
+                    <span className="of-num" style={{ color: "var(--color-of-muted)" }}>{money(c.amount)}</span>
+                  </div>
+                  <ProgressBar value={c.pct} color={tSpending.accent} />
                 </div>
-                <ProgressBar value={c.pct} color={theme.accent} />
               </div>
             ))
           ) : (
-            <EmptyBlock theme={theme} text="No spending yet this month." />
+            <EmptyBlock theme={tSpending} text="No spending yet this month." />
           )}
-        </div>
+        </NavCard>
 
-        <div style={CARD}>
+        <NavCard note={NOTES.goals} onClick={() => onNavigate?.("goals")} ariaLabel="View goals">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 20 }}>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Goals on track</h3>
-            <Button variant="link" size="sm" onClick={() => onNavigate?.("goals")} className="text-[12.5px]">
-              View all →
-            </Button>
+            <ViewLink color={NOTES.goals.accent} />
           </div>
           {goals.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -352,7 +503,7 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
                 const pct = g.target > 0 ? Math.round((g.saved / g.target) * 100) : 0;
                 return (
                   <div key={g.id} style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                    <ProgressRing value={pct} size={44} stroke={5} color={accent}>
+                    <ProgressRing value={pct} size={44} stroke={5} color={NOTES.goals.accent}>
                       {g.emoji && <span style={{ fontSize: 16, lineHeight: 1 }}>{g.emoji}</span>}
                     </ProgressRing>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -364,7 +515,7 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
                         <span className="of-num">{money(g.target)}</span>
                       </div>
                     </div>
-                    <span className="of-num" style={{ fontSize: 15, fontWeight: 500, color: theme.accentDeep, flexShrink: 0 }}>
+                    <span className="of-num" style={{ fontSize: 15, fontWeight: 500, color: tGoals.accentDeep, flexShrink: 0 }}>
                       {pct}%
                     </span>
                   </div>
@@ -372,23 +523,21 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
               })}
             </div>
           ) : (
-            <EmptyBlock theme={theme} text="No goals yet — set one to start saving with intent." />
+            <EmptyBlock theme={tGoals} text="No goals yet — set one to start saving with intent." />
           )}
-        </div>
+        </NavCard>
       </section>
 
-      {/* ── recent + insight ── */}
+      {/* ── recent (Transactions · blue) + insight (Insights · brown) ── */}
       <section className="of-grid-split" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 16 }}>
-        <div style={CARD}>
+        <NavCard note={NOTES.transactions} onClick={() => onNavigate?.("transactions")} ariaLabel="View transactions">
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 14 }}>
             <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Recent activity</h3>
-            <Button variant="link" size="sm" onClick={() => onNavigate?.("transactions")} className="text-[12.5px]">
-              See all →
-            </Button>
+            <ViewLink color={NOTES.transactions.accent} label="See all" />
           </div>
           {recent.length > 0 ? (
             recent.map((t, i) => {
-              const [tileBg, tileInk] = accentFamilyTint(i, accent);
+              const [tileBg, tileInk] = accentFamilyTint(i, NOTES.transactions.accent);
               const isIncome = t.amount > 0;
               return (
                 <div
@@ -402,20 +551,29 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
                     </div>
                     <div style={{ fontSize: 12, color: "var(--color-of-faint)" }}>{t.category}</div>
                   </div>
-                  <div className="of-num" style={{ fontSize: 14.5, fontWeight: 500, color: isIncome ? theme.accentDeep : "var(--color-of-ink)" }}>
+                  <div className="of-num" style={{ fontSize: 14.5, fontWeight: 500, color: isIncome ? tTx.accentDeep : "var(--color-of-ink)" }}>
                     {isIncome ? "+" : ""}{money(t.amount)}
                   </div>
                 </div>
               );
             })
           ) : (
-            <EmptyBlock theme={theme} text="No transactions yet this month." />
+            <EmptyBlock theme={tTx} text="No transactions yet this month." />
           )}
-        </div>
+        </NavCard>
 
-        {/* deep evergreen showpiece — the AI insight, in the landing's banknote
-            band language (re-tinted to the active accent hue). */}
+        {/* deep banknote showpiece — the AI insight, in the $100 brown note. */}
         <div
+          role="button"
+          tabIndex={0}
+          aria-label="Open insights"
+          onClick={() => onNavigate?.("insights")}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onNavigate?.("insights");
+            }
+          }}
           style={{
             position: "relative",
             overflow: "hidden",
@@ -424,7 +582,9 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
             padding: 24,
             display: "flex",
             flexDirection: "column",
-            boxShadow: "0 20px 50px oklch(22% 0.04 160 / 0.28)",
+            boxShadow: "0 20px 50px oklch(22% 0.05 68 / 0.28)",
+            cursor: "pointer",
+            outline: "none",
           }}
         >
           <GuillocheFlow accent={band.line} accentDeep={band.lineDeep} opacity={0.15} fade="none" speed={4} />
@@ -458,25 +618,21 @@ export function OtterfundOverview({ overview, name, accent, theme, onNavigate }:
             {insight}
           </p>
           <div style={{ flex: 1 }} />
-          <button
-            type="button"
-            onClick={() => onNavigate?.("insights")}
+          <span
             style={{
               position: "relative",
               alignSelf: "flex-start",
               marginTop: 20,
               padding: "9px 16px",
               borderRadius: 9999,
-              border: "none",
               background: band.ink,
               color: `oklch(26% 0.05 ${hue})`,
               fontSize: 13.5,
               fontWeight: 600,
-              cursor: "pointer",
             }}
           >
-            See more insights
-          </button>
+            See more insights →
+          </span>
         </div>
       </section>
     </div>

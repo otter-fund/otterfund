@@ -9,6 +9,8 @@ const ROUTE_FOR: Record<string, string> = {
   goals: "/dashboard/goals",
   transactions: "/dashboard/transactions",
   insights: "/dashboard/insights",
+  spending: "/dashboard/spending",
+  accounts: "/dashboard/accounts",
 };
 
 export function OverviewView({ overview, name }: { overview: DashboardOverview; name: string | null }) {

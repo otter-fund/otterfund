@@ -19,7 +19,7 @@ const SEQUENCE: Array<{ closed: boolean; hold: number }> = [
   { closed: true, hold: 110 },   // blink 1: close
   { closed: false, hold: 130 },  // blink 1: open
   { closed: true, hold: 110 },   // blink 2: close
-  { closed: false, hold: 3400 }, // open, long pause before next double-blink
+  { closed: false, hold: 2200 }, // open, long pause before next double-blink
 ];
 
 const maskStyle = (src: string) =>

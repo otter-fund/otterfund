@@ -290,7 +290,7 @@ export function OtterfundAccounts({ accounts, netWorth, netWorthTrend = [], netW
             the balances that make it up (the Overview shows the same line). */}
         {hasTrend && (
           <div style={{ position: "relative", marginTop: 18 }}>
-            <NetWorthSparkline trend={netWorthTrend} theme={theme} money={money} signed={signed} height={104} />
+            <NetWorthSparkline trend={netWorthTrend} theme={theme} money={money} signed={signed} currency={currency} height={104} />
           </div>
         )}
       </section>
