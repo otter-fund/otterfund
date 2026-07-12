@@ -21,10 +21,12 @@ export interface OtterfundChromeValue {
   setAccent: (accent: string) => void;
   /** The user's billing tier — pages read it to render locked states. */
   plan: PlanTier;
-  /** Gate an action: true = proceed; false = plan lacks it (opens the paywall). */
+  /** Gate an action: true = proceed; false = plan lacks it (redirects to pricing). */
   requireFeature: (feature: Feature) => boolean;
-  /** Open the upgrade paywall for a specific gated feature. */
-  openPaywall: (feature: Feature) => void;
+  /** Send the user to the pricing page to upgrade. */
+  promptUpgrade: () => void;
+  /** Open Stripe's hosted billing portal to manage/cancel a paid plan. */
+  openBillingPortal: () => void;
   /** Open the chrome-owned modals. */
   addTransaction: () => void;
   addGoal: () => void;

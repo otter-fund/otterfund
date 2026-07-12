@@ -20,8 +20,9 @@ import { useOtterfundChrome } from "@/components/otterfund/chrome-context";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
 import { BudgetPlanPicker } from "@/components/otterfund/budget-plan-picker";
-import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus } from "lucide-react";
+import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus, CreditCard, Sparkles } from "lucide-react";
 import { CURRENCIES, getBudgetPlan } from "@/lib/constants";
+import { PLAN_META } from "@/lib/plans";
 
 const PLAID_ITEMS = /* GraphQL */ `
   query PlaidItems {
@@ -59,10 +60,11 @@ const DELETE_MY_ACCOUNT = /* GraphQL */ `
   }
 `;
 
-type SettingsTab = "profile" | "money" | "connections" | "appearance" | "data";
+type SettingsTab = "profile" | "plan" | "money" | "connections" | "appearance" | "data";
 
 const TABS: TabItem[] = [
   { value: "profile", label: "Profile", icon: User },
+  { value: "plan", label: "Plan", icon: CreditCard },
   { value: "appearance", label: "Appearance", icon: Palette },
   { value: "money", label: "Money", icon: Wallet },
   { value: "connections", label: "Connections", icon: Landmark },
@@ -130,7 +132,7 @@ function SectionHead({
 
 export function SettingsModal({ open, onClose, user, accent, onAccentChange, onSaved }: SettingsModalProps) {
   const router = useRouter();
-  const { connectBank } = useOtterfundChrome();
+  const { connectBank, plan, promptUpgrade, openBillingPortal } = useOtterfundChrome();
   const theme = deriveTheme(accent);
   const [tab, setTab] = useState<SettingsTab>("profile");
 
@@ -436,6 +438,49 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, onS
                     <input value={user.email} disabled className="of-field opacity-60" />
                   </div>
                 </div>
+              </section>
+            )}
+
+            {tab === "plan" && (
+              <section className="of-enter">
+                <SectionHead icon={CreditCard} title="Plan" desc={<>Your <Wordmark /> subscription and billing.</>} />
+                <div
+                  className="max-w-[440px] rounded-2xl p-6"
+                  style={{ background: "var(--color-of-surface)", border: "1px solid var(--color-of-line)" }}
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <div className={fieldLabelCls}>Current plan</div>
+                      <div className="text-[19px] font-semibold tracking-[-0.01em] text-[var(--color-of-ink)]">
+                        {PLAN_META[plan].name}
+                      </div>
+                    </div>
+                    <span
+                      className="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold"
+                      style={{ background: "var(--accent)", color: "var(--color-primary)" }}
+                    >
+                      {PLAN_META[plan].label}
+                    </span>
+                  </div>
+
+                  <div className="mt-5 flex flex-wrap gap-2.5">
+                    {plan !== "pro" && (
+                      <Button size="sm" onClick={() => { onClose(); promptUpgrade(); }}>
+                        <Sparkles data-icon="inline-start" className="w-4 h-4" /> Upgrade plan
+                      </Button>
+                    )}
+                    {plan !== "free" && (
+                      <Button variant="outline" size="sm" onClick={() => { onClose(); openBillingPortal(); }}>
+                        <CreditCard data-icon="inline-start" className="w-4 h-4" /> Manage billing
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                <p className="mt-3 max-w-[440px] text-[12.5px] text-[var(--color-of-muted)]">
+                  {plan === "free"
+                    ? "Upgrade to unlock automatic bank sync, AI insights, and investment tracking."
+                    : "Manage billing opens Stripe to update payment, switch plans, or cancel."}
+                </p>
               </section>
             )}
 

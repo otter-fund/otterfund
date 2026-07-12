@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import Link from "next/link";
-import { Settings, LogOut, Sparkles, CreditCard } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LucideProps } from "lucide-react";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -60,8 +60,6 @@ export function MobileNav({
   userName,
   initials,
   planLabel,
-  onUpgrade,
-  onManageBilling,
   onOpenSettings,
   onSignOut,
 }: {
@@ -74,10 +72,6 @@ export function MobileNav({
   userName: string | null;
   initials: string | null;
   planLabel: string;
-  /** Present when the plan can be upgraded (→ /pricing). */
-  onUpgrade?: () => void;
-  /** Present on any paid plan (→ Stripe billing portal). */
-  onManageBilling?: () => void;
   onOpenSettings: () => void;
   onSignOut: () => void;
 }) {
@@ -261,30 +255,6 @@ export function MobileNav({
                   <div className="text-[11.5px] text-[var(--color-of-faint)]">{planLabel}</div>
                 </div>
               </div>
-              {(onUpgrade || onManageBilling) && (
-                <div className="mt-1.5 flex gap-2">
-                  {onUpgrade && (
-                    <Dialog.Close
-                      render={
-                        <Button size="sm" onClick={onUpgrade} className="flex-1">
-                          <Sparkles data-icon="inline-start" size={16} strokeWidth={2} aria-hidden="true" />
-                          Upgrade
-                        </Button>
-                      }
-                    />
-                  )}
-                  {onManageBilling && (
-                    <Dialog.Close
-                      render={
-                        <Button variant="outline" size="sm" onClick={onManageBilling} className="flex-1">
-                          <CreditCard data-icon="inline-start" size={16} strokeWidth={2} aria-hidden="true" />
-                          Billing
-                        </Button>
-                      }
-                    />
-                  )}
-                </div>
-              )}
               <div className="mt-1.5 flex gap-2">
                 <Dialog.Close
                   render={

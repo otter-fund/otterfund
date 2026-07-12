@@ -341,10 +341,19 @@ function TierCta({
 
   const isCurrent = currentPlan === tier.id;
   if (isCurrent) {
+    // Free has no subscription to manage — it reads as a static marker. A paid
+    // current plan links into the Stripe portal to manage or cancel.
+    if (tier.id === "free") {
+      return (
+        <button type="button" disabled className={cn(cls("outline"), "cursor-default opacity-70")}>
+          <Check className="h-4 w-4" strokeWidth={2.6} />
+          Current plan
+        </button>
+      );
+    }
     return (
-      <button type="button" disabled className={cn(cls("outline"), "cursor-default opacity-70")}>
-        <Check className="h-4 w-4" strokeWidth={2.6} />
-        Current plan
+      <button type="button" onClick={onPortal} disabled={busy} className={cls("outline")}>
+        {busy ? "Opening…" : "Manage plan"}
       </button>
     );
   }
@@ -353,18 +362,16 @@ function TierCta({
   if (tier.id === "free") {
     return (
       <button type="button" onClick={onPortal} disabled={busy} className={cls("outline")}>
-        {busy ? "Opening…" : "Switch to Free"}
+        {busy ? "Opening…" : "Downgrade"}
       </button>
     );
   }
 
-  // Paid card. First paid plan → Checkout; changing an existing plan → portal.
+  // Paid card that isn't the current plan. First paid plan from Free → Checkout;
+  // changing an existing paid plan → the portal. Higher tier reads "Upgrade",
+  // a lower paid tier "Downgrade".
   const changingExisting = currentPlan !== "free";
-  const label = changingExisting
-    ? tierRank(tier.id) > tierRank(currentPlan)
-      ? `Upgrade to ${tier.name}`
-      : `Switch to ${tier.name}`
-    : tier.cta;
+  const label = tierRank(tier.id) > tierRank(currentPlan) ? "Upgrade" : "Downgrade";
   return (
     <button
       type="button"
