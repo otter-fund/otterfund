@@ -8,10 +8,13 @@ export function SpendingView({
   plan,
   subscriptions,
   currency,
+  period,
 }: {
   plan: SpendingPlanView;
   subscriptions: SubscriptionView[];
   currency: string;
+  /** The month being viewed — the category drill-in queries the same window. */
+  period: { month: number; year: number };
 }) {
   const { accent, theme, hrefFor, addSubscription, editSubscription, hasAccounts, addAccount, connectBank } = useOtterfundChrome();
   return (
@@ -21,6 +24,7 @@ export function SpendingView({
       theme={theme}
       subscriptions={subscriptions}
       currency={currency}
+      period={period}
       hasAccounts={hasAccounts}
       onAddAccount={addAccount}
       onConnect={connectBank}

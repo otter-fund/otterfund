@@ -36,5 +36,5 @@ export default async function SpendingPage({
     getSubscriptions(user.id).catch(() => []),
     userCurrency(user.id),
   ]);
-  return <SpendingView plan={plan} subscriptions={subscriptions} currency={currency} />;
+  return <SpendingView plan={plan} subscriptions={subscriptions} currency={currency} period={{ month, year }} />;
 }

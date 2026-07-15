@@ -18,6 +18,8 @@ import { GuillochePattern, GuillocheSeal } from "@/components/otterfund/guilloch
 import { StatPill } from "@/components/otterfund/stat-pill";
 import { MerchantAvatar } from "@/components/otterfund/merchant-avatar";
 import { SectionHead, Ledger, Row } from "@/components/otterfund/ledger";
+import { Panel } from "@/components/otterfund/panel";
+import { CardLabel } from "@/components/otterfund/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -248,87 +250,94 @@ export function OtterfundSubscriptions({ subscriptions, theme, currency = "CAD",
   );
 
   // ── embedded · a "Recurring" section for the Spending page ──
-  // Flows as statement sections (services ledger + annual-projection ledger) so
-  // it sits neatly at the foot of the Spending page — no bordered cards. The
-  // standalone page below keeps its hero + two-up.
+  // Matches the redesigned Spending page's card grammar: a section label +
+  // summary, then a two-up of textured Panels (the services ledger and the
+  // annual-projection bars) so it sits on-brand at the foot of the page. The
+  // standalone page below keeps its own hero + two-up.
   if (embedded) {
     return (
-      <section style={{ marginTop: 38 }}>
-        <SectionHead title="Recurring" action={addButton} />
-        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 6 }}>
-          <span style={{ fontSize: 13, color: "var(--color-of-muted)" }}>
-            <span className="of-num">{money(monthlyEquivalent)}</span>/mo ·{" "}
-            <span className="of-num">{money(annualTotal)}</span>/yr · {subscriptions.length} service
-            {subscriptions.length === 1 ? "" : "s"}
-          </span>
-          {flaggedCount > 0 && <StatPill theme={theme} tone="clay" figure={flaggedCount} label="need attention" />}
+      <section style={{ marginTop: 30 }}>
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
+          <div>
+            <CardLabel>Recurring</CardLabel>
+            {subscriptions.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
+                <span style={{ fontSize: 13, color: "var(--color-of-muted)" }}>
+                  <span className="of-num">{money(monthlyEquivalent)}</span>/mo ·{" "}
+                  <span className="of-num">{money(annualTotal)}</span>/yr · {subscriptions.length} service
+                  {subscriptions.length === 1 ? "" : "s"}
+                </span>
+                {flaggedCount > 0 && <StatPill theme={theme} tone="clay" figure={flaggedCount} label="need attention" />}
+              </div>
+            )}
+          </div>
+          {addButton}
         </div>
 
         {subscriptions.length > 0 ? (
-          <Ledger style={{ marginTop: 4 }}>
-            {subscriptions.map((s, i) => {
-              const [tileBg, tileInk] = accentFamilyTint(i, theme.accent);
-              return (
-                <Row
-                  key={s.id}
-                  columns="40px 1fr auto"
-                  gap={13}
-                  onClick={onEdit ? () => onEdit(s) : undefined}
-                  ariaLabel={onEdit ? `Edit ${s.name}` : undefined}
-                >
-                  <MerchantAvatar name={s.name} domain={s.domain} bg={tileBg} ink={tileInk} size={36} />
-                  <div style={{ minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {s.name}
-                      </span>
-                      {s.flags.map((flag) => {
-                        const { bg, color, label } = flagBadge(flag, theme);
-                        return (
-                          <span
-                            key={flag}
-                            title={flag}
-                            style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", padding: "2px 7px", borderRadius: 999, background: bg, color }}
-                          >
-                            {label}
+          <div className="of-grid-2up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+            {/* services */}
+            <Panel theme={theme}>
+              <SectionHead
+                title="Services"
+                action={<span style={{ fontSize: 12, color: "var(--color-of-faint)" }}>{subscriptions.length} active</span>}
+              />
+              <Ledger style={{ marginTop: 4 }}>
+                {subscriptions.map((s, i) => {
+                  const [tileBg, tileInk] = accentFamilyTint(i, theme.accent);
+                  return (
+                    <Row
+                      key={s.id}
+                      columns="40px 1fr auto"
+                      gap={13}
+                      onClick={onEdit ? () => onEdit(s) : undefined}
+                      ariaLabel={onEdit ? `Edit ${s.name}` : undefined}
+                    >
+                      <MerchantAvatar name={s.name} domain={s.domain} bg={tileBg} ink={tileInk} size={36} />
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                          <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            {s.name}
                           </span>
-                        );
-                      })}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--color-of-faint)", marginTop: 2 }}>{s.cycle}</div>
-                  </div>
-                  <div className="of-num" style={{ fontSize: 15, fontWeight: 500, flexShrink: 0, whiteSpace: "nowrap", textAlign: "right" }}>
-                    {money(s.amount)}
-                    <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-of-faint)", marginLeft: 2 }}>
-                      {s.cycle === "Annual" ? "/yr" : "/mo"}
-                    </span>
-                  </div>
-                </Row>
-              );
-            })}
-          </Ledger>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 150, textAlign: "center" }}>
-            <div style={{ width: 56, height: 56 }} aria-hidden="true">
-              <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
-            </div>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--color-of-muted)" }}>No subscriptions tracked yet.</p>
-          </div>
-        )}
+                          {s.flags.map((flag) => {
+                            const { bg, color, label } = flagBadge(flag, theme);
+                            return (
+                              <span
+                                key={flag}
+                                title={flag}
+                                style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", padding: "2px 7px", borderRadius: 999, background: bg, color }}
+                              >
+                                {label}
+                              </span>
+                            );
+                          })}
+                        </div>
+                        <div style={{ fontSize: 12, color: "var(--color-of-faint)", marginTop: 2 }}>{s.cycle}</div>
+                      </div>
+                      <div className="of-num" style={{ fontSize: 15, fontWeight: 500, flexShrink: 0, whiteSpace: "nowrap", textAlign: "right" }}>
+                        {money(s.amount)}
+                        <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-of-faint)", marginLeft: 2 }}>
+                          {s.cycle === "Annual" ? "/yr" : "/mo"}
+                        </span>
+                      </div>
+                    </Row>
+                  );
+                })}
+              </Ledger>
+            </Panel>
 
-        {projection.length > 0 && (
-          <div style={{ marginTop: 28 }}>
-            <SectionHead
-              title="Annual projection"
-              action={<span className="of-num" style={{ fontSize: 12.5, color: "var(--color-of-faint)" }}>{money(annualTotal)}/yr total</span>}
-            />
-            <Ledger style={{ marginTop: 4 }}>
-              {projection.map(({ s, annual }) => {
-                const pct = maxAnnual > 0 ? (annual / maxAnnual) * 100 : 0;
-                return (
-                  <Row key={s.id} columns="1fr" padding="12px 12px">
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, marginBottom: 8, gap: 12 }}>
+            {/* annual projection */}
+            <Panel theme={theme}>
+              <SectionHead
+                title="Annual projection"
+                action={<span className="of-num" style={{ fontSize: 12, color: "var(--color-of-faint)" }}>{money(annualTotal)}/yr total</span>}
+              />
+              <div style={{ marginTop: 14 }}>
+                {projection.map(({ s, annual }, i) => {
+                  const pct = maxAnnual > 0 ? (annual / maxAnnual) * 100 : 0;
+                  return (
+                    <div key={s.id} style={{ marginBottom: i === projection.length - 1 ? 0 : 16 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, marginBottom: 7, gap: 12 }}>
                         <span style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
                         <span className="of-num" style={{ color: "var(--color-of-muted)", flexShrink: 0 }}>
                           {money(annual)}<span style={{ color: "var(--color-of-faint)" }}>/yr</span>
@@ -336,11 +345,20 @@ export function OtterfundSubscriptions({ subscriptions, theme, currency = "CAD",
                       </div>
                       <ProgressBar value={pct} color={theme.accent} />
                     </div>
-                  </Row>
-                );
-              })}
-            </Ledger>
+                  );
+                })}
+              </div>
+            </Panel>
           </div>
+        ) : (
+          <Panel theme={theme}>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 150, textAlign: "center" }}>
+              <div style={{ width: 56, height: 56 }} aria-hidden="true">
+                <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: "var(--color-of-muted)" }}>No subscriptions tracked yet.</p>
+            </div>
+          </Panel>
         )}
       </section>
     );

@@ -25,6 +25,7 @@ import { StatPill } from "@/components/otterfund/stat-pill";
 import { CardLabel } from "@/components/otterfund/card";
 import { NetWorthSparkline } from "@/components/otterfund/net-worth-sparkline";
 import { MerchantAvatar } from "@/components/otterfund/merchant-avatar";
+import { CategoryGlyph } from "@/components/otterfund/category-glyph";
 import { OtterFace } from "@/components/otterfund/logo";
 import { Wordmark } from "@/components/otterfund/wordmark";
 import { Statement, HeroBand, SectionHead, ViewAllLink, Ledger, Row } from "@/components/otterfund/ledger";
@@ -74,45 +75,6 @@ function useTween(target: number, run: boolean, duration = 1200) {
     return () => cancelAnimationFrame(raf);
   }, [run, target, duration]);
   return value;
-}
-
-// Hand-drawn category glyphs (public/categories/*.png) are white+alpha masks, so
-// filling the box with a colour tints the sketch — here to the category's OWN
-// identity tint, the one place per-category colour survives the single-accent
-// chrome (a category is data, not decoration).
-const CATEGORY_GLYPHS = new Set([
-  "bills", "dining_out", "entertainment", "groceries",
-  "health", "housing", "other", "subscriptions", "transport",
-]);
-
-function glyphFor(category: string): string {
-  const key = category.trim().toLowerCase().replace(/\s+/g, "_");
-  return `/categories/${CATEGORY_GLYPHS.has(key) ? key : "other"}.png`;
-}
-
-/** A category's sketch glyph, tinted to `color` via CSS mask (landing-style). */
-function CategoryGlyph({ category, color, size = 24 }: { category: string; color: string; size?: number }) {
-  const src = glyphFor(category);
-  return (
-    <span
-      aria-hidden
-      style={{
-        display: "inline-block",
-        width: size,
-        height: size,
-        flexShrink: 0,
-        background: color,
-        WebkitMaskImage: `url(${src})`,
-        maskImage: `url(${src})`,
-        WebkitMaskRepeat: "no-repeat",
-        maskRepeat: "no-repeat",
-        WebkitMaskPosition: "center",
-        maskPosition: "center",
-        WebkitMaskSize: "contain",
-        maskSize: "contain",
-      }}
-    />
-  );
 }
 
 export function OtterfundOverview({ overview, name, theme, hasAccounts = true, onAddAccount, onConnectBank, onNavigate }: OtterfundOverviewProps) {

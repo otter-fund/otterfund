@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "./prisma";
 import { getUserRow } from "./user";
 import {
@@ -21,6 +22,7 @@ import type {
   SpendingPlanView,
   SpendingBucket,
   SpendingCategorySlice,
+  SpendingCategoryDetail,
   GoalView,
   GoalPlanItem,
   GoalsPlanView,
@@ -452,6 +454,7 @@ export async function getSpendingPlan(
         amount,
         color: g.color || "oklch(60% 0.09 155)",
         pctOfBucket: savingsTarget > 0 ? Math.round((amount / savingsTarget) * 100) : 0,
+        emoji: g.emoji,
       };
     })
     .sort((a, b) => b.amount - a.amount);
@@ -490,6 +493,73 @@ export async function getSpendingPlan(
     currency,
     totalSpent,
     buckets,
+  };
+}
+
+/**
+ * The spend transactions behind one Spending category slice, for the drill-in
+ * drawer. Mirrors getSpendingPlan's categorisation so the drawer reconciles with
+ * the row that opened it: expenses only (amount < 0), the same period window and
+ * excluded-account rule. `categoryId` is a real category id, or the synthetic
+ * "uncategorized" slice — the spend the buckets folded into Wants: transactions
+ * with no category, plus any tagged "Income" (both dropped by the rollup).
+ * Returns null when the id isn't a spend category the caller owns.
+ */
+export async function getSpendingCategoryDetail(
+  userId: string,
+  categoryId: string,
+  month: number,
+  year: number
+): Promise<SpendingCategoryDetail | null> {
+  const startDate = new Date(year, month - 1, 1);
+  const endDate = new Date(year, month, 1);
+  const period = { gte: startDate, lt: endDate };
+
+  let where: Prisma.TransactionWhereInput;
+  let label: string;
+
+  if (categoryId === "uncategorized") {
+    // The fold-in bucket: spend with no category, or spend tagged "Income"
+    // (bucketOf returns null only for Income). Everything else maps to a bucket.
+    const income = await prisma.category.findFirst({ where: { userId, name: "Income" } });
+    where = {
+      userId,
+      amount: { lt: 0 },
+      date: period,
+      ...NOT_EXCLUDED_ACCOUNT,
+      OR: [{ categoryId: null }, ...(income ? [{ categoryId: income.id }] : [])],
+    };
+    label = "Uncategorized";
+  } else {
+    const category = await prisma.category.findFirst({ where: { id: categoryId, userId } });
+    // Only real spend categories drill in — Income and non-spend rows (savings
+    // slices are goals, not transactions) return null so the row stays inert.
+    if (!category || bucketOf(category.name) === null) return null;
+    where = { userId, categoryId: category.id, amount: { lt: 0 }, date: period, ...NOT_EXCLUDED_ACCOUNT };
+    label = category.name;
+  }
+
+  const txns = await prisma.transaction.findMany({
+    where,
+    include: { account: true },
+    orderBy: { date: "desc" },
+  });
+
+  const total = txns.reduce((s, t) => s + Math.abs(t.amount), 0);
+  return {
+    categoryId,
+    label,
+    total,
+    count: txns.length,
+    transactions: [...txns]
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount))
+      .map((t) => ({
+        id: t.id,
+        name: t.name,
+        amount: t.amount,
+        date: formatDate(t.date),
+        account: t.account?.name ?? null,
+      })),
   };
 }
 

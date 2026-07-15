@@ -2,7 +2,7 @@ import { builder } from "../builder";
 import { requireUser, notFound, badRequest } from "../errors";
 import { TransactionPageRef } from "../types/views";
 import { MutationResultRef } from "../types/results";
-import { getTransactions } from "@/lib/db/queries";
+import { getTransactions, getSpendingCategoryDetail } from "@/lib/db/queries";
 import { prisma } from "@/lib/db/prisma";
 import { okString, okMoney, LIMITS } from "@/lib/validate";
 
@@ -24,6 +24,23 @@ builder.queryField("transactions", (t) =>
         month: args.month ?? undefined,
         year: args.year ?? undefined,
       }),
+  }),
+);
+
+// The spend transactions behind one Spending category slice — powers the
+// category-breakdown drill-in drawer. JSON return mirrors insightDetail's
+// category drill-down, which the client already renders the same way.
+builder.queryField("spendingCategoryDetail", (t) =>
+  t.field({
+    type: "JSON",
+    nullable: true,
+    args: {
+      categoryId: t.arg.id({ required: true }),
+      month: t.arg.int({ required: true }),
+      year: t.arg.int({ required: true }),
+    },
+    resolve: (_root, args, ctx) =>
+      getSpendingCategoryDetail(requireUser(ctx), String(args.categoryId), args.month, args.year),
   }),
 );
 

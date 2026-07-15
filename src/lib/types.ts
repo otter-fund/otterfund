@@ -38,6 +38,9 @@ export interface SpendingCategorySlice {
   color: string;
   /** This category's share of its bucket's actual spend (0–100, rounded). */
   pctOfBucket: number;
+  /** Savings slices only — the funded goal's emoji, so the Spending page can
+      show the same mark the Goals page does. Null when the goal has none. */
+  emoji?: string | null;
 }
 
 /**
@@ -248,6 +251,18 @@ export interface InsightDetailTx {
   amount: number;
   date: string;
   account: string | null;
+}
+
+/** The transactions behind one Spending category slice, for the drill-in drawer:
+ *  the period's spend in that category and the rows that make it up. */
+export interface SpendingCategoryDetail {
+  categoryId: string;
+  label: string;
+  /** Absolute total spent in the category this period. */
+  total: number;
+  count: number;
+  /** Every spend transaction in the category this period, largest first. */
+  transactions: InsightDetailTx[];
 }
 
 /** The real data behind an insight, resolved from its focus. Shape varies by
