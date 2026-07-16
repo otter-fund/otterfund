@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Newsreader, Hanken_Grotesk, Space_Grotesk } from "next/font/google";
+import Script from "next/script";
 import { Providers } from "@/components/providers";
 import { JsonLd } from "@/components/seo/json-ld";
 import {
@@ -110,13 +111,12 @@ export default function RootLayout({
         {/* Pre-paint theme boot — set the night class from the `of-appearance`
             cookie (System resolved via the OS) BEFORE first paint, so a reload in
             dark never flashes light. Gated to the authenticated app (/dashboard,
-            /dev); pre-auth pages (landing, login, onboarding) always stay light. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "(function(){try{var p=location.pathname;if(p.indexOf('/dashboard')!==0&&p.indexOf('/dev')!==0)return;var m=document.cookie.match(/(?:^|; )of-appearance=([^;]*)/);var v=m?decodeURIComponent(m[1]):'system';var d=v==='dark'||(v!=='light'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){var e=document.documentElement;e.classList.add('dark');e.style.colorScheme='dark';}}catch(e){}})();",
-          }}
-        />
+            /dev); pre-auth pages (landing, login, onboarding) always stay light.
+            next/script @ beforeInteractive inlines it into the server HTML so it
+            runs before hydration — Next 16 rejects a raw executable <script>. */}
+        <Script id="of-theme-boot" strategy="beforeInteractive">
+          {"(function(){try{var p=location.pathname;if(p.indexOf('/dashboard')!==0&&p.indexOf('/dev')!==0)return;var m=document.cookie.match(/(?:^|; )of-appearance=([^;]*)/);var v=m?decodeURIComponent(m[1]):'system';var d=v==='dark'||(v!=='light'&&window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d){var e=document.documentElement;e.classList.add('dark');e.style.colorScheme='dark';}}catch(e){}})();"}
+        </Script>
       </head>
       <body className="min-h-full flex flex-col">
         {/* Site-wide structured data — identifies the brand, the site, and the

@@ -1,4 +1,5 @@
 import { OtterfundChrome } from "@/components/otterfund/otterfund-chrome";
+import { OtterfundTour } from "@/components/otterfund/tour/otterfund-tour";
 import {
   requireUser,
   currentPeriod,
@@ -28,32 +29,40 @@ export default async function DashboardLayout({ children }: { children: React.Re
     countAccounts(user.id).catch(() => 0),
   ]);
 
+  const hasAccounts = accountCount > 0;
+
   return (
-    <OtterfundChrome
-      initialAccent={prefs.accent}
-      initialAppearance={prefs.appearance}
-      todayMonth={todayMonth}
-      todayYear={todayYear}
-      txThisMonth={txThisMonth}
-      hasAccounts={accountCount > 0}
-      user={{
-        name: user.name ?? "",
-        email: user.email ?? "",
-        monthlyIncome: overview?.monthlyIncome ?? 0,
-        currency: overview?.currency ?? "CAD",
-        budgetTarget: overview?.budgetTarget ?? 0,
-        budgetPlan: prefs.budgetPlan ?? DEFAULT_BUDGET_PLAN_ID,
-        plan: prefs.plan ?? "free",
-        isAdmin: user.isAdmin ?? false,
-      }}
-      notice={{
-        budgetTarget: overview?.budgetTarget ?? 0,
-        monthlySpend: overview?.monthlySpend ?? 0,
-        spendingByCategory: overview?.spendingByCategory ?? [],
-        upcomingBills: overview?.upcomingBills ?? [],
-      }}
+    <OtterfundTour
+      autoStart={user.tourCompletedAt == null}
+      firstName={user.name ?? null}
+      hasAccounts={hasAccounts}
     >
-      {children}
-    </OtterfundChrome>
+      <OtterfundChrome
+        initialAccent={prefs.accent}
+        initialAppearance={prefs.appearance}
+        todayMonth={todayMonth}
+        todayYear={todayYear}
+        txThisMonth={txThisMonth}
+        hasAccounts={hasAccounts}
+        user={{
+          name: user.name ?? "",
+          email: user.email ?? "",
+          monthlyIncome: overview?.monthlyIncome ?? 0,
+          currency: overview?.currency ?? "CAD",
+          budgetTarget: overview?.budgetTarget ?? 0,
+          budgetPlan: prefs.budgetPlan ?? DEFAULT_BUDGET_PLAN_ID,
+          plan: prefs.plan ?? "free",
+          isAdmin: user.isAdmin ?? false,
+        }}
+        notice={{
+          budgetTarget: overview?.budgetTarget ?? 0,
+          monthlySpend: overview?.monthlySpend ?? 0,
+          spendingByCategory: overview?.spendingByCategory ?? [],
+          upcomingBills: overview?.upcomingBills ?? [],
+        }}
+      >
+        {children}
+      </OtterfundChrome>
+    </OtterfundTour>
   );
 }

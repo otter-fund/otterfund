@@ -87,7 +87,8 @@ export function AddAccountEmptyState({
       title={title}
       description={description}
       actions={
-        <>
+        // data-tour anchors the first-run tour's closing step to this CTA.
+        <span data-tour="add-account-cta" style={{ display: "inline-flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
           <Button size="sm" onClick={() => onConnect?.()} aria-label="Connect a bank">
             <Landmark data-icon="inline-start" size={16} strokeWidth={2} />
             Connect a bank
@@ -96,7 +97,7 @@ export function AddAccountEmptyState({
             <Plus data-icon="inline-start" size={16} strokeWidth={2} />
             Add account
           </Button>
-        </>
+        </span>
       }
     />
   );

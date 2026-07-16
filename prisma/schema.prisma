@@ -21,6 +21,11 @@ model User {
   accent         String?  // Brand-kit accent (oklch); null = the default evergreen
   appearance     String?  @default("system") // Colour scheme: light | dark | system
   onboardingDone Boolean  @default(false)
+  // When the first-run product tour was finished OR skipped. Null = the user
+  // has never seen it, so the dashboard auto-starts the tour on their next
+  // load. Stamped (once) by the completeTour mutation; the profile menu's
+  // "Take a tour" replays it without clearing this.
+  tourCompletedAt DateTime?
   // otterfund staff flag. Gates the internal /dev tools (brand kit, AI usage,
   // plan-preview switcher). Set manually in the DB — never exposed in product UI.
   isAdmin        Boolean  @default(false)

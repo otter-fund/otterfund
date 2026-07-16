@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog } from "@base-ui/react/dialog";
 import Link from "next/link";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, Compass } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { LucideProps } from "lucide-react";
 import { useMediaQuery } from "@/lib/use-media-query";
@@ -63,6 +63,7 @@ export function MobileNav({
   planLabel,
   plan,
   onOpenSettings,
+  onTakeTour,
   onSignOut,
 }: {
   sections: NavSection[];
@@ -76,6 +77,7 @@ export function MobileNav({
   planLabel: string;
   plan: string;
   onOpenSettings: () => void;
+  onTakeTour: () => void;
   onSignOut: () => void;
 }) {
   // Controlled so we can force-close when the viewport grows past the desktop
@@ -174,6 +176,7 @@ export function MobileNav({
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger
+        data-tour="mobile-menu"
         className="of-hamburger group relative grid h-10 w-10 cursor-pointer place-items-center rounded-full border border-[var(--color-border)] bg-[var(--color-background)] outline-none transition-colors hover:bg-[var(--color-of-line-soft)] focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40 data-popup-open:bg-[var(--of-accent)]"
         aria-label="Menu"
       >
@@ -265,18 +268,28 @@ export function MobileNav({
                   </div>
                 </div>
               </div>
-              <div className="mt-1.5 flex gap-2">
+              <div className="mt-1.5 flex flex-col gap-2">
+                <div className="flex gap-2">
+                  <Dialog.Close
+                    render={
+                      <Button variant="outline" size="sm" onClick={onOpenSettings} className="flex-1">
+                        <Settings data-icon="inline-start" size={16} strokeWidth={2} aria-hidden="true" />
+                        Settings
+                      </Button>
+                    }
+                  />
+                  <Dialog.Close
+                    render={
+                      <Button variant="outline" size="sm" onClick={onTakeTour} className="flex-1">
+                        <Compass data-icon="inline-start" size={16} strokeWidth={2} aria-hidden="true" />
+                        Take a tour
+                      </Button>
+                    }
+                  />
+                </div>
                 <Dialog.Close
                   render={
-                    <Button variant="outline" size="sm" onClick={onOpenSettings} className="flex-1">
-                      <Settings data-icon="inline-start" size={16} strokeWidth={2} aria-hidden="true" />
-                      Settings
-                    </Button>
-                  }
-                />
-                <Dialog.Close
-                  render={
-                    <Button variant="danger" size="sm" onClick={onSignOut} className="flex-1">
+                    <Button variant="danger" size="sm" onClick={onSignOut} className="w-full">
                       <LogOut data-icon="inline-start" size={16} strokeWidth={2} aria-hidden="true" />
                       Log out
                     </Button>

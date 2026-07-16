@@ -14,8 +14,14 @@
 // create : makes an email-confirmed auth user (a Postgres trigger auto-creates
 //          the profile row with onboardingDone=false). If the user already
 //          exists, it re-confirms them and resets the password.
-// reset  : flips the existing user's onboardingDone back to false.
-// delete : removes the auth user (and cascades the profile) for a clean slate.
+// reset  : restores the full first-run state — onboardingDone=false, the tour
+//          re-armed (tourCompletedAt=null), AND the data onboarding creates
+//          (categories, budgets, accounts, subscriptions, bills, …) wiped.
+//          Without the wipe, re-walking onboarding collides on the existing
+//          budgets (unique userId+category+month+year) and errors; without the
+//          tour re-arm, the first-run guide never shows again.
+// delete : removes the auth user, then the profile row (the auth→profile FK is
+//          NOT ON DELETE CASCADE, so the profile must be deleted explicitly).
 
 import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
@@ -88,17 +94,19 @@ function warnWeakPassword(pw) {
   }
 }
 
-// Flip onboardingDone=false via PostgREST (the secret key bypasses RLS).
+// Restore the pre-first-run flags via PostgREST (the secret key bypasses RLS):
+// onboardingDone=false replays the wizard, and tourCompletedAt=null re-arms the
+// first-run product tour so it auto-starts again on the next /dashboard load.
 async function resetFlag(userId, targetLabel, { quiet } = {}) {
   const rows = await api(`/rest/v1/User?id=eq.${userId}`, {
     method: "PATCH",
     headers: { Prefer: "return=representation" },
-    body: JSON.stringify({ onboardingDone: false }),
+    body: JSON.stringify({ onboardingDone: false, tourCompletedAt: null }),
   });
   if (!rows?.length) {
     if (!quiet) console.warn(`!  No profile row found for ${targetLabel} — the trigger may not have created it yet.`);
   } else if (!quiet) {
-    console.log(`✔  Reset onboardingDone=false for ${targetLabel}. Reload /onboarding.`);
+    console.log(`✔  Reset onboardingDone=false + re-armed the first-run tour for ${targetLabel}. Reload /onboarding.`);
   }
 }
 
@@ -131,6 +139,36 @@ async function create() {
   console.log("→  Sign in at /login; you'll be routed to /onboarding.");
 }
 
+// The user's onboarding-created + derived data, in FK-safe order (children
+// before the accounts/categories/goals they reference). Wiped on reset so
+// re-walking onboarding starts clean instead of colliding on existing rows.
+const OWNED_TABLES_FK_ORDER = [
+  "Transaction",
+  "Budget",
+  "GoalAllocation",
+  "Bill",
+  "Subscription",
+  "Insight",
+  "BankStatement",
+  "Investment",
+  "Account",
+  "Goal",
+  "Category",
+];
+
+// Delete every owned row for the user, table by table. Best-effort per table: a
+// missing table (schema drift) or a benign empty delete must not abort the reset.
+async function wipeUserData(userId) {
+  for (const table of OWNED_TABLES_FK_ORDER) {
+    try {
+      await api(`/rest/v1/${table}?userId=eq.${userId}`, { method: "DELETE" });
+    } catch (e) {
+      console.warn(`!  Skipped ${table}: ${e.message}`);
+    }
+  }
+  console.log("✔  Cleared onboarding data (categories, budgets, accounts, subscriptions, bills, …).");
+}
+
 async function reset() {
   if (!email) usage();
   const user = await findByEmail(email);
@@ -138,6 +176,7 @@ async function reset() {
     console.error(`No auth user found for ${email}`);
     process.exit(1);
   }
+  await wipeUserData(user.id);
   await resetFlag(user.id, email);
 }
 
@@ -149,7 +188,12 @@ async function del() {
     process.exit(1);
   }
   await api(`/auth/v1/admin/users/${user.id}`, { method: "DELETE" });
-  console.log(`✔  Deleted user: ${email} (id ${user.id})`);
+  // The auth→profile FK is NOT ON DELETE CASCADE, so removing the auth user
+  // leaves the profile row orphaned — and since User.email is unique, that
+  // orphan blocks re-registering the same email. Delete it explicitly (this
+  // cascades the user's owned data via the User table's own FKs).
+  await api(`/rest/v1/User?id=eq.${user.id}`, { method: "DELETE" });
+  console.log(`✔  Deleted user + profile: ${email} (id ${user.id})`);
 }
 
 try {

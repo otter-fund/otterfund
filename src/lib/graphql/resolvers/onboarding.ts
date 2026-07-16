@@ -112,8 +112,26 @@ builder.mutationField("completeOnboarding", (t) =>
             month: currentMonth,
             year: currentYear,
           }));
+        // Upsert (not create) so re-running onboarding — or finishing it after a
+        // bank connection already seeded this month's budgets — updates the row
+        // instead of colliding on the (userId, categoryId, month, year) unique.
         if (budgetEntries.length > 0) {
-          await Promise.all(budgetEntries.map((e) => tx.budget.create({ data: e })));
+          await Promise.all(
+            budgetEntries.map((e) =>
+              tx.budget.upsert({
+                where: {
+                  userId_categoryId_month_year: {
+                    userId,
+                    categoryId: e.categoryId,
+                    month: e.month,
+                    year: e.year,
+                  },
+                },
+                create: e,
+                update: { amount: e.amount },
+              }),
+            ),
+          );
         }
 
         if (input.accounts?.length) {

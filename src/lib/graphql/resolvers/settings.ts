@@ -65,6 +65,26 @@ builder.mutationField("updateSettings", (t) =>
   }),
 );
 
+// Mark the first-run product tour as seen. Called by the dashboard when the
+// user finishes OR skips the tour, so it never auto-starts again. Idempotent —
+// stamps `tourCompletedAt` once and leaves it (replays from the profile menu
+// don't clear it, so a replay never re-arms the auto-start on next load).
+builder.mutationField("completeTour", (t) =>
+  t.field({
+    type: MutationResultRef,
+    resolve: async (_root, _args, ctx) => {
+      const userId = requireUser(ctx);
+      await prisma.user.updateMany({
+        // updateMany + the null guard keeps this a single idempotent write:
+        // the first finish/skip stamps the time, later calls no-op.
+        where: { id: userId, tourCompletedAt: null },
+        data: { tourCompletedAt: new Date() },
+      });
+      return { ok: true, id: userId };
+    },
+  }),
+);
+
 // Switch the user's budget plan. The plan drives the spend allowance and the
 // per-category budgets for the current month, so both are recomputed here in
 // one transaction — keeping the Spending page, Overview, and Settings coherent.

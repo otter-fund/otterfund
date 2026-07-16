@@ -176,7 +176,9 @@ export function OtterfundOverview({ overview, name, theme, hasAccounts = true, o
   if (!hasAccounts) {
     return (
       <Statement>
-        {greeting}
+        {/* Cold start has no hero — anchor the greeting so the tour card stays
+            on-screen (a tall target soft-locks). */}
+        <div data-tour="overview-hero">{greeting}</div>
         <AddAccountEmptyState
           theme={theme}
           onAdd={onAddAccount}
@@ -190,6 +192,9 @@ export function OtterfundOverview({ overview, name, theme, hasAccounts = true, o
 
   return (
     <Statement>
+      {/* Greeting + net-worth hero are the first-run tour's Overview spotlight —
+          from the greeting down through the hero's hairline cut. */}
+      <div data-tour="overview-hero">
       {/* ── greeting ── */}
       {greeting}
 
@@ -237,6 +242,7 @@ export function OtterfundOverview({ overview, name, theme, hasAccounts = true, o
           )
         }
       />
+      </div>
 
       {/* ── this month — one honest line, hairline-split ── */}
       <CardLabel style={{ margin: "40px 0 18px" }}>

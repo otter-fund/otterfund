@@ -13,7 +13,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
-import { Home, List, CreditCard, Target, Sparkles, Bell, Settings, LogOut, PieChart, TrendingUp, Gauge, SlidersHorizontal, type LucideProps } from "lucide-react";
+import { Home, List, CreditCard, Target, Sparkles, Bell, Settings, LogOut, PieChart, TrendingUp, Gauge, SlidersHorizontal, Compass, type LucideProps } from "lucide-react";
 import { AddTransactionModal } from "@/components/dashboard/modals/add-transaction-modal";
 import { ImportModal } from "@/components/dashboard/modals/import-modal";
 import { EditTransactionModal } from "@/components/dashboard/modals/edit-transaction-modal";
@@ -39,6 +39,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { MonthPicker } from "@/components/otterfund/month-picker";
 import { MobileNav } from "@/components/otterfund/mobile-nav";
 import { OtterfundChromeProvider } from "@/components/otterfund/chrome-context";
+import { useOtterfundTour } from "@/components/otterfund/tour/otterfund-tour";
 import { MONTH_NAMES } from "@/lib/constants";
 import { resolvePeriod, type Period } from "@/lib/period";
 import { canUse, toPlanTier, PLAN_META, type Feature, type PlanTier } from "@/lib/plans";
@@ -149,12 +150,13 @@ const TITLES: Record<string, RouteMeta> = {
 };
 
 /** Icon-rail nav link with a tooltip that flies out to the right of the dark rail. */
-function RailLink({ item, active, accent, href }: { item: NavItem; active: boolean; accent: string; href: string }) {
+function RailLink({ item, active, accent, href, dataTour }: { item: NavItem; active: boolean; accent: string; href: string; dataTour?: string }) {
   const { Icon, label } = item;
   return (
     <div className="group relative flex justify-center">
       <Link
         href={href}
+        data-tour={dataTour}
         aria-label={label}
         aria-current={active ? "page" : undefined}
         title={label}
@@ -222,6 +224,9 @@ export function OtterfundChrome({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [periodPending, startPeriodTransition] = useTransition();
+  // Replay the first-run tour on demand (the profile menu's "Take a tour").
+  // The chrome renders inside <OtterfundTour>, so this hook resolves here.
+  const { startTour } = useOtterfundTour();
 
   const [accent, setAccentState] = useState<string>(initialAccent ?? DEFAULT_ACCENT);
   // Appearance (light | dark | system). For an EXPLICIT light/dark the server
@@ -683,6 +688,7 @@ export function OtterfundChrome({
       >
         {/* ░░ ICON RAIL ░░ */}
         <aside
+          data-tour="rail"
           className="of-rail of-vh"
           style={{
             width: 60,
@@ -701,7 +707,14 @@ export function OtterfundChrome({
                 dividers); the mobile sheet is where the section labels show. */}
             <nav aria-label="Primary" style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {NAV_SECTIONS.flatMap((section) => section.items).map((item) => (
-                <RailLink key={item.href} item={item} href={hrefFor(item.href)} active={pathname === item.href} accent={accent} />
+                <RailLink
+                  key={item.href}
+                  item={item}
+                  href={hrefFor(item.href)}
+                  active={pathname === item.href}
+                  accent={accent}
+                  dataTour={item.href === "/dashboard/insights" ? "nav-insights" : undefined}
+                />
               ))}
             </nav>
 
@@ -726,6 +739,7 @@ export function OtterfundChrome({
                 render={
                   <button
                     type="button"
+                    data-tour="profile-avatar"
                     aria-label={userName ?? "Account"}
                     style={{
                       width: 32, height: 32, borderRadius: "50%", background: "var(--of-accent)", color: "#fff",
@@ -756,6 +770,10 @@ export function OtterfundChrome({
                 <MenuItem onClick={() => openSettings()}>
                   <Settings size={15} strokeWidth={2} aria-hidden="true" />
                   <span>Settings</span>
+                </MenuItem>
+                <MenuItem onClick={() => startTour()}>
+                  <Compass size={15} strokeWidth={2} aria-hidden="true" />
+                  <span>Take a tour</span>
                 </MenuItem>
                 <MenuItem onClick={() => handleSignOut()} className="text-[var(--color-of-clay)]">
                   <LogOut size={15} strokeWidth={2} aria-hidden="true" />
@@ -790,6 +808,7 @@ export function OtterfundChrome({
                 planLabel={PLAN_META[plan].label}
                 plan={plan}
                 onOpenSettings={() => openSettings()}
+                onTakeTour={() => startTour()}
                 onSignOut={handleSignOut}
               />
               <div className="of-topbar-title" style={{ minWidth: 0 }}>
@@ -799,34 +818,39 @@ export function OtterfundChrome({
                 <p style={{ margin: "3px 0 0", fontSize: 13, color: "oklch(54% 0.012 80)" }}>{pageSub}</p>
               </div>
               {/* mobile-only bell — rides the title row, right-aligned */}
-              <span className="of-bell-inline">{bell}</span>
+              <span className="of-bell-inline" data-tour="bell-mobile">{bell}</span>
             </div>
 
             <div className="of-topbar-actions" style={{ display: "flex", alignItems: "center", gap: 10 }}>
               {/* month picker — only on period-scoped routes (overview /
                   transactions / spending); hidden elsewhere where it'd be inert */}
               {showPicker && (
-                <MonthPicker
-                  month={month}
-                  year={year}
-                  todayMonth={todayMonth}
-                  todayYear={todayYear}
-                  accent={accent}
-                  theme={theme}
-                  pending={periodPending}
-                  onSelect={selectPeriod}
-                />
+                <span data-tour="month-picker" style={{ display: "inline-flex" }}>
+                  <MonthPicker
+                    month={month}
+                    year={year}
+                    todayMonth={todayMonth}
+                    todayYear={todayYear}
+                    accent={accent}
+                    theme={theme}
+                    pending={periodPending}
+                    onSelect={selectPeriod}
+                  />
+                </span>
               )}
 
               {/* desktop-only bell — hidden on mobile, where it rides the title row.
                   No add action lives in the header anymore: each page owns its add
                   inline (Transactions has Add transaction + Import in its toolbar). */}
-              <span className="of-bell-top">{bell}</span>
+              <span className="of-bell-top" data-tour="bell">{bell}</span>
             </div>
           </header>
 
-          {/* scroll canvas — keyed by route so each page gets the of-enter mount animation */}
-          <div className="of-scroll of-canvas" style={{ flex: 1, padding: 34 }} key={pathname}>
+          {/* scroll canvas — keyed by route so each page gets the of-enter mount animation.
+              id + position:relative let the first-run tour's Overview step use this as its
+              NextStep `viewportID`, so the spotlight measures against THIS scroll container
+              (not document.body) and aligns exactly — the app scrolls here, not the window. */}
+          <div id="of-tour-viewport" className="of-scroll of-canvas" style={{ position: "relative", flex: 1, padding: 34 }} key={pathname}>
             {children}
           </div>
         </main>
