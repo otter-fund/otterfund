@@ -32,7 +32,9 @@ export function useTurnstile() {
       onSuccess={setToken}
       onExpire={() => setToken("")}
       onError={() => setToken("")}
-      options={{ theme: "auto" }}
+      // Pinned light — the auth forms always sit on a light card, so "auto"
+      // (which follows the OS setting) would render a dark widget in dark mode.
+      options={{ theme: "light" }}
       className="mx-auto"
     />
   ) : null;
