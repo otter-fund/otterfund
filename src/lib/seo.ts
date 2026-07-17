@@ -12,7 +12,7 @@
 
 /** Canonical origin, override per-env with NEXT_PUBLIC_SITE_URL. No trailing slash. */
 export const SITE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://otterfund.ai"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.otterfund.ai"
 ).replace(/\/+$/, "");
 
 export const SITE_NAME = "otterfund";
