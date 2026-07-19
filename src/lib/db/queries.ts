@@ -832,6 +832,12 @@ export function countAccounts(userId: string): Promise<number> {
   return prisma.account.count({ where: { userId } });
 }
 
+/** Count of auto-detected subscriptions awaiting review — drives the sidebar
+    review badge (shown only when > 0). */
+export function countPendingSubscriptions(userId: string): Promise<number> {
+  return prisma.subscription.count({ where: { userId, status: "suggested" } });
+}
+
 /** id + name only — for filter dropdowns; skips the balance aggregation. */
 export function getAccountOptions(userId: string): Promise<{ id: string; name: string }[]> {
   return prisma.account.findMany({

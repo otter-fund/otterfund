@@ -3,6 +3,7 @@ import { requireUser, rateLimited, badRequest } from "../errors";
 import { MutationResultRef } from "../types/results";
 import { prisma } from "@/lib/db/prisma";
 import { detectRecurringExpenses } from "@/lib/ai/detect-recurring";
+import { detectAndStoreRecurring } from "@/lib/db/recurring";
 import { resolveMerchant } from "@/lib/merchant/resolve";
 import { rateLimit, MINUTE, HOUR } from "@/lib/rate-limit";
 import { okString, okMoney, okEnum, LIMITS } from "@/lib/validate";
@@ -35,6 +36,24 @@ builder.mutationField("detectRecurring", (t) =>
         })),
       );
       return { suggestions };
+    },
+  }),
+);
+
+// Manual "Scan for subscriptions" — runs the same detect-and-store pass the
+// bank link / import trigger automatically, so the user can refresh their review
+// queue on demand. Returns { added, suggested }.
+builder.mutationField("scanRecurring", (t) =>
+  t.field({
+    type: "JSON",
+    resolve: async (_root, _args, ctx) => {
+      const userId = requireUser(ctx);
+      const limit = rateLimit(`ai:recurring:${userId}`, [
+        { limit: 5, windowMs: 5 * MINUTE },
+        { limit: 30, windowMs: HOUR },
+      ]);
+      if (!limit.ok) rateLimited(limit.retryAfterSec);
+      return detectAndStoreRecurring(userId);
     },
   }),
 );

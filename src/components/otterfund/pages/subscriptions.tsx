@@ -2,33 +2,39 @@
 
 // otterfund — SUBSCRIPTIONS page.
 //
-// A monthly-equivalent hero (with annual projection + a flagged-count alert when
-// subscriptions need attention), then a two-up: the service list (theme-derived
-// avatar tiles + flag badges) and an annual-projection bar chart. Every figure
-// derives from `subscriptions`; flags render as clay (price up) / amber (unused)
-// badges. Avatar tiles are tinted from the ACTIVE ACCENT (via the theme) rather
-// than a per-service colour, so the page stays on one hue and re-tints with the
-// brand-kit scheme.
+// A first-class tab (was folded into Spending). Standalone mode is the full
+// statement: a monthly-equivalent HeroBand (annual projection + attention pill +
+// Scan / New actions), the auto-detection review queue, then a two-up of the
+// services ledger and the annual-projection bars — all in the shared Statement /
+// HeroBand / Panel grammar so it reads like Accounts and Spending. Embedded mode
+// (inside Spending) is a compact summary that links here, so the two surfaces
+// don't duplicate. Every figure derives from `subscriptions`; flags render as
+// clay (price up) / amber (unused) badges. Avatar tiles tint from the ACTIVE
+// ACCENT so the page stays on one hue.
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import type { SubscriptionView } from "@/lib/types";
 import { type OtterfundTheme, accentFamilyTint } from "@/components/otterfund/theme";
 import { fmt } from "@/lib/format";
 import { ProgressBar } from "@/components/otterfund/progress";
-import { GuillochePattern, GuillocheSeal } from "@/components/otterfund/guilloche";
 import { StatPill } from "@/components/otterfund/stat-pill";
 import { MerchantAvatar } from "@/components/otterfund/merchant-avatar";
-import { SectionHead, Ledger, Row } from "@/components/otterfund/ledger";
+import { Statement, HeroBand, SectionHead, Ledger, Row, ViewAllLink } from "@/components/otterfund/ledger";
 import { Panel } from "@/components/otterfund/panel";
-import { CardLabel } from "@/components/otterfund/card";
+import { EmptyState } from "@/components/otterfund/empty-state";
 import { Button } from "@/components/ui/button";
-import { Plus, Check, X, Sparkles } from "lucide-react";
-import { gqlClient } from "@/lib/graphql/client";
+import { Plus, Check, X, Sparkles, RefreshCw } from "lucide-react";
+import { gqlClient, errMessage } from "@/lib/graphql/client";
 
 const REVIEW_SUBSCRIPTION = /* GraphQL */ `
   mutation ReviewSubscription($id: ID!, $action: String!) {
     reviewSubscription(id: $id, action: $action) { ok }
   }
+`;
+
+const SCAN_RECURRING = /* GraphQL */ `
+  mutation ScanRecurring { scanRecurring }
 `;
 
 interface OtterfundSubscriptionsProps {
@@ -40,22 +46,14 @@ interface OtterfundSubscriptionsProps {
   currency?: string;
   onAdd?: () => void;
   onEdit?: (subscription: SubscriptionView) => void;
-  /** Re-fetch the page after a review-queue accept/decline. */
+  /** Re-fetch the page after a review/scan. */
   onReviewed?: () => void;
   /**
-   * Rendered as a "Recurring" section inside the Spending page rather than a
-   * standalone tab: drops the full-bleed hero + page wrapper for a compact
-   * section header, keeping the services + projection two-up.
+   * Rendered as a compact "Recurring" summary inside the Spending page (linking
+   * to this tab) rather than the full standalone statement.
    */
   embedded?: boolean;
 }
-
-const CARD: React.CSSProperties = {
-  background: "var(--color-of-surface)",
-  border: "1px solid var(--color-of-line)",
-  borderRadius: 20,
-  padding: 24,
-};
 
 // Price-up flags use the clay alert tone; "unused" gets a warm amber tint so the
 // two reasons-to-look read distinctly at a glance.
@@ -68,18 +66,7 @@ function flagBadge(flag: string, theme: OtterfundTheme): { bg: string; color: st
 
 export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme, currency = "CAD", onAdd, onEdit, onReviewed, embedded = false }: OtterfundSubscriptionsProps) {
   const money = (n: number) => fmt(n, currency);
-
-  // Review queue — id currently being accepted/declined (disables its buttons).
-  const [reviewing, setReviewing] = useState<string | null>(null);
-  const review = (id: string, action: "accept" | "dismiss") => {
-    if (reviewing) return;
-    setReviewing(id);
-    gqlClient
-      .request(REVIEW_SUBSCRIPTION, { id, action })
-      .then(() => onReviewed?.())
-      .catch(() => {})
-      .finally(() => setReviewing(null));
-  };
+  const router = useRouter();
 
   const monthlyTotal = subscriptions
     .filter((s) => s.cycle === "Monthly")
@@ -100,26 +87,62 @@ export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme,
     .map((s) => ({ s, annual: s.cycle === "Annual" ? s.amount : s.amount * 12 }))
     .sort((a, b) => b.annual - a.annual);
 
-  // The New-subscription button + a flagged-count alert, reused in both the
-  // standalone hero and the embedded section header.
+  // Review queue — id currently being accepted/declined (disables its buttons).
+  const [reviewing, setReviewing] = useState<string | null>(null);
+  const review = (id: string, action: "accept" | "dismiss") => {
+    if (reviewing) return;
+    setReviewing(id);
+    gqlClient
+      .request(REVIEW_SUBSCRIPTION, { id, action })
+      .then(() => onReviewed?.())
+      .catch(() => {})
+      .finally(() => setReviewing(null));
+  };
+
+  // Manual "Scan for subscriptions" — runs the same detection the bank link /
+  // import trigger automatically, so the user can refresh their queue on demand.
+  const [scanning, setScanning] = useState(false);
+  const [scanMsg, setScanMsg] = useState("");
+  const scan = () => {
+    if (scanning) return;
+    setScanning(true);
+    setScanMsg("");
+    gqlClient
+      .request<{ scanRecurring?: { added?: number; suggested?: number } }>(SCAN_RECURRING)
+      .then((d) => {
+        const r = d.scanRecurring ?? {};
+        const found = (r.added ?? 0) + (r.suggested ?? 0);
+        setScanMsg(found > 0 ? `Found ${found} new ${found === 1 ? "subscription" : "subscriptions"}.` : "No new subscriptions found.");
+        onReviewed?.();
+      })
+      .catch((e) => setScanMsg(errMessage(e)))
+      .finally(() => setScanning(false));
+  };
+
   const addButton = onAdd && (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => onAdd()}
-      className="border-dashed shrink-0"
-      style={{ position: "relative" }}
-    >
+    <Button size="sm" onClick={() => onAdd()} className="shrink-0" aria-label="Add subscription">
       <Plus data-icon="inline-start" size={16} strokeWidth={2.2} />
       New subscription
     </Button>
   );
 
-  // Review queue — auto-detected recurring charges the user hasn't accepted or
-  // declined yet. Sits above the tracked list so it reads as "new, needs a
-  // decision". Each row commits immediately via reviewSubscription + refresh.
+  const scanButton = onReviewed && (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={scan}
+      disabled={scanning}
+      className="border-dashed shrink-0"
+      aria-label="Scan transactions for subscriptions"
+    >
+      <RefreshCw data-icon="inline-start" size={15} strokeWidth={2} className={scanning ? "of-spin" : undefined} />
+      {scanning ? "Scanning…" : "Scan for subscriptions"}
+    </Button>
+  );
+
+  // ── review queue · auto-detected charges awaiting a decision ──
   const reviewQueue = suggestions.length > 0 && (
-    <Panel theme={theme} style={{ marginBottom: 18 }}>
+    <Panel theme={theme} style={{ marginTop: 24 }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 11, marginBottom: 14 }}>
         <div
           aria-hidden="true"
@@ -220,336 +243,176 @@ export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme,
     </Panel>
   );
 
-  const twoUp = (
-    <section className="of-grid-2up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        {/* service list */}
-        <div style={CARD}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-              margin: "0 0 6px",
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Services</h3>
-            <span style={{ fontSize: 12, color: "var(--color-of-faint)" }}>
-              {subscriptions.length} active
-            </span>
-          </div>
-          {subscriptions.length > 0 ? (
-            <div style={{ margin: "0 -4px" }}>
-              {subscriptions.map((s, i) => {
-                const [tileBg, tileInk] = accentFamilyTint(i, theme.accent);
-                return (
-                <div
-                  key={s.id}
-                  role={onEdit ? "button" : undefined}
-                  tabIndex={onEdit ? 0 : undefined}
-                  onClick={onEdit ? () => onEdit(s) : undefined}
-                  onKeyDown={
-                    onEdit
-                      ? (e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            onEdit(s);
-                          }
-                        }
-                      : undefined
-                  }
-                  onMouseEnter={
-                    onEdit ? (e) => (e.currentTarget.style.background = "var(--color-of-hover)") : undefined
-                  }
-                  onMouseLeave={
-                    onEdit ? (e) => (e.currentTarget.style.background = "transparent") : undefined
-                  }
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 13,
-                    padding: "13px 8px",
-                    cursor: onEdit ? "pointer" : "default",
-                    transition: "background .15s",
-                    borderTop: i === 0 ? "none" : "1px solid var(--color-of-line-soft)",
-                  }}
-                >
-                  <MerchantAvatar name={s.name} domain={s.domain} bg={tileBg} ink={tileInk} size={30} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+  // ── services ledger ──
+  const servicesPanel = (
+    <Panel theme={theme}>
+      <SectionHead
+        title="Services"
+        action={<span style={{ fontSize: 12, color: "var(--color-of-faint)" }}>{subscriptions.length} active</span>}
+      />
+      <Ledger style={{ marginTop: 4 }}>
+        {subscriptions.map((s, i) => {
+          const [tileBg, tileInk] = accentFamilyTint(i, theme.accent);
+          return (
+            <Row
+              key={s.id}
+              columns="40px 1fr auto"
+              gap={13}
+              onClick={onEdit ? () => onEdit(s) : undefined}
+              ariaLabel={onEdit ? `Edit ${s.name}` : undefined}
+            >
+              <MerchantAvatar name={s.name} domain={s.domain} bg={tileBg} ink={tileInk} size={36} />
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {s.name}
+                  </span>
+                  {s.flags.map((flag) => {
+                    const { bg, color, label } = flagBadge(flag, theme);
+                    return (
                       <span
-                        style={{
-                          fontSize: 14,
-                          fontWeight: 600,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
+                        key={flag}
+                        title={flag}
+                        style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", padding: "2px 7px", borderRadius: 999, background: bg, color }}
                       >
-                        {s.name}
+                        {label}
                       </span>
-                      {s.flags.map((flag) => {
-                        const { bg, color, label } = flagBadge(flag, theme);
-                        return (
-                          <span
-                            key={flag}
-                            title={flag}
-                            style={{
-                              fontSize: 10,
-                              fontWeight: 600,
-                              letterSpacing: "0.04em",
-                              padding: "2px 7px",
-                              borderRadius: 999,
-                              background: bg,
-                              color,
-                            }}
-                          >
-                            {label}
-                          </span>
-                        );
-                      })}
-                    </div>
-                    <div style={{ fontSize: 12, color: "var(--color-of-faint)", marginTop: 2 }}>
-                      {s.cycle}
-                    </div>
-                  </div>
-                  <div className="of-num" style={{ fontSize: 15, fontWeight: 500, flexShrink: 0, whiteSpace: "nowrap" }}>
-                    {money(s.amount)}
-                    <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-of-faint)", marginLeft: 2 }}>
-                      {s.cycle === "Annual" ? "/yr" : "/mo"}
-                    </span>
-                  </div>
+                    );
+                  })}
                 </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, minHeight: 220, textAlign: "center" }}>
-              <div style={{ width: 72, height: 72 }} aria-hidden="true">
-                <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
+                <div style={{ fontSize: 12, color: "var(--color-of-faint)", marginTop: 2 }}>{s.cycle}</div>
               </div>
-              <p style={{ margin: 0, fontSize: 14, color: "var(--color-of-muted)" }}>No subscriptions tracked yet.</p>
-            </div>
-          )}
-        </div>
-
-        {/* annual projection */}
-        <div style={CARD}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-              margin: "0 0 18px",
-            }}
-          >
-            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>Annual projection</h3>
-            <span className="of-num" style={{ fontSize: 12, color: "var(--color-of-faint)" }}>
-              {money(annualTotal)}/yr total
-            </span>
-          </div>
-          {projection.length > 0 ? (
-            <div>
-              {projection.map(({ s, annual }, i) => {
-                const pct = maxAnnual > 0 ? (annual / maxAnnual) * 100 : 0;
-                return (
-                  <div key={s.id} style={{ marginBottom: i === projection.length - 1 ? 0 : 18 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, marginBottom: 7, gap: 12 }}>
-                      <span style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {s.name}
-                      </span>
-                      <span className="of-num" style={{ color: "var(--color-of-muted)", flexShrink: 0 }}>
-                        {money(annual)}<span style={{ color: "var(--color-of-faint)" }}>/yr</span>
-                      </span>
-                    </div>
-                    <ProgressBar value={pct} color={theme.accent} />
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, minHeight: 220, textAlign: "center" }}>
-              <div style={{ width: 72, height: 72 }} aria-hidden="true">
-                <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
+              <div className="of-num" style={{ fontSize: 15, fontWeight: 500, flexShrink: 0, whiteSpace: "nowrap", textAlign: "right" }}>
+                {money(s.amount)}
+                <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-of-faint)", marginLeft: 2 }}>
+                  {s.cycle === "Annual" ? "/yr" : "/mo"}
+                </span>
               </div>
-              <p style={{ margin: 0, fontSize: 14, color: "var(--color-of-muted)" }}>No data.</p>
-            </div>
-          )}
-        </div>
-      </section>
+            </Row>
+          );
+        })}
+      </Ledger>
+    </Panel>
   );
 
-  // ── embedded · a "Recurring" section for the Spending page ──
-  // Matches the redesigned Spending page's card grammar: a section label +
-  // summary, then a two-up of textured Panels (the services ledger and the
-  // annual-projection bars) so it sits on-brand at the foot of the page. The
-  // standalone page below keeps its own hero + two-up.
+  // ── annual projection bars ──
+  const projectionPanel = (
+    <Panel theme={theme}>
+      <SectionHead
+        title="Annual projection"
+        action={<span className="of-num" style={{ fontSize: 12, color: "var(--color-of-faint)" }}>{money(annualTotal)}/yr total</span>}
+      />
+      <div style={{ marginTop: 14 }}>
+        {projection.map(({ s, annual }, i) => {
+          const pct = maxAnnual > 0 ? (annual / maxAnnual) * 100 : 0;
+          return (
+            <div key={s.id} style={{ marginBottom: i === projection.length - 1 ? 0 : 16 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, marginBottom: 7, gap: 12 }}>
+                <span style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
+                <span className="of-num" style={{ color: "var(--color-of-muted)", flexShrink: 0 }}>
+                  {money(annual)}<span style={{ color: "var(--color-of-faint)" }}>/yr</span>
+                </span>
+              </div>
+              <ProgressBar value={pct} color={theme.accent} />
+            </div>
+          );
+        })}
+      </div>
+    </Panel>
+  );
+
+  // ── embedded · a compact "Recurring" summary for the Spending page ──
+  // Points to this tab rather than duplicating the full page.
   if (embedded) {
+    const hasAny = subscriptions.length > 0;
     return (
       <section style={{ marginTop: 30 }}>
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
-          <div>
-            <CardLabel>Recurring</CardLabel>
-            {subscriptions.length > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
-                <span style={{ fontSize: 13, color: "var(--color-of-muted)" }}>
-                  <span className="of-num">{money(monthlyEquivalent)}</span>/mo ·{" "}
-                  <span className="of-num">{money(annualTotal)}</span>/yr · {subscriptions.length} service
-                  {subscriptions.length === 1 ? "" : "s"}
-                </span>
+        <SectionHead
+          title="Recurring"
+          action={<ViewAllLink label="View subscriptions" onClick={() => router.push("/dashboard/subscriptions")} />}
+        />
+        <Panel theme={theme}>
+          {hasAny || suggestions.length > 0 ? (
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+              <div>
+                <div className="of-num" style={{ fontSize: 27, fontWeight: 500, letterSpacing: "-0.02em", lineHeight: 1 }}>
+                  {money(monthlyEquivalent)}
+                  <span style={{ fontSize: 14, color: "var(--color-of-muted)", fontWeight: 400 }}>/mo</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: "var(--color-of-muted)", marginTop: 6 }}>
+                  <span className="of-num">{money(annualTotal)}</span>/yr · {subscriptions.length} service{subscriptions.length === 1 ? "" : "s"}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                {suggestions.length > 0 && <StatPill theme={theme} tone="accent" figure={suggestions.length} label="to review" />}
                 {flaggedCount > 0 && <StatPill theme={theme} tone="clay" figure={flaggedCount} label="need attention" />}
               </div>
-            )}
-          </div>
-          {addButton}
-        </div>
-
-        {reviewQueue}
-
-        {subscriptions.length > 0 ? (
-          <div className="of-grid-2up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
-            {/* services */}
-            <Panel theme={theme}>
-              <SectionHead
-                title="Services"
-                action={<span style={{ fontSize: 12, color: "var(--color-of-faint)" }}>{subscriptions.length} active</span>}
-              />
-              <Ledger style={{ marginTop: 4 }}>
-                {subscriptions.map((s, i) => {
-                  const [tileBg, tileInk] = accentFamilyTint(i, theme.accent);
-                  return (
-                    <Row
-                      key={s.id}
-                      columns="40px 1fr auto"
-                      gap={13}
-                      onClick={onEdit ? () => onEdit(s) : undefined}
-                      ariaLabel={onEdit ? `Edit ${s.name}` : undefined}
-                    >
-                      <MerchantAvatar name={s.name} domain={s.domain} bg={tileBg} ink={tileInk} size={36} />
-                      <div style={{ minWidth: 0 }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
-                          <span style={{ fontSize: 14, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                            {s.name}
-                          </span>
-                          {s.flags.map((flag) => {
-                            const { bg, color, label } = flagBadge(flag, theme);
-                            return (
-                              <span
-                                key={flag}
-                                title={flag}
-                                style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", padding: "2px 7px", borderRadius: 999, background: bg, color }}
-                              >
-                                {label}
-                              </span>
-                            );
-                          })}
-                        </div>
-                        <div style={{ fontSize: 12, color: "var(--color-of-faint)", marginTop: 2 }}>{s.cycle}</div>
-                      </div>
-                      <div className="of-num" style={{ fontSize: 15, fontWeight: 500, flexShrink: 0, whiteSpace: "nowrap", textAlign: "right" }}>
-                        {money(s.amount)}
-                        <span style={{ fontSize: 11, fontWeight: 400, color: "var(--color-of-faint)", marginLeft: 2 }}>
-                          {s.cycle === "Annual" ? "/yr" : "/mo"}
-                        </span>
-                      </div>
-                    </Row>
-                  );
-                })}
-              </Ledger>
-            </Panel>
-
-            {/* annual projection */}
-            <Panel theme={theme}>
-              <SectionHead
-                title="Annual projection"
-                action={<span className="of-num" style={{ fontSize: 12, color: "var(--color-of-faint)" }}>{money(annualTotal)}/yr total</span>}
-              />
-              <div style={{ marginTop: 14 }}>
-                {projection.map(({ s, annual }, i) => {
-                  const pct = maxAnnual > 0 ? (annual / maxAnnual) * 100 : 0;
-                  return (
-                    <div key={s.id} style={{ marginBottom: i === projection.length - 1 ? 0 : 16 }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", fontSize: 13, marginBottom: 7, gap: 12 }}>
-                        <span style={{ fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</span>
-                        <span className="of-num" style={{ color: "var(--color-of-muted)", flexShrink: 0 }}>
-                          {money(annual)}<span style={{ color: "var(--color-of-faint)" }}>/yr</span>
-                        </span>
-                      </div>
-                      <ProgressBar value={pct} color={theme.accent} />
-                    </div>
-                  );
-                })}
-              </div>
-            </Panel>
-          </div>
-        ) : (
-          <Panel theme={theme}>
-            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, minHeight: 150, textAlign: "center" }}>
-              <div style={{ width: 56, height: 56 }} aria-hidden="true">
-                <GuillocheSeal accent={theme.accent} accentDeep={theme.accentDeep} label="$" />
-              </div>
-              <p style={{ margin: 0, fontSize: 13, color: "var(--color-of-muted)" }}>No subscriptions tracked yet.</p>
             </div>
-          </Panel>
-        )}
+          ) : (
+            <p style={{ margin: 0, fontSize: 13, color: "var(--color-of-muted)" }}>
+              No recurring subscriptions tracked yet. Open the Subscriptions tab to scan your transactions or add one.
+            </p>
+          )}
+        </Panel>
       </section>
     );
   }
 
-  // ── standalone · the full Subscriptions page (hero + two-up) ──
+  // ── standalone · the full Subscriptions statement ──
   return (
-    <div className="of-enter of-page">
-      {/* ── hero · subscription summary ── */}
-      <section
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          padding: "0 4px 32px",
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: 16,
-        }}
-      >
-        <GuillochePattern accent={theme.accent} accentDeep={theme.accentDeep} fade="left" opacity={0.16} />
-        <div style={{ position: "relative" }}>
-          <div
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              letterSpacing: "0.07em",
-              textTransform: "uppercase",
-              color: "var(--color-of-faint)",
-            }}
-          >
-            Active subscriptions
+    <Statement>
+      <HeroBand
+        theme={theme}
+        ariaLabel="Recurring subscriptions"
+        asideAlign="start"
+        eyebrow={
+          <div style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.07em", textTransform: "uppercase", color: "var(--color-of-muted)" }}>
+            Recurring · {subscriptions.length} {subscriptions.length === 1 ? "service" : "services"}
           </div>
-          <div
-            className="of-num"
-            style={{
-              fontSize: "clamp(44px, 5.5vw, 64px)",
-              fontWeight: 500,
-              letterSpacing: "-0.03em",
-              lineHeight: 1,
-              marginTop: 12,
-            }}
-          >
+        }
+        figure={
+          <>
             {money(monthlyEquivalent)}
-            <span style={{ fontSize: 18, color: "var(--color-of-muted)", fontWeight: 400 }}>/mo</span>
-          </div>
-          <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.4em", fontWeight: 400, letterSpacing: 0, color: "var(--color-of-muted)" }}>/mo</span>
+          </>
+        }
+        meta={
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <span style={{ fontSize: 13, color: "var(--color-of-muted)" }}>
-              <span className="of-num">{money(annualTotal)}</span>/year · {subscriptions.length} service
-              {subscriptions.length === 1 ? "" : "s"}
+              <span className="of-num">{money(annualTotal)}</span>/year
             </span>
-            {flaggedCount > 0 && (
-              <StatPill theme={theme} tone="clay" figure={flaggedCount} label="need attention" />
+            {flaggedCount > 0 && <StatPill theme={theme} tone="clay" figure={flaggedCount} label="need attention" />}
+          </div>
+        }
+        aside={
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {addButton}
+              {scanButton}
+            </div>
+            {scanMsg && (
+              <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--color-of-muted)", maxWidth: 320 }}>{scanMsg}</span>
             )}
           </div>
-        </div>
-        {addButton}
-      </section>
+        }
+      />
 
-      {twoUp}
-    </div>
+      {reviewQueue}
+
+      {subscriptions.length > 0 ? (
+        <div className="of-grid-2up" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18, marginTop: 24 }}>
+          {servicesPanel}
+          {projectionPanel}
+        </div>
+      ) : suggestions.length === 0 ? (
+        <div style={{ marginTop: 20 }}>
+          <EmptyState
+            theme={theme}
+            title="No subscriptions yet"
+            description="Add a recurring service by hand, or scan your transactions to detect them automatically. Anything found lands in the review queue for you to confirm."
+          />
+        </div>
+      ) : null}
+    </Statement>
   );
 }

@@ -120,6 +120,7 @@ const TITLES: Record<string, RouteMeta> = {
   "/dashboard": { title: "Overview", sub: () => "Here’s where your money stands today", periodic: true },
   "/dashboard/transactions": { title: "Transactions", sub: ({ txThisMonth, monthLabel }) => `${txThisMonth} this month · ${monthLabel}`, periodic: true },
   "/dashboard/spending": { title: "Spending", sub: ({ monthLabel }) => `Plan vs. actual · ${monthLabel}`, periodic: true },
+  "/dashboard/subscriptions": { title: "Subscriptions", sub: () => "Recurring, in one place" },
   "/dashboard/accounts": { title: "Accounts", sub: () => "Everything in one place" },
   "/dashboard/investments": { title: "Investments", sub: () => "Your portfolio and holdings" },
   "/dashboard/goals": { title: "Goals", sub: () => "Saving with intent" },
@@ -130,20 +131,29 @@ const TITLES: Record<string, RouteMeta> = {
 };
 
 /** Icon-rail nav link with a tooltip that flies out to the right of the dark rail. */
-function RailLink({ item, active, accent, href, dataTour }: { item: NavItem; active: boolean; accent: string; href: string; dataTour?: string }) {
+function RailLink({ item, active, accent, href, dataTour, badge = 0 }: { item: NavItem; active: boolean; accent: string; href: string; dataTour?: string; badge?: number }) {
   const { Icon, label } = item;
   return (
     <div className="group relative flex justify-center">
       <Link
         href={href}
         data-tour={dataTour}
-        aria-label={label}
+        aria-label={badge > 0 ? `${label} (${badge} to review)` : label}
         aria-current={active ? "page" : undefined}
         title={label}
-        className="of-rail-btn flex h-[36px] w-[36px] items-center justify-center rounded-[11px] outline-none transition-[background,color] duration-150 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
+        className="of-rail-btn relative flex h-[36px] w-[36px] items-center justify-center rounded-[11px] outline-none transition-[background,color] duration-150 focus-visible:ring-2 focus-visible:ring-[var(--color-primary)]/40"
         style={active ? { background: accent, color: "#fff" } : { color: "var(--color-of-rail-icon)" }}
       >
         <Icon size={17} strokeWidth={1.8} aria-hidden="true" />
+        {badge > 0 && (
+          <span
+            aria-hidden="true"
+            className="absolute -right-1 -top-1 flex h-[15px] min-w-[15px] items-center justify-center rounded-full px-[3px] text-[9px] font-bold leading-none text-white"
+            style={{ background: accent, boxShadow: "0 0 0 2px var(--color-of-sidebar)" }}
+          >
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
       </Link>
       <span
         role="tooltip"
@@ -185,6 +195,7 @@ export function OtterfundChrome({
   notice,
   txThisMonth,
   hasAccounts,
+  pendingSubscriptions = 0,
   todayMonth,
   todayYear,
   children,
@@ -198,6 +209,8 @@ export function OtterfundChrome({
   txThisMonth: number;
   /** False when the user has no accounts at all — drives cold-start empty states. */
   hasAccounts: boolean;
+  /** Auto-detected subscriptions awaiting review — drives the sidebar badge. */
+  pendingSubscriptions?: number;
   /** Today's real period — the picker's "today" marker + the period fallback. */
   todayMonth: number;
   todayYear: number;
@@ -782,6 +795,7 @@ export function OtterfundChrome({
                   href={hrefFor(item.href)}
                   active={pathname === item.href}
                   accent={accent}
+                  badge={item.key === "subscriptions" ? pendingSubscriptions : 0}
                   dataTour={item.href === "/dashboard/insights" ? "nav-insights" : undefined}
                 />
               ))}

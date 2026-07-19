@@ -7,7 +7,7 @@ import {
   monthlyTxCount,
   userPrefs,
 } from "@/lib/dashboard-context";
-import { countAccounts } from "@/lib/db/queries";
+import { countAccounts, countPendingSubscriptions } from "@/lib/db/queries";
 import { DEFAULT_BUDGET_PLAN_ID } from "@/lib/constants";
 
 // Persistent dashboard shell. A Next layout does NOT remount when navigating
@@ -22,11 +22,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   // Per-period body data is fetched by each page from its own searchParams.
   const { month: todayMonth, year: todayYear } = currentPeriod();
 
-  const [overview, txThisMonth, prefs, accountCount] = await Promise.all([
+  const [overview, txThisMonth, prefs, accountCount, pendingSubscriptions] = await Promise.all([
     dashboardOverview(user.id, todayMonth, todayYear).catch(() => null),
     monthlyTxCount(user.id, todayMonth, todayYear).catch(() => 0),
     userPrefs(user.id),
     countAccounts(user.id).catch(() => 0),
+    countPendingSubscriptions(user.id).catch(() => 0),
   ]);
 
   const hasAccounts = accountCount > 0;
@@ -45,6 +46,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         todayYear={todayYear}
         txThisMonth={txThisMonth}
         hasAccounts={hasAccounts}
+        pendingSubscriptions={pendingSubscriptions}
         user={{
           name: user.name ?? "",
           email: user.email ?? "",

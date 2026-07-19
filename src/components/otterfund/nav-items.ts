@@ -7,7 +7,7 @@
 // without orphaning a user's saved order. Dev tools stay separate + admin-only
 // (see SECONDARY_NAV in otterfund-chrome) and are NOT customizable.
 
-import { Home, List, CreditCard, Target, PieChart, TrendingUp, type LucideProps } from "lucide-react";
+import { Home, List, CreditCard, Target, PieChart, TrendingUp, Repeat, type LucideProps } from "lucide-react";
 import { OtterFace } from "@/components/otterfund/logo";
 
 export interface NavItem {
@@ -27,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { key: "overview", href: "/dashboard", label: "Overview", Icon: Home },
   { key: "transactions", href: "/dashboard/transactions", label: "Transactions", Icon: List },
   { key: "spending", href: "/dashboard/spending", label: "Spending", Icon: PieChart },
+  { key: "subscriptions", href: "/dashboard/subscriptions", label: "Subscriptions", Icon: Repeat },
   { key: "accounts", href: "/dashboard/accounts", label: "Accounts", Icon: CreditCard },
   { key: "investments", href: "/dashboard/investments", label: "Investments", Icon: TrendingUp },
   { key: "goals", href: "/dashboard/goals", label: "Goals", Icon: Target },
