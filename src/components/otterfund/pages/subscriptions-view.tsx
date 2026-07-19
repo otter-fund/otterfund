@@ -13,7 +13,7 @@ export function SubscriptionsView({
   suggestions: SubscriptionView[];
   currency: string;
 }) {
-  const { accent, theme, addSubscription, editSubscription, refreshData } = useOtterfundChrome();
+  const { accent, theme, addSubscription, editSubscription, refreshData, notify } = useOtterfundChrome();
   return (
     <OtterfundSubscriptions
       subscriptions={subscriptions}
@@ -24,6 +24,7 @@ export function SubscriptionsView({
       onAdd={addSubscription}
       onEdit={editSubscription}
       onReviewed={refreshData}
+      notify={notify}
     />
   );
 }

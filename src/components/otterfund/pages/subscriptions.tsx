@@ -24,8 +24,9 @@ import { Statement, HeroBand, SectionHead, Ledger, Row, ViewAllLink } from "@/co
 import { Panel } from "@/components/otterfund/panel";
 import { EmptyState } from "@/components/otterfund/empty-state";
 import { Button } from "@/components/ui/button";
-import { Plus, Check, X, Sparkles, RefreshCw } from "lucide-react";
+import { Plus, Check, X, RefreshCw } from "lucide-react";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
+import type { ToastInput } from "@/components/otterfund/toast";
 
 const REVIEW_SUBSCRIPTION = /* GraphQL */ `
   mutation ReviewSubscription($id: ID!, $action: String!) {
@@ -48,6 +49,8 @@ interface OtterfundSubscriptionsProps {
   onEdit?: (subscription: SubscriptionView) => void;
   /** Re-fetch the page after a review/scan. */
   onReviewed?: () => void;
+  /** Show a transient toast (chrome-owned) — used for background-scan status. */
+  notify?: (toast: ToastInput) => void;
   /**
    * Rendered as a compact "Recurring" summary inside the Spending page (linking
    * to this tab) rather than the full standalone statement.
@@ -64,7 +67,7 @@ function flagBadge(flag: string, theme: OtterfundTheme): { bg: string; color: st
     : { bg: "var(--color-of-warn)", color: "var(--color-of-warn-ink)", label: "No recent charge" };
 }
 
-export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme, currency = "CAD", onAdd, onEdit, onReviewed, embedded = false }: OtterfundSubscriptionsProps) {
+export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme, currency = "CAD", onAdd, onEdit, onReviewed, notify, embedded = false }: OtterfundSubscriptionsProps) {
   const money = (n: number) => fmt(n, currency);
   const router = useRouter();
 
@@ -100,22 +103,38 @@ export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme,
   };
 
   // Manual "Scan for subscriptions" — runs the same detection the bank link /
-  // import trigger automatically, so the user can refresh their queue on demand.
+  // import trigger automatically. It's a slow AI pass, so we don't block: fire it,
+  // toast "we'll let you know", and toast + refresh on completion (the sidebar /
+  // bell also surface the result, so the user can navigate away meanwhile).
   const [scanning, setScanning] = useState(false);
-  const [scanMsg, setScanMsg] = useState("");
   const scan = () => {
     if (scanning) return;
     setScanning(true);
-    setScanMsg("");
+    notify?.({
+      key: "scan",
+      tone: "progress",
+      title: "Scanning your transactions…",
+      message: "This can take a moment. We'll let you know when it's done.",
+      duration: 30000,
+    });
     gqlClient
       .request<{ scanRecurring?: { added?: number; suggested?: number } }>(SCAN_RECURRING)
       .then((d) => {
         const r = d.scanRecurring ?? {};
         const found = (r.added ?? 0) + (r.suggested ?? 0);
-        setScanMsg(found > 0 ? `Found ${found} new ${found === 1 ? "subscription" : "subscriptions"}.` : "No new subscriptions found.");
+        notify?.(
+          found > 0
+            ? {
+                key: "scan",
+                tone: "success",
+                title: `Found ${found} possible ${found === 1 ? "subscription" : "subscriptions"}`,
+                message: "Review them in your queue below.",
+              }
+            : { key: "scan", tone: "info", title: "Scan complete", message: "No new subscriptions found." },
+        );
         onReviewed?.();
       })
-      .catch((e) => setScanMsg(errMessage(e)))
+      .catch((e) => notify?.({ key: "scan", tone: "error", title: "Scan failed", message: errMessage(e) }))
       .finally(() => setScanning(false));
   };
 
@@ -143,31 +162,13 @@ export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme,
   // ── review queue · auto-detected charges awaiting a decision ──
   const reviewQueue = suggestions.length > 0 && (
     <Panel theme={theme} style={{ marginTop: 24 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 11, marginBottom: 14 }}>
-        <div
-          aria-hidden="true"
-          style={{
-            display: "flex",
-            height: 30,
-            width: 30,
-            flexShrink: 0,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: 9,
-            background: theme.accentTint,
-            color: theme.accentDeep,
-          }}
-        >
-          <Sparkles size={16} strokeWidth={2.2} />
-        </div>
-        <div style={{ minWidth: 0 }}>
-          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
-            {suggestions.length} possible subscription{suggestions.length === 1 ? "" : "s"}
-          </h3>
-          <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "var(--color-of-muted)" }}>
-            We spotted these recurring charges in your transactions. Add the ones you want to track.
-          </p>
-        </div>
+      <div style={{ marginBottom: 14 }}>
+        <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600 }}>
+          {suggestions.length} possible subscription{suggestions.length === 1 ? "" : "s"}
+        </h3>
+        <p style={{ margin: "3px 0 0", fontSize: 12.5, color: "var(--color-of-muted)" }}>
+          We spotted these recurring charges in your transactions. Add the ones you want to track.
+        </p>
       </div>
       <Ledger>
         {suggestions.map((s, i) => {
@@ -385,14 +386,9 @@ export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme,
           </div>
         }
         aside={
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 8 }}>
-            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {addButton}
-              {scanButton}
-            </div>
-            {scanMsg && (
-              <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--color-of-muted)", maxWidth: 320 }}>{scanMsg}</span>
-            )}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {addButton}
+            {scanButton}
           </div>
         }
       />

@@ -40,6 +40,7 @@ import { MonthPicker } from "@/components/otterfund/month-picker";
 import { MobileNav } from "@/components/otterfund/mobile-nav";
 import { NAV_ITEMS, resolveNav, type NavItem, type SidebarLayout } from "@/components/otterfund/nav-items";
 import { SidebarCustomizer } from "@/components/otterfund/sidebar-customizer";
+import { ToastViewport, type Toast, type ToastInput } from "@/components/otterfund/toast";
 import { OtterfundChromeProvider } from "@/components/otterfund/chrome-context";
 import { useOtterfundTour } from "@/components/otterfund/tour/otterfund-tour";
 import { MONTH_NAMES } from "@/lib/constants";
@@ -361,6 +362,23 @@ export function OtterfundChrome({
 
   // Mutations live in the modals; refetch server data by re-running the active RSC.
   const refresh = () => router.refresh();
+
+  // Toasts — transient top-right status (e.g. background-scan progress). State
+  // lives here (chrome outlives page navigations), exposed via context as
+  // notify(); auto-dismisses unless duration is 0.
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastSeq = useRef(0);
+  const dismissToast = useCallback((id: number) => setToasts((ts) => ts.filter((t) => t.id !== id)), []);
+  const notify = useCallback(
+    ({ duration = 5000, ...toast }: ToastInput) => {
+      const id = (toastSeq.current += 1);
+      // A keyed toast replaces any prior toast with the same key (e.g. a
+      // "scanning…" toast becoming "scan complete").
+      setToasts((ts) => [...(toast.key ? ts.filter((t) => t.key !== toast.key) : ts), { ...toast, id }]);
+      if (duration > 0) setTimeout(() => dismissToast(id), duration);
+    },
+    [dismissToast],
+  );
 
   const handleSignOut = async () => {
     await createClient().auth.signOut();
@@ -684,8 +702,15 @@ export function OtterfundChrome({
       <PopoverTrigger
         aria-haspopup="dialog"
         render={
-          <Button variant="outline" size="icon" aria-label="Notifications">
+          <Button variant="outline" size="icon" aria-label={pendingSubscriptions > 0 ? `Notifications (${pendingSubscriptions} to review)` : "Notifications"} className="relative">
             <Bell size={17} strokeWidth={1.9} aria-hidden="true" />
+            {pendingSubscriptions > 0 && (
+              <span
+                aria-hidden="true"
+                className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full"
+                style={{ background: accent, boxShadow: "0 0 0 2px var(--color-of-surface)" }}
+              />
+            )}
           </Button>
         }
       />
@@ -695,6 +720,7 @@ export function OtterfundChrome({
           monthlySpend={notice.monthlySpend}
           spendingByCategory={notice.spendingByCategory}
           upcomingBills={notice.upcomingBills}
+          pendingSubscriptions={pendingSubscriptions}
         />
       </PopoverContent>
     </Popover>
@@ -747,11 +773,12 @@ export function OtterfundChrome({
       editSubscription: setEditSubscription,
       editInvestment: setEditInvestment,
       refreshData: refresh,
+      notify,
       hrefFor,
       txCount,
       setTxCount,
     }),
-    [accent, theme, setAccent, appearance, resolvedMode, setAppearance, hrefFor, txCount, plan, hasAccounts, requireFeature, promptUpgrade, openPaywall, openBillingPortal, portalBusy, openSettings]
+    [accent, theme, setAccent, appearance, resolvedMode, setAppearance, hrefFor, txCount, plan, hasAccounts, requireFeature, promptUpgrade, openPaywall, openBillingPortal, portalBusy, openSettings, notify]
   );
 
   return (
@@ -987,6 +1014,7 @@ export function OtterfundChrome({
           onAppearanceChange={setAppearance}
           user={user}
         />
+        <ToastViewport toasts={toasts} onDismiss={dismissToast} theme={theme} />
       </div>
     </OtterfundChromeProvider>
   );

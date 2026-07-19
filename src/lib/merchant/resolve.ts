@@ -171,6 +171,53 @@ export async function resolveDomainsCached(
 }
 
 /**
+ * Batch-resolve merchant DISPLAY NAME + domain from the dictionary + cache only
+ * (no Claude). Like resolveDomainsCached but also returns a clean display name,
+ * for callers that need a presentable label without paying for an AI call (e.g.
+ * the free heuristic subscription detector). Falls back to the raw name when the
+ * merchant is unknown.
+ *
+ * @returns Map keyed by the ORIGINAL raw name → { displayName, domain }.
+ */
+export async function lookupMerchantsCached(
+  rawNames: string[],
+): Promise<Map<string, { displayName: string; domain: string | null }>> {
+  const out = new Map<string, { displayName: string; domain: string | null }>();
+  const keyByName = new Map<string, string>();
+  const missKeys = new Set<string>();
+
+  for (const raw of rawNames) {
+    if (out.has(raw) || keyByName.has(raw)) continue;
+    const key = normalizeKey(raw);
+    if (!key) {
+      out.set(raw, { displayName: raw, domain: null });
+      continue;
+    }
+    const dict = MERCHANT_DICTIONARY[key];
+    if (dict) {
+      out.set(raw, { displayName: dict.displayName, domain: dict.domain });
+      continue;
+    }
+    keyByName.set(raw, key);
+    missKeys.add(key);
+  }
+
+  if (missKeys.size > 0) {
+    const rows = await prisma.merchant.findMany({
+      where: { normalizedKey: { in: [...missKeys] } },
+      select: { normalizedKey: true, displayName: true, domain: true, isCompany: true },
+    });
+    const byKey = new Map(rows.map((r) => [r.normalizedKey, r]));
+    for (const [raw, key] of keyByName) {
+      const row = byKey.get(key);
+      out.set(raw, row ? { displayName: row.displayName, domain: row.isCompany ? row.domain : null } : { displayName: raw, domain: null });
+    }
+  }
+
+  return out;
+}
+
+/**
  * Warm the shared Merchant cache for a batch of merchant names: resolve any that
  * aren't already known (dictionary) or cached, via the canonical resolveMerchant
  * (which persists the result). This is how transaction merchants enter the same

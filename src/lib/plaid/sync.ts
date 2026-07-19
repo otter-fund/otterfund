@@ -24,6 +24,7 @@ import {
   iconColorFor,
 } from "./mappers";
 import { resolveMerchant, warmMerchantDomains } from "@/lib/merchant/resolve";
+import { detectRecurringHeuristic } from "@/lib/db/recurring";
 
 export interface SyncResult {
   added: number;
@@ -196,6 +197,17 @@ export async function syncItem(item: PlaidItem): Promise<SyncResult> {
     await warmMerchantDomains(names, { max: 20 });
   } catch (err) {
     console.error("merchant cache warm failed:", safePlaidErr(err));
+  }
+
+  // 7) Free heuristic subscription detection — ONLY when this sync actually
+  // brought in new transactions, and never with an AI call. New monthly
+  // patterns land in the review queue. Best-effort; must not fail the sync.
+  if (added.length > 0) {
+    try {
+      await detectRecurringHeuristic(item.userId);
+    } catch (err) {
+      console.error("heuristic recurring detection failed:", err);
+    }
   }
 
   return { added: added.length, modified: modified.length, removed: removed.length };

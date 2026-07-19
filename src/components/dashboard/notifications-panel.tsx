@@ -2,17 +2,19 @@
 
 import type { SpendCategory, BillView } from "@/lib/types";
 import { fmt } from "@/lib/format";
-import { AlertTriangle, TrendingUp, Calendar } from "lucide-react";
+import { AlertTriangle, TrendingUp, Calendar, Repeat } from "lucide-react";
 
 interface NotificationsPanelProps {
   budgetTarget: number;
   monthlySpend: number;
   spendingByCategory: SpendCategory[];
   upcomingBills: BillView[];
+  /** Auto-detected subscriptions awaiting review — surfaced as a notification. */
+  pendingSubscriptions?: number;
 }
 
 interface Notification {
-  type: "warning" | "alert" | "info";
+  type: "warning" | "alert" | "info" | "subscription";
   title: string;
   message: string;
 }
@@ -22,8 +24,19 @@ export function NotificationsPanel({
   monthlySpend,
   spendingByCategory,
   upcomingBills,
+  pendingSubscriptions = 0,
 }: NotificationsPanelProps) {
   const notifications: Notification[] = [];
+
+  // Auto-detected subscriptions waiting for review — lead with it, it's an
+  // action the user can take right now.
+  if (pendingSubscriptions > 0) {
+    notifications.push({
+      type: "subscription",
+      title: "Subscriptions found",
+      message: `We found ${pendingSubscriptions} possible ${pendingSubscriptions === 1 ? "subscription" : "subscriptions"} in your transactions. Review ${pendingSubscriptions === 1 ? "it" : "them"} in Subscriptions.`,
+    });
+  }
 
   // Budget warnings
   if (budgetTarget > 0) {
@@ -77,6 +90,7 @@ export function NotificationsPanel({
     warning: <TrendingUp className="w-4 h-4 text-[var(--color-of-clay)]" />,
     alert: <AlertTriangle className="w-4 h-4 text-[var(--color-of-clay)]" />,
     info: <Calendar className="w-4 h-4 text-[var(--color-primary)]" />,
+    subscription: <Repeat className="w-4 h-4 text-[var(--color-primary)]" />,
   };
 
   // Content only — the surface, positioning, scrim, focus and dismissal are

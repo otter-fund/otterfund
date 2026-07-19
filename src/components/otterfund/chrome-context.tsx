@@ -12,6 +12,7 @@ import { createContext, useContext } from "react";
 import type { OtterfundTheme, ThemeMode, AppearanceMode } from "@/components/otterfund/theme";
 import type { TransactionView, GoalView, AccountView, SubscriptionView, InvestmentView } from "@/lib/types";
 import type { Feature, PlanTier } from "@/lib/plans";
+import type { ToastInput } from "@/components/otterfund/toast";
 
 export interface OtterfundChromeValue {
   /** Live accent (oklch) and its derived palette. */
@@ -61,6 +62,8 @@ export interface OtterfundChromeValue {
   editAccount: (account: AccountView) => void;
   /** Re-run the current route's RSC to pick up mutated server data. */
   refreshData: () => void;
+  /** Show a transient top-right toast (e.g. background-task status). */
+  notify: (toast: ToastInput) => void;
   /** Build a route href that preserves the remembered period on period-scoped
       routes (and stays clean elsewhere). Use for ALL cross-route navigation so
       the selected month survives — the rail and in-page links both go through
