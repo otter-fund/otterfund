@@ -148,7 +148,7 @@ const CARD_PAYMENT_FROM_CASH =
  * genuine income (a side gig, a client), and the goal-allocation cash cap
  * (see computeGoalCashHeadroom) guards against over-allocating regardless.
  */
-function isInternalTransfer(name: string, group: AccountGroup | null, amount: number): boolean {
+export function isInternalTransfer(name: string, group: AccountGroup | null, amount: number): boolean {
   if ((group === "credit" || group === "loans") && amount > 0) return true;
   if (group === "cash" && amount < 0 && CARD_PAYMENT_FROM_CASH.test(name)) return true;
   return false;

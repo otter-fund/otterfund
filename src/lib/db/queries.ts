@@ -6,6 +6,7 @@ import {
   computeAllBudgetSpent,
   computeMonthlySurplus,
   computeGoalCashHeadroom,
+  isInternalTransfer,
   NOT_EXCLUDED_ACCOUNT,
 } from "./calculations";
 import {
@@ -121,7 +122,7 @@ export async function getDashboardOverview(
         date: { gte: sevenMonthsAgo },
         ...NOT_EXCLUDED_ACCOUNT,
       },
-      select: { date: true, amount: true, accountId: true },
+      select: { date: true, amount: true, accountId: true, name: true },
     }),
     // Earliest transaction per account — a manual entry can be backdated to
     // before its account row was created, so "when does this account's history
@@ -211,6 +212,13 @@ export async function getDashboardOverview(
     ? [...startById.values()].reduce((a, b) => (a < b ? a : b))
     : null;
 
+  // Group each account once (cash / credit / loan / invest) so the trend can
+  // drop internal transfers: a credit-card paydown just moves money between the
+  // user's own accounts, so it must not read as income, spending, or a net-worth
+  // gain. Mirrors computeMonthlySurplus, keeping the chart and the headline
+  // consistent.
+  const groupById = new Map(accounts.map((a) => [a.id, accountGroupOf(a.type)]));
+
   const months: string[] = [];
   const incomeArr: number[] = [];
   const expenseArr: number[] = [];
@@ -229,6 +237,10 @@ export async function getDashboardOverview(
     let monthDelta = 0;
     let afterEnd = 0;
     for (const t of windowTxs) {
+      // Internal transfers move money between the user's own accounts — skip them
+      // so they never show up as income, spending, or a net-worth step.
+      const group = t.accountId ? groupById.get(t.accountId) ?? null : null;
+      if (isInternalTransfer(t.name, group, t.amount)) continue;
       if (t.date >= mEnd) {
         if (existsAt(t.accountId)) afterEnd += t.amount;
       } else if (t.date >= m) {

@@ -24,6 +24,7 @@ import { Statement, HeroBand, SectionHead, Ledger, Row, ViewAllLink } from "@/co
 import { Panel } from "@/components/otterfund/panel";
 import { EmptyState } from "@/components/otterfund/empty-state";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Plus, Check, X, RefreshCw } from "lucide-react";
 import { gqlClient, errMessage } from "@/lib/graphql/client";
 import type { ToastInput } from "@/components/otterfund/toast";
@@ -270,14 +271,36 @@ export function OtterfundSubscriptions({ subscriptions, suggestions = [], theme,
                   </span>
                   {s.flags.map((flag) => {
                     const { bg, color, label } = flagBadge(flag, theme);
+                    const badgeStyle = { fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", padding: "2px 7px", borderRadius: 999, background: bg, color };
+                    // Price flags are self-evident. "No recent charge" reads as an
+                    // error, so make it a tappable chip that explains itself and
+                    // reassures when the charge simply lives on an account we can't
+                    // see. stopPropagation keeps the tap off the row's edit action.
+                    if (flag.toLowerCase().startsWith("price")) {
+                      return (
+                        <span key={flag} title={flag} style={badgeStyle}>
+                          {label}
+                        </span>
+                      );
+                    }
                     return (
-                      <span
-                        key={flag}
-                        title={flag}
-                        style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.04em", padding: "2px 7px", borderRadius: 999, background: bg, color }}
-                      >
-                        {label}
-                      </span>
+                      <Popover key={flag}>
+                        <PopoverTrigger
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ ...badgeStyle, border: "none", cursor: "pointer" }}
+                        >
+                          {label}
+                        </PopoverTrigger>
+                        <PopoverContent side="top" align="start" className="w-[250px] p-3.5">
+                          <p className="text-[12.5px] leading-relaxed text-[var(--color-of-muted)]">
+                            We haven&rsquo;t matched a charge for{" "}
+                            <span className="font-semibold text-[var(--color-of-ink)]">{s.name}</span>{" "}
+                            in your transactions in the last 60 days. If you pay it from an
+                            account you haven&rsquo;t connected, that&rsquo;s expected and you
+                            can ignore this.
+                          </p>
+                        </PopoverContent>
+                      </Popover>
                     );
                   })}
                 </div>

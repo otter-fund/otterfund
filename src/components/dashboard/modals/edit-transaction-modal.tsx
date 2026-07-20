@@ -129,6 +129,17 @@ export function EditTransactionModal({
       ? categories
       : ["Groceries", "Dining Out", "Transport", "Bills", "Entertainment", "Health", "Subscriptions", "Income", "Other"];
 
+  // Where the transaction came from — a synced bank feed vs. something the user
+  // tracked themselves. "Synced" reuses the accent pill from the Accounts page;
+  // manual/imported stay neutral. Read-only: the modal doesn't move transactions
+  // between accounts.
+  const sourceBadge =
+    transaction?.source === "plaid"
+      ? { label: "Synced", bg: "var(--accent)", fg: "var(--accent-foreground)" }
+      : transaction?.source === "csv"
+        ? { label: "Imported", bg: "var(--color-of-line-soft)", fg: "var(--color-of-muted)" }
+        : { label: "Manual", bg: "var(--color-of-line-soft)", fg: "var(--color-of-muted)" };
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="sm:max-w-[480px] p-6 sm:p-9">
@@ -148,6 +159,22 @@ export function EditTransactionModal({
               onChange={(e) => setName(e.target.value)}
               className="of-field"
             />
+          </div>
+          <div>
+            <label className="block text-[11px] font-semibold tracking-[0.09em] uppercase text-[var(--color-of-faint)] mb-1.5">
+              Account
+            </label>
+            <div className="flex items-center justify-between gap-2 rounded-xl border border-[var(--color-of-line)] bg-[var(--color-of-canvas)] px-3.5 py-2.5">
+              <span className="min-w-0 truncate text-sm font-medium text-[var(--color-of-ink)]">
+                {transaction?.accountName || "No linked account"}
+              </span>
+              <span
+                className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.02em]"
+                style={{ background: sourceBadge.bg, color: sourceBadge.fg }}
+              >
+                {sourceBadge.label}
+              </span>
+            </div>
           </div>
           <div className="flex gap-3">
             <div className="flex-1">

@@ -85,9 +85,15 @@ export async function detectUnusedSubscriptions(
     }
 
     if (!mostRecent) {
-      const days = sub.lastTransactionDate
-        ? Math.floor((now - sub.lastTransactionDate.getTime()) / 86400000)
-        : UNUSED_THRESHOLD_DAYS;
+      // No transaction name-matches this subscription in the window. Only treat
+      // that as "stopped charging" when we've actually seen it before AND it has
+      // since gone quiet past the window. A brand-new entry, or one paid from an
+      // account the user hasn't connected, has no observed history here, so
+      // flagging it "no recent charge" reads as an error when nothing is wrong.
+      const last = sub.lastTransactionDate;
+      if (!last) continue;
+      const days = Math.floor((now - last.getTime()) / 86400000);
+      if (days < UNUSED_THRESHOLD_DAYS) continue;
       flagged.push({
         subscriptionId: sub.id,
         name: sub.name,
