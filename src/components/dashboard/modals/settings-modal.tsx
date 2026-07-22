@@ -23,11 +23,12 @@ import { useOtterfundChrome } from "@/components/otterfund/chrome-context";
 import { createClient } from "@/lib/supabase/client";
 import { gqlClient } from "@/lib/graphql/client";
 import { BudgetPlanPicker } from "@/components/otterfund/budget-plan-picker";
-import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Unlink, RefreshCw, Loader2, Plus, CreditCard, ArrowLeftRight, Lock, ArrowRight } from "lucide-react";
+import { User, Wallet, ShieldAlert, ChevronDown, Database, Palette, Trash2, Check, Landmark, Send, Unlink, RefreshCw, Loader2, Plus, CreditCard, ArrowLeftRight, Lock, ArrowRight } from "lucide-react";
 import { OtterFace } from "@/components/otterfund/logo";
+import { TelegramGlyph, WhatsAppGlyph } from "@/components/otterfund/messaging-icons";
 import { GuillocheFlow } from "@/components/otterfund/guilloche-flow";
 import { CURRENCIES, getBudgetPlan } from "@/lib/constants";
-import { PLAN_META, FEATURE_COPY, FEATURE_REQUIRED_TIER, canUse } from "@/lib/plans";
+import { PLAN_META, FEATURE_COPY, FEATURE_REQUIRED_TIER, canUse, type Feature } from "@/lib/plans";
 import type { OtterfundTheme, AppearanceMode } from "@/components/otterfund/theme";
 
 const PLAID_ITEMS = /* GraphQL */ `
@@ -67,6 +68,24 @@ const DELETE_MY_ACCOUNT = /* GraphQL */ `
   }
 `;
 
+const MESSAGING_CONNECTIONS = /* GraphQL */ `
+  query MessagingConnections {
+    messagingConnections
+  }
+`;
+
+const START_MESSAGING_LINK = /* GraphQL */ `
+  mutation StartMessagingLink($provider: String!) {
+    startMessagingLink(provider: $provider)
+  }
+`;
+
+const DISCONNECT_MESSAGING = /* GraphQL */ `
+  mutation DisconnectMessaging($provider: String!) {
+    disconnectMessaging(provider: $provider)
+  }
+`;
+
 type SettingsTab = "profile" | "plan" | "money" | "connections" | "appearance" | "data";
 
 const TABS: TabItem[] = [
@@ -86,6 +105,27 @@ interface PlaidConnection {
   accountCount: number;
   domain: string | null;
 }
+
+type MessagingProviderId = "telegram" | "whatsapp";
+
+interface MessagingConn {
+  provider: MessagingProviderId;
+  status: string; // pending | active | disconnected
+  configured: boolean; // server has this provider's tokens set
+}
+
+// The two channels shown in the messaging subsection. `startVerb` is the button
+// the user taps in the chat app to finish linking (Telegram "Start" / WhatsApp "Send").
+const MESSAGING_PROVIDERS_META: {
+  provider: MessagingProviderId;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  hint: string;
+  startVerb: string;
+}[] = [
+  { provider: "telegram", label: "Telegram", icon: TelegramGlyph, hint: "Free, instant setup.", startVerb: "Start" },
+  { provider: "whatsapp", label: "WhatsApp", icon: WhatsAppGlyph, hint: "Chat from your WhatsApp.", startVerb: "Send" },
+];
 
 interface SettingsModalProps {
   open: boolean;
@@ -154,9 +194,17 @@ function SectionHead({
 // the otter mark, a Newsreader title, accent-tint perk chips) so it reads like
 // otterfund rather than a generic "locked" notice. The CTA points at the lowest
 // tier that unlocks bank sync (source of truth: FEATURE_REQUIRED_TIER).
-function ConnectionsUpsell({ theme, onUpgrade }: { theme: OtterfundTheme; onUpgrade: () => void }) {
-  const copy = FEATURE_COPY.bank_sync;
-  const tierName = PLAN_META[FEATURE_REQUIRED_TIER.bank_sync].name;
+function ConnectionsUpsell({
+  theme,
+  onUpgrade,
+  feature = "bank_sync",
+}: {
+  theme: OtterfundTheme;
+  onUpgrade: () => void;
+  feature?: Feature;
+}) {
+  const copy = FEATURE_COPY[feature];
+  const tierName = PLAN_META[FEATURE_REQUIRED_TIER[feature]].name;
   return (
     <div
       className="max-w-[460px] overflow-hidden rounded-[20px]"
@@ -242,9 +290,74 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, app
     }
   }, []);
 
+  // ── Messaging (text the advisor via Telegram / WhatsApp) ──
+  const [messaging, setMessaging] = useState<MessagingConn[] | null>(null);
+  const [linking, setLinking] = useState<MessagingProviderId | null>(null);
+  const [msgBusy, setMsgBusy] = useState<string | null>(null);
+
+  const loadMessaging = useCallback(async (): Promise<MessagingConn[]> => {
+    try {
+      const { messagingConnections } = await gqlClient.request<{ messagingConnections: MessagingConn[] }>(
+        MESSAGING_CONNECTIONS,
+      );
+      const list = messagingConnections ?? [];
+      setMessaging(list);
+      return list;
+    } catch {
+      setMessaging([]);
+      return [];
+    }
+  }, []);
+
+  const startMessagingLink = async (provider: MessagingProviderId) => {
+    setLinking(provider);
+    try {
+      const { startMessagingLink: res } = await gqlClient.request<{
+        startMessagingLink: { deepLink: string; provider: string };
+      }>(START_MESSAGING_LINK, { provider });
+      // Open the chat app (or its web client). The user taps Start/Send there; the
+      // webhook flips us to "active" and the poll below picks it up.
+      if (res?.deepLink) window.open(res.deepLink, "_blank", "noopener,noreferrer");
+      else setLinking(null);
+    } catch {
+      setLinking(null);
+    }
+  };
+
+  const disconnectMessagingProvider = async (provider: MessagingProviderId) => {
+    setMsgBusy(provider);
+    try {
+      await gqlClient.request(DISCONNECT_MESSAGING, { provider });
+      await loadMessaging();
+    } finally {
+      setMsgBusy(null);
+    }
+  };
+
+  // While a link is pending, poll until the provider goes active (or give up after
+  // ~2 min). router.refresh() picks up the newly-connected state elsewhere too.
   useEffect(() => {
-    if (open && tab === "connections") loadConnections();
-  }, [open, tab, loadConnections]);
+    if (!linking) return;
+    let tries = 0;
+    const iv = setInterval(async () => {
+      tries += 1;
+      const list = await loadMessaging();
+      const active = list.find((m) => m.provider === linking)?.status === "active";
+      if (active || tries >= 40) {
+        clearInterval(iv);
+        setLinking(null);
+        if (active) router.refresh();
+      }
+    }, 3000);
+    return () => clearInterval(iv);
+  }, [linking, loadMessaging, router]);
+
+  useEffect(() => {
+    if (open && tab === "connections") {
+      loadConnections();
+      loadMessaging();
+    }
+  }, [open, tab, loadConnections, loadMessaging]);
 
   const disconnect = async (itemId: string) => {
     setDisconnecting(itemId);
@@ -768,6 +881,112 @@ export function SettingsModal({ open, onClose, user, accent, onAccentChange, app
                 </Button>
                 </>
                 )}
+
+                {/* ── Message your advisor (Telegram / WhatsApp) ── */}
+                <div className="mt-9 border-t border-[var(--color-of-line-soft)] pt-7">
+                  <SectionHead
+                    icon={Send}
+                    title="Message your advisor"
+                    desc={<>Text{" "}<Wordmark />{" "}from Telegram or WhatsApp and get answers about your money, no app needed.</>}
+                  />
+
+                  {!canUse(plan, "messaging") ? (
+                    <ConnectionsUpsell theme={theme} feature="messaging" onUpgrade={() => { onClose(); promptUpgrade(); }} />
+                  ) : (
+                    <>
+                      <div className="overflow-hidden rounded-[20px] border border-[var(--color-of-line)] bg-[var(--color-of-surface)]">
+                        {MESSAGING_PROVIDERS_META.map((p, i) => {
+                          const conn = messaging?.find((m) => m.provider === p.provider);
+                          const status = conn?.status ?? "disconnected";
+                          const configured = conn?.configured ?? false;
+                          const isActive = status === "active";
+                          const isLinking = linking === p.provider;
+                          const Icon = p.icon;
+                          return (
+                            <div
+                              key={p.provider}
+                              className="flex flex-col gap-3 px-[22px] py-[18px] sm:flex-row sm:items-center sm:gap-[15px]"
+                              style={{ borderTop: i === 0 ? "none" : "1px solid var(--color-of-line-soft)" }}
+                            >
+                              <div className="flex min-w-0 flex-1 items-center gap-[15px]">
+                                <div
+                                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px]"
+                                  style={{ background: "var(--accent)", color: "var(--color-primary)" }}
+                                >
+                                  <Icon className="h-[19px] w-[19px]" />
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className="truncate text-[14.5px] font-semibold text-[var(--color-of-ink)]">
+                                      {p.label}
+                                    </span>
+                                    {isActive && (
+                                      <span
+                                        className="shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-semibold tracking-[0.02em]"
+                                        style={{ background: "var(--accent)", color: "var(--accent-foreground)" }}
+                                      >
+                                        Connected
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="mt-0.5 text-[12.5px] text-[var(--color-of-muted)]">
+                                    {isActive
+                                      ? `Answers arrive in your ${p.label} chat.`
+                                      : isLinking
+                                        ? `Waiting for you to tap ${p.startVerb} in ${p.label}…`
+                                        : configured
+                                          ? p.hint
+                                          : "Not available yet, coming soon."}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex shrink-0 items-center gap-[15px] self-start sm:self-auto">
+                                {isActive ? (
+                                  <ConfirmButton
+                                    onConfirm={() => disconnectMessagingProvider(p.provider)}
+                                    icon={Unlink}
+                                    busyIcon={Loader2}
+                                    confirmLabel="Are you sure?"
+                                    busyLabel="Disconnecting…"
+                                    busy={msgBusy === p.provider}
+                                    restText="Disconnect"
+                                    restTextMobileOnly
+                                    restWidth="w-[150px]"
+                                    expandedWidth="w-[176px]"
+                                    labelMaxWidth="max-w-[132px]"
+                                    restLabel={`Disconnect ${p.label}`}
+                                    armedLabel={`Confirm disconnect ${p.label}`}
+                                  />
+                                ) : (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={!configured || isLinking}
+                                    onClick={() => startMessagingLink(p.provider)}
+                                  >
+                                    {isLinking ? (
+                                      <>
+                                        <Loader2 data-icon="inline-start" className="h-3.5 w-3.5 animate-spin" /> Waiting…
+                                      </>
+                                    ) : (
+                                      "Connect"
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {linking && (
+                        <p className="mt-3 max-w-[440px] text-[12.5px] text-[var(--color-of-muted)]">
+                          A new tab opened to {linking === "telegram" ? "Telegram" : "WhatsApp"}. Tap{" "}
+                          {linking === "telegram" ? "Start" : "Send"} there, then come back. This page updates on its own.
+                        </p>
+                      )}
+                    </>
+                  )}
+                </div>
               </section>
             )}
 

@@ -10,7 +10,7 @@ export const PLAN_TIERS = ["free", "standard", "pro"] as const;
 export type PlanTier = (typeof PLAN_TIERS)[number];
 
 /** Gated capabilities. A resolver/UI asks `canUse(plan, feature)`. */
-export type Feature = "bank_sync" | "insights" | "advisor" | "investments";
+export type Feature = "bank_sync" | "insights" | "advisor" | "investments" | "messaging";
 
 export interface PlanEntitlements {
   /** Max connected bank (Plaid) accounts. 0 = bank sync entirely locked. */
@@ -21,6 +21,10 @@ export interface PlanEntitlements {
   insights: boolean;
   /** Investments tab. */
   investments: boolean;
+  /** Text the AI advisor from Telegram / WhatsApp (Settings → Connections). The
+      chat itself reuses the advisor, so `advisor` must also be true wherever this
+      is; the monthly message cap (aiMonthlyMessages) applies to texted turns too. */
+  messaging: boolean;
   /** Durable per-user monthly advisor-message cap (one per answered question).
       0 when advisor is locked, `null` when unlimited (Pro). Per-minute/hour rate
       limits still apply as abuse protection regardless. Resets at the start of
@@ -40,6 +44,7 @@ export const PLAN_ENTITLEMENTS: Record<PlanTier, PlanEntitlements> = {
     advisor: false,
     insights: false,
     investments: false,
+    messaging: false,
     aiMonthlyMessages: 0,
     insightsPerMonth: 0,
   },
@@ -48,6 +53,7 @@ export const PLAN_ENTITLEMENTS: Record<PlanTier, PlanEntitlements> = {
     advisor: true,
     insights: true,
     investments: false,
+    messaging: false,
     aiMonthlyMessages: 20,
     insightsPerMonth: 10,
   },
@@ -56,6 +62,7 @@ export const PLAN_ENTITLEMENTS: Record<PlanTier, PlanEntitlements> = {
     advisor: true,
     insights: true,
     investments: true,
+    messaging: true,
     aiMonthlyMessages: null, // "Unlimited AI chats & insights" — no monthly cap
     insightsPerMonth: null, // unlimited
   },
@@ -75,6 +82,7 @@ export const FEATURE_REQUIRED_TIER: Record<Feature, PlanTier> = {
   insights: "standard",
   advisor: "standard",
   investments: "pro",
+  messaging: "pro",
 };
 
 /** Marketing copy for each gated feature, shown across the upsell surfaces.
@@ -154,6 +162,20 @@ export const FEATURE_COPY: Record<
       ],
     },
   },
+  messaging: {
+    title: "Text your advisor",
+    blurb: "Ask about your money from Telegram or WhatsApp and get answers back on your phone.",
+    perks: ["Chat from Telegram or WhatsApp", "Answers grounded in your accounts", "No app needed to check in"],
+    outcome: {
+      headline: "Your money advisor, one text away",
+      sub: "Ask what you can cut or where your money went straight from your phone, and get a real answer back in seconds.",
+      bullets: [
+        "Text a question, get a grounded reply",
+        "Works from Telegram or WhatsApp",
+        "Every answer built from your real numbers",
+      ],
+    },
+  },
 };
 
 export function isPlanTier(v: unknown): v is PlanTier {
@@ -186,5 +208,7 @@ export function canUse(plan: PlanTier | string | null | undefined, feature: Feat
       return e.advisor;
     case "investments":
       return e.investments;
+    case "messaging":
+      return e.messaging;
   }
 }

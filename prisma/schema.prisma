@@ -67,6 +67,7 @@ model User {
   advisorMessages  AdvisorMessage[]
   investments      Investment[]
   aiUsageEvents    AiUsageEvent[]
+  messagingConnections MessagingConnection[]
 }
 
 model Account {
@@ -425,4 +426,44 @@ model StripeEvent {
 
   @@index([type, createdAt])
   @@index([userId, createdAt])
+}
+
+// A user's link to an external chat app (Telegram / WhatsApp) so they can text
+// the AI advisor from their phone and get replies back. One row per provider per
+// user. `providerChatId` is who we reply to (Telegram chat id / WhatsApp wa_id).
+// `linkToken` is the one-time deep-link nonce that binds an incoming chat to this
+// user; it is cleared once the connection goes active. `conversationId` points at
+// the rolling AdvisorConversation backing this channel, so texted Q&A also shows
+// up in the in-app advisor history (unified). Provider is a plain string to match
+// the rest of the schema (validated in code): "telegram" | "whatsapp".
+model MessagingConnection {
+  id                 String    @id @default(cuid())
+  userId             String
+  provider           String // "telegram" | "whatsapp"
+  status             String    @default("pending") // pending | active | disconnected
+  providerChatId     String? // Telegram chat id / WhatsApp wa_id (reply target)
+  linkToken          String?   @unique // one-time deep-link nonce; cleared on activate
+  linkTokenExpiresAt DateTime?
+  conversationId     String? // rolling AdvisorConversation for this channel
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider]) // one row per provider per user (upsert target)
+  @@unique([provider, providerChatId]) // a chat id maps to one account (NULLs are distinct in Postgres)
+  @@index([userId])
+}
+
+// Idempotency guard for inbound messaging webhooks — Telegram delivers updates
+// at-least-once (update_id) and WhatsApp retries (message id). `id` is the
+// namespaced provider event id, so a duplicate insert is a no-op we can detect.
+// Mirrors StripeEvent.
+model MessagingEvent {
+  id        String   @id // "<provider>:<update_id | message_id>"
+  provider  String
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([provider, createdAt])
 }
